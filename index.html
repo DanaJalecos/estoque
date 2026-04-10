@@ -3,237 +3,247 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Estoque de Tecidos — Dana Jalecos</title>
+<title>Estoque — Dana Jalecos</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root {
-  --blue-900:#0a1628;--blue-800:#0f2240;--blue-700:#163463;
-  --blue-600:#1d4e89;--blue-500:#2563a8;--blue-400:#4a8fd4;
-  --blue-300:#7db4e8;--blue-200:#b3d4f4;--blue-100:#dfedf9;--blue-50:#f0f6fc;
-  --accent:#e8a838;--accent-soft:#f5d590;
-  --red:#e85d5d;--red-bg:#fde8e8;
-  --green:#3dba7a;--green-bg:#eafaf1;
-  --orange:#e8a838;--orange-bg:#fef3e2;
-  --white:#fff;--gray-50:#f8f9fb;--gray-100:#eef1f5;
-  --gray-200:#d8dde6;--gray-300:#bcc4d0;--gray-400:#8e99a9;
-  --gray-600:#505a6a;--gray-800:#2a2f3a;
-  --serif:'DM Serif Display',Georgia,serif;
-  --sans:'Plus Jakarta Sans',system-ui,sans-serif;
-  --sidebar-w:260px;--radius:12px;
+:root{
+  --bg:#0e0e0e;--bg-card:#1a1a1a;--bg-card-hover:#222;--bg-input:#141414;
+  --border:#2a2a2a;--border-light:#333;--border-focus:#555;
+  --text:#f0f0f0;--text-secondary:#999;--text-muted:#666;
+  --accent:#fff;--accent-dim:#ccc;
+  --green:#4ade80;--green-bg:rgba(74,222,128,.1);
+  --red:#f87171;--red-bg:rgba(248,113,113,.1);
+  --orange:#fbbf24;--orange-bg:rgba(251,191,36,.1);
+  --blue:#60a5fa;--blue-bg:rgba(96,165,250,.1);
+  --heading:'Playfair Display',Georgia,serif;
+  --body:'Inter',system-ui,sans-serif;
+  --sidebar-w:250px;--radius:10px;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-html{font-size:15px;}
-body{font-family:var(--sans);color:var(--gray-800);background:var(--gray-50);min-height:100vh;}
+html{font-size:14px;}
+body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:100vh;-webkit-font-smoothing:antialiased;}
+::selection{background:rgba(255,255,255,.15);}
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:#333;border-radius:3px;}
 
-/* ─── LOGIN ─── */
+/* ═══ LOGIN ═══ */
 .login-page{
   min-height:100vh;display:flex;align-items:center;justify-content:center;
-  background:linear-gradient(160deg,var(--blue-900) 0%,var(--blue-700) 40%,var(--blue-500) 100%);
-  position:relative;overflow:hidden;
+  background:var(--bg);position:relative;
 }
 .login-page::before{
-  content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse 600px 400px at 20% 80%,rgba(232,168,56,.15),transparent),
-  radial-gradient(ellipse 800px 600px at 80% 20%,rgba(74,143,212,.25),transparent);
-}
-.login-page::after{
-  content:'';position:absolute;inset:0;
-  background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-  opacity:.5;
+  content:'';position:absolute;top:-200px;right:-200px;width:600px;height:600px;
+  border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.03),transparent 70%);
 }
 .login-card{
-  position:relative;z-index:2;background:var(--white);border-radius:20px;
-  padding:2.5rem;width:90%;max-width:420px;
-  box-shadow:0 25px 80px rgba(10,22,40,.3);
+  position:relative;z-index:2;background:var(--bg-card);border:1px solid var(--border);
+  border-radius:16px;padding:2.5rem;width:90%;max-width:400px;
 }
 .login-card .brand{text-align:center;margin-bottom:2rem;}
-.login-card .brand h1{font-family:var(--serif);font-size:1.6rem;color:var(--blue-900);}
-.login-card .brand h1 span{color:var(--accent);}
-.login-card .brand p{font-size:.82rem;color:var(--gray-400);margin-top:.3rem;}
-.login-tabs{display:flex;margin-bottom:1.5rem;border-bottom:2px solid var(--gray-100);}
+.login-card .brand h1{font-family:var(--heading);font-size:1.8rem;color:var(--text);font-weight:700;letter-spacing:-.02em;}
+.login-card .brand p{font-size:.8rem;color:var(--text-muted);margin-top:.4rem;letter-spacing:.05em;text-transform:uppercase;}
+.login-tabs{display:flex;margin-bottom:1.5rem;background:var(--bg);border-radius:8px;padding:3px;}
 .login-tabs button{
-  flex:1;background:none;border:none;padding:.7rem;font-family:var(--sans);
-  font-size:.85rem;font-weight:600;color:var(--gray-400);cursor:pointer;
-  border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s;
+  flex:1;background:none;border:none;padding:.55rem;font-family:var(--body);
+  font-size:.82rem;font-weight:600;color:var(--text-muted);cursor:pointer;
+  border-radius:6px;transition:all .2s;
 }
-.login-tabs button.active{color:var(--blue-600);border-bottom-color:var(--blue-600);}
+.login-tabs button.active{background:var(--bg-card);color:var(--text);}
 .login-form{display:flex;flex-direction:column;gap:1rem;}
-.login-form label{font-size:.75rem;font-weight:600;color:var(--gray-600);text-transform:uppercase;letter-spacing:.05em;}
+.login-form label{font-size:.72rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.08em;}
 .login-form input{
-  width:100%;padding:.7rem .9rem;border:1px solid var(--gray-200);
-  border-radius:10px;font-size:.9rem;font-family:var(--sans);
-  transition:border-color .2s;
+  width:100%;padding:.7rem .9rem;background:var(--bg-input);border:1px solid var(--border);
+  border-radius:8px;font-size:.9rem;font-family:var(--body);color:var(--text);transition:border-color .2s;
 }
-.login-form input:focus{outline:none;border-color:var(--blue-400);box-shadow:0 0 0 3px rgba(37,99,168,.1);}
+.login-form input:focus{outline:none;border-color:var(--border-focus);}
+.login-form input::placeholder{color:var(--text-muted);}
 .login-btn{
-  padding:.75rem;border-radius:10px;border:none;font-size:.9rem;
-  font-weight:600;font-family:var(--sans);cursor:pointer;transition:all .2s;
+  padding:.75rem;border-radius:8px;border:none;font-size:.85rem;
+  font-weight:600;font-family:var(--body);cursor:pointer;transition:all .2s;
 }
-.login-btn-primary{background:var(--blue-600);color:var(--white);}
-.login-btn-primary:hover{background:var(--blue-700);}
-.login-btn-google{
-  background:var(--white);color:var(--gray-800);border:1px solid var(--gray-200);
-  display:flex;align-items:center;justify-content:center;gap:.6rem;
-}
-.login-btn-google:hover{background:var(--gray-50);border-color:var(--gray-300);}
-.login-btn-google svg{width:20px;height:20px;}
-.login-divider{
-  display:flex;align-items:center;gap:1rem;margin:.5rem 0;
-  color:var(--gray-400);font-size:.78rem;
-}
-.login-divider::before,.login-divider::after{content:'';flex:1;height:1px;background:var(--gray-200);}
-.login-error{
-  background:var(--red-bg);color:var(--red);padding:.6rem .8rem;
-  border-radius:8px;font-size:.82rem;display:none;
-}
-.login-success{
-  background:var(--green-bg);color:var(--green);padding:.6rem .8rem;
-  border-radius:8px;font-size:.82rem;display:none;
-}
-.login-footer{text-align:center;margin-top:1rem;font-size:.78rem;color:var(--gray-400);}
-.login-footer a{color:var(--blue-500);cursor:pointer;text-decoration:none;}
+.login-btn-primary{background:var(--text);color:var(--bg);}
+.login-btn-primary:hover{opacity:.9;}
+.login-error{background:var(--red-bg);color:var(--red);padding:.6rem .8rem;border-radius:8px;font-size:.82rem;display:none;border:1px solid rgba(248,113,113,.2);}
+.login-success{background:var(--green-bg);color:var(--green);padding:.6rem .8rem;border-radius:8px;font-size:.82rem;display:none;border:1px solid rgba(74,222,128,.2);}
+.login-footer{text-align:center;margin-top:1.2rem;font-size:.78rem;color:var(--text-muted);}
+.login-footer a{color:var(--text-secondary);cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
+.login-footer a:hover{color:var(--text);}
 
-/* ─── APP LAYOUT ─── */
-.app{display:flex;min-height:100vh;display:none;}
+/* ═══ PROFILE SETUP ═══ */
+.profile-setup{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:var(--bg);display:none;
+}
+.profile-card{
+  background:var(--bg-card);border:1px solid var(--border);border-radius:16px;
+  padding:2.5rem;width:90%;max-width:400px;text-align:center;
+}
+.profile-card h2{font-family:var(--heading);font-size:1.4rem;margin-bottom:.5rem;}
+.profile-card p{font-size:.85rem;color:var(--text-secondary);margin-bottom:1.5rem;}
+.profile-card input{
+  width:100%;padding:.7rem .9rem;background:var(--bg-input);border:1px solid var(--border);
+  border-radius:8px;font-size:1rem;font-family:var(--body);color:var(--text);
+  text-align:center;margin-bottom:1rem;
+}
+.profile-card input:focus{outline:none;border-color:var(--border-focus);}
+
+/* ═══ APP LAYOUT ═══ */
+.app{display:none;min-height:100vh;}
 .sidebar{
-  width:var(--sidebar-w);min-height:100vh;background:var(--blue-900);
-  color:var(--white);display:flex;flex-direction:column;position:fixed;
-  top:0;left:0;bottom:0;z-index:50;transition:transform .3s;
+  width:var(--sidebar-w);height:100vh;background:var(--bg-card);
+  border-right:1px solid var(--border);display:flex;flex-direction:column;
+  position:fixed;top:0;left:0;z-index:50;transition:transform .3s;
 }
-.sidebar-brand{padding:1.5rem;border-bottom:1px solid rgba(255,255,255,.08);}
-.sidebar-brand h1{font-family:var(--serif);font-size:1.2rem;color:var(--white);}
-.sidebar-brand h1 span{color:var(--accent);}
-.sidebar-brand p{font-size:.7rem;color:var(--blue-400);margin-top:.2rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;}
-.sidebar-nav{flex:1;padding:1rem 0;}
+.sidebar-brand{padding:1.3rem 1.2rem;border-bottom:1px solid var(--border);}
+.sidebar-brand h1{font-family:var(--heading);font-size:1.1rem;font-weight:700;letter-spacing:-.01em;}
+.sidebar-brand p{font-size:.68rem;color:var(--text-muted);margin-top:.2rem;text-transform:uppercase;letter-spacing:.05em;}
+.sidebar-user{
+  padding:.8rem 1.2rem;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:.6rem;
+}
+.sidebar-avatar{
+  width:32px;height:32px;border-radius:50%;background:var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;
+  color:var(--text-secondary);flex-shrink:0;
+}
+.sidebar-userinfo{overflow:hidden;}
+.sidebar-userinfo .name{font-size:.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sidebar-userinfo .role{font-size:.68rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;}
+.sidebar-nav{flex:1;padding:.5rem 0;overflow-y:auto;}
+.sidebar-nav .nav-section{
+  font-size:.65rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;
+  letter-spacing:.1em;padding:.8rem 1.2rem .3rem;
+}
 .sidebar-nav button{
-  width:100%;text-align:left;background:none;border:none;color:var(--blue-300);
-  padding:.75rem 1.5rem;font-size:.85rem;font-family:var(--sans);cursor:pointer;
-  display:flex;align-items:center;gap:.7rem;transition:all .2s;font-weight:500;
+  width:100%;text-align:left;background:none;border:none;color:var(--text-secondary);
+  padding:.6rem 1.2rem;font-size:.82rem;font-family:var(--body);cursor:pointer;
+  display:flex;align-items:center;gap:.6rem;transition:all .15s;font-weight:500;
 }
-.sidebar-nav button:hover{background:rgba(255,255,255,.05);color:var(--white);}
-.sidebar-nav button.active{background:rgba(255,255,255,.1);color:var(--white);border-left:3px solid var(--accent);}
-.sidebar-nav button .icon{font-size:1.1rem;width:24px;text-align:center;}
-.sidebar-footer{padding:1rem 1.5rem;border-top:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:.4rem;}
+.sidebar-nav button:hover{background:rgba(255,255,255,.04);color:var(--text);}
+.sidebar-nav button.active{background:rgba(255,255,255,.07);color:var(--text);}
+.sidebar-nav button .icon{font-size:1rem;width:20px;text-align:center;opacity:.7;}
+.sidebar-nav button.active .icon{opacity:1;}
+.sidebar-footer{padding:.8rem 1.2rem;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:.3rem;}
 .sidebar-footer button{
-  width:100%;padding:.6rem;border-radius:8px;border:1px solid rgba(255,255,255,.15);
-  background:none;color:var(--blue-300);font-size:.75rem;cursor:pointer;
-  font-family:var(--sans);transition:all .2s;
+  width:100%;padding:.5rem;border-radius:6px;border:1px solid var(--border);
+  background:none;color:var(--text-muted);font-size:.72rem;cursor:pointer;
+  font-family:var(--body);transition:all .2s;
 }
-.sidebar-footer button:hover{background:rgba(255,255,255,.05);color:var(--white);}
-.sidebar-footer .logout-btn{border-color:rgba(232,93,93,.3);color:rgba(232,93,93,.7);}
-.sidebar-footer .logout-btn:hover{background:rgba(232,93,93,.1);color:var(--red);}
+.sidebar-footer button:hover{border-color:var(--border-light);color:var(--text-secondary);}
+.sidebar-footer .logout-btn{border-color:rgba(248,113,113,.2);color:rgba(248,113,113,.6);}
+.sidebar-footer .logout-btn:hover{background:var(--red-bg);color:var(--red);}
 
 .main{margin-left:var(--sidebar-w);flex:1;min-height:100vh;}
 .topbar{
-  background:var(--white);border-bottom:1px solid var(--gray-100);
-  padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;
+  background:var(--bg);border-bottom:1px solid var(--border);
+  padding:.8rem 1.5rem;display:flex;justify-content:space-between;align-items:center;
   position:sticky;top:0;z-index:30;
 }
-.topbar h2{font-family:var(--serif);font-size:1.3rem;color:var(--blue-900);}
-.topbar-actions{display:flex;gap:.5rem;}
+.topbar h2{font-size:1rem;font-weight:700;letter-spacing:-.01em;}
+.topbar-actions{display:flex;gap:.4rem;}
+.content{padding:1.5rem;}
+
+/* ═══ BUTTONS ═══ */
 .btn{
-  padding:.5rem 1rem;border-radius:8px;border:1px solid var(--gray-200);
-  background:var(--white);font-size:.8rem;font-family:var(--sans);
-  cursor:pointer;font-weight:600;color:var(--gray-600);transition:all .2s;
-  display:inline-flex;align-items:center;gap:.4rem;
+  padding:.45rem .9rem;border-radius:6px;border:1px solid var(--border);
+  background:var(--bg-card);font-size:.78rem;font-family:var(--body);
+  cursor:pointer;font-weight:600;color:var(--text-secondary);transition:all .15s;
+  display:inline-flex;align-items:center;gap:.3rem;
 }
-.btn:hover{border-color:var(--blue-400);color:var(--blue-600);}
-.btn-primary{background:var(--blue-600);color:var(--white);border-color:var(--blue-600);}
-.btn-primary:hover{background:var(--blue-700);}
-.btn-danger{color:var(--red);border-color:var(--red);}
+.btn:hover{border-color:var(--border-light);color:var(--text);}
+.btn-primary{background:var(--text);color:var(--bg);border-color:var(--text);}
+.btn-primary:hover{opacity:.9;}
+.btn-danger{color:var(--red);border-color:rgba(248,113,113,.3);}
 .btn-danger:hover{background:var(--red-bg);}
-.btn-sm{padding:.35rem .7rem;font-size:.75rem;}
-.content{padding:2rem;}
+.btn-sm{padding:.3rem .6rem;font-size:.72rem;}
 
-/* CARDS */
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:2rem;}
+/* ═══ STATS ═══ */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.8rem;margin-bottom:1.5rem;}
 .stat-card{
-  background:var(--white);border-radius:var(--radius);padding:1.5rem;
-  border:1px solid var(--gray-100);transition:all .3s;
+  background:var(--bg-card);border-radius:var(--radius);padding:1.2rem;
+  border:1px solid var(--border);transition:all .2s;
 }
-.stat-card:hover{box-shadow:0 8px 25px rgba(10,22,40,.06);transform:translateY(-2px);}
-.stat-card .stat-icon{font-size:1.6rem;margin-bottom:.5rem;}
-.stat-card .stat-value{font-family:var(--serif);font-size:2rem;color:var(--blue-900);line-height:1;}
-.stat-card .stat-label{font-size:.75rem;color:var(--gray-400);margin-top:.3rem;}
+.stat-card:hover{border-color:var(--border-light);}
+.stat-card .stat-label{font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem;}
+.stat-card .stat-value{font-family:var(--heading);font-size:1.8rem;font-weight:700;line-height:1;}
+.stat-card .stat-sub{font-size:.7rem;color:var(--text-muted);margin-top:.2rem;}
 
-/* TABLE */
-.table-wrap{background:var(--white);border-radius:var(--radius);border:1px solid var(--gray-100);overflow-x:auto;margin-top:1rem;}
+/* ═══ TABLE ═══ */
+.table-wrap{background:var(--bg-card);border-radius:var(--radius);border:1px solid var(--border);overflow-x:auto;margin-top:.8rem;}
 .table-wrap table{width:100%;border-collapse:collapse;}
 .table-wrap th{
-  background:var(--blue-50);color:var(--blue-700);font-weight:600;
-  padding:.7rem 1rem;text-align:left;font-size:.78rem;text-transform:uppercase;
-  letter-spacing:.05em;border-bottom:2px solid var(--blue-100);
+  background:rgba(255,255,255,.02);color:var(--text-muted);font-weight:600;
+  padding:.6rem .8rem;text-align:left;font-size:.7rem;text-transform:uppercase;
+  letter-spacing:.06em;border-bottom:1px solid var(--border);
 }
-.table-wrap td{padding:.7rem 1rem;border-bottom:1px solid var(--gray-100);font-size:.85rem;color:var(--gray-600);}
+.table-wrap td{padding:.6rem .8rem;border-bottom:1px solid var(--border);font-size:.82rem;color:var(--text-secondary);}
 .table-wrap tr:last-child td{border-bottom:none;}
-.table-wrap tr:hover td{background:var(--blue-50);}
-.status{display:inline-block;padding:.15rem .6rem;border-radius:100px;font-size:.7rem;font-weight:600;}
-.status-ok{background:var(--green-bg);color:var(--green);}
-.status-low{background:var(--orange-bg);color:var(--orange);}
-.status-critical{background:var(--red-bg);color:var(--red);}
+.table-wrap tr:hover td{background:rgba(255,255,255,.02);}
+.badge{display:inline-block;padding:.15rem .5rem;border-radius:100px;font-size:.68rem;font-weight:600;}
+.badge-ok{background:var(--green-bg);color:var(--green);}
+.badge-low{background:var(--orange-bg);color:var(--orange);}
+.badge-critical{background:var(--red-bg);color:var(--red);}
+.badge-in{background:var(--green-bg);color:var(--green);}
+.badge-out{background:var(--red-bg);color:var(--red);}
+.badge-admin{background:var(--blue-bg);color:var(--blue);}
 
-/* FORMS */
-.form-card{background:var(--white);border-radius:var(--radius);border:1px solid var(--gray-100);padding:2rem;max-width:600px;}
-.form-group{margin-bottom:1.2rem;}
-.form-group label{display:block;font-size:.78rem;font-weight:600;color:var(--gray-600);margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.05em;}
+/* ═══ FORMS ═══ */
+.form-card{background:var(--bg-card);border-radius:var(--radius);border:1px solid var(--border);padding:1.5rem;max-width:560px;}
+.form-group{margin-bottom:1rem;}
+.form-group label{display:block;font-size:.7rem;font-weight:600;color:var(--text-muted);margin-bottom:.25rem;text-transform:uppercase;letter-spacing:.06em;}
 .form-group input,.form-group select,.form-group textarea{
-  width:100%;padding:.6rem .8rem;border:1px solid var(--gray-200);
-  border-radius:8px;font-size:.9rem;font-family:var(--sans);color:var(--gray-800);
-  transition:border-color .2s;background:var(--white);
+  width:100%;padding:.55rem .7rem;background:var(--bg-input);border:1px solid var(--border);
+  border-radius:6px;font-size:.85rem;font-family:var(--body);color:var(--text);transition:border-color .2s;
 }
-.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--blue-400);box-shadow:0 0 0 3px rgba(37,99,168,.1);}
-.form-group textarea{resize:vertical;min-height:60px;}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
-.form-actions{margin-top:1.5rem;display:flex;gap:.5rem;}
-.filter-bar{display:flex;gap:.7rem;margin-bottom:1rem;flex-wrap:wrap;align-items:center;}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--border-focus);}
+.form-group select{cursor:pointer;}
+.form-group select option{background:var(--bg-card);color:var(--text);}
+.form-group textarea{resize:vertical;min-height:50px;}
+.form-group input::placeholder,.form-group textarea::placeholder{color:var(--text-muted);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;}
+.form-actions{margin-top:1.2rem;display:flex;gap:.4rem;}
+.filter-bar{display:flex;gap:.5rem;margin-bottom:.8rem;flex-wrap:wrap;align-items:center;}
 .filter-bar input,.filter-bar select{
-  padding:.45rem .7rem;border:1px solid var(--gray-200);border-radius:8px;
-  font-size:.82rem;font-family:var(--sans);background:var(--white);
+  padding:.4rem .6rem;background:var(--bg-card);border:1px solid var(--border);
+  border-radius:6px;font-size:.78rem;font-family:var(--body);color:var(--text);
 }
-.filter-bar input:focus,.filter-bar select:focus{outline:none;border-color:var(--blue-400);}
+.filter-bar input:focus,.filter-bar select:focus{outline:none;border-color:var(--border-focus);}
 
-/* EMPTY & LOADING */
-.empty-state{text-align:center;padding:3rem;color:var(--gray-400);}
-.empty-state .icon{font-size:3rem;margin-bottom:.5rem;display:block;}
-.empty-state p{font-size:.9rem;}
-.loading{text-align:center;padding:2rem;color:var(--gray-400);font-size:.85rem;}
-.spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--gray-200);border-top-color:var(--blue-500);border-radius:50%;animation:spin .6s linear infinite;margin-right:.5rem;vertical-align:middle;}
+/* ═══ MISC ═══ */
+.empty-state{text-align:center;padding:2.5rem;color:var(--text-muted);}
+.empty-state .icon{font-size:2rem;margin-bottom:.3rem;display:block;opacity:.5;}
+.empty-state p{font-size:.82rem;}
+.loading{text-align:center;padding:1.5rem;color:var(--text-muted);font-size:.82rem;}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--text-secondary);border-radius:50%;animation:spin .6s linear infinite;margin-right:.4rem;vertical-align:middle;}
 @keyframes spin{to{transform:rotate(360deg);}}
-
-/* REALTIME INDICATOR */
-.realtime-dot{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;margin-right:.4rem;animation:pulse 2s infinite;}
-@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
-
-/* TOAST */
 .toast{
-  position:fixed;bottom:2rem;right:2rem;background:var(--blue-900);color:var(--white);
-  padding:.8rem 1.5rem;border-radius:10px;font-size:.85rem;z-index:999;
-  opacity:0;transform:translateY(20px);transition:all .3s;pointer-events:none;
-  box-shadow:0 8px 30px rgba(10,22,40,.2);
+  position:fixed;bottom:1.5rem;right:1.5rem;background:var(--text);color:var(--bg);
+  padding:.7rem 1.2rem;border-radius:8px;font-size:.82rem;font-weight:600;z-index:999;
+  opacity:0;transform:translateY(16px);transition:all .3s;pointer-events:none;
 }
 .toast.show{opacity:1;transform:translateY(0);}
-
-/* MODAL */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(10,22,40,.5);z-index:200;align-items:center;justify-content:center;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
 .modal-overlay.show{display:flex;}
-.modal{background:var(--white);border-radius:16px;padding:2rem;max-width:450px;width:90%;box-shadow:0 20px 60px rgba(10,22,40,.2);}
-.modal h3{font-family:var(--serif);font-size:1.2rem;margin-bottom:1rem;}
-.modal-actions{display:flex;gap:.5rem;justify-content:flex-end;margin-top:1.5rem;}
+.modal{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;max-width:400px;width:90%;}
+.modal h3{font-size:1rem;font-weight:700;margin-bottom:.8rem;}
+.modal p{font-size:.85rem;color:var(--text-secondary);}
+.modal-actions{display:flex;gap:.4rem;justify-content:flex-end;margin-top:1.2rem;}
+.hidden{display:none!important;}
 
-/* MOBILE */
 .menu-toggle{
-  display:none;position:fixed;top:.8rem;left:.8rem;z-index:60;
-  background:var(--blue-900);color:var(--white);border:none;border-radius:8px;
-  width:40px;height:40px;font-size:1.2rem;cursor:pointer;
+  display:none;position:fixed;top:.6rem;left:.6rem;z-index:60;
+  background:var(--bg-card);color:var(--text);border:1px solid var(--border);border-radius:6px;
+  width:36px;height:36px;font-size:1rem;cursor:pointer;
 }
 @media(max-width:768px){
   .sidebar{transform:translateX(-100%);}
   .sidebar.open{transform:translateX(0);}
   .main{margin-left:0;}
   .menu-toggle{display:flex;align-items:center;justify-content:center;}
-  .topbar{padding-left:3.5rem;}
+  .topbar{padding-left:3rem;}
   .content{padding:1rem;}
   .stats-grid{grid-template-columns:1fr 1fr;}
   .form-row{grid-template-columns:1fr;}
@@ -242,32 +252,29 @@ body{font-family:var(--sans);color:var(--gray-800);background:var(--gray-50);min
 </head>
 <body>
 
-<!-- ═══════════════ LOGIN PAGE ═══════════════ -->
+<button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+
+<!-- ═══ LOGIN ═══ -->
 <div class="login-page" id="loginPage">
   <div class="login-card">
     <div class="brand">
-      <h1>Dana <span>Jalecos</span></h1>
-      <p>Controle de Estoque de Tecidos</p>
+      <h1>Dana Jalecos</h1>
+      <p>Sistema de Estoque</p>
     </div>
-
     <div class="login-tabs">
-      <button class="active" onclick="switchLoginTab('login',this)">Entrar</button>
-      <button onclick="switchLoginTab('register',this)">Criar Conta</button>
+      <button class="active" onclick="switchTab('login',this)">Entrar</button>
+      <button onclick="switchTab('register',this)">Criar Conta</button>
     </div>
-
     <div class="login-error" id="loginError"></div>
     <div class="login-success" id="loginSuccess"></div>
-
-    <!-- Login Form -->
     <div id="loginForm">
       <form class="login-form" onsubmit="return handleLogin(event)">
         <div><label>Email</label><input type="email" id="loginEmail" required placeholder="seu@email.com"></div>
         <div><label>Senha</label><input type="password" id="loginPassword" required placeholder="Sua senha" minlength="6"></div>
         <button type="submit" class="login-btn login-btn-primary" id="loginSubmitBtn">Entrar</button>
       </form>
+      <div class="login-footer"><a onclick="showForgotPw()">Esqueci minha senha</a></div>
     </div>
-
-    <!-- Register Form -->
     <div id="registerForm" style="display:none">
       <form class="login-form" onsubmit="return handleRegister(event)">
         <div><label>Email</label><input type="email" id="regEmail" required placeholder="seu@email.com"></div>
@@ -276,90 +283,103 @@ body{font-family:var(--sans);color:var(--gray-800);background:var(--gray-50);min
         <button type="submit" class="login-btn login-btn-primary" id="regSubmitBtn">Criar Conta</button>
       </form>
     </div>
-
-    <div class="login-footer" id="loginFooter">
-      <a onclick="showForgotPassword()">Esqueci minha senha</a>
-    </div>
   </div>
 </div>
 
-<!-- ═══════════════ APP ═══════════════ -->
-<button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+<!-- ═══ PROFILE SETUP ═══ -->
+<div class="profile-setup" id="profileSetup">
+  <div class="profile-card">
+    <h2>Bem-vindo!</h2>
+    <p>Como você quer ser chamado(a) no sistema?</p>
+    <input id="profileNameInput" placeholder="Seu nome" maxlength="50">
+    <button class="login-btn login-btn-primary" style="width:100%" onclick="saveProfile()">Continuar</button>
+  </div>
+</div>
 
+<!-- ═══ APP ═══ -->
 <div class="app" id="app">
   <aside class="sidebar">
-    <div class="sidebar-brand">
-      <h1>Dana <span>Jalecos</span></h1>
-      <p id="userEmail">Carregando...</p>
+    <div class="sidebar-brand"><h1>Dana Jalecos</h1><p>Controle de Estoque</p></div>
+    <div class="sidebar-user">
+      <div class="sidebar-avatar" id="userAvatar">?</div>
+      <div class="sidebar-userinfo">
+        <div class="name" id="userName">—</div>
+        <div class="role" id="userRole">—</div>
+      </div>
     </div>
     <nav class="sidebar-nav">
+      <div class="nav-section">Principal</div>
       <button class="active" onclick="showPage('dashboard',this)"><span class="icon">📊</span> Dashboard</button>
-      <button onclick="showPage('cadastro',this)"><span class="icon">🧵</span> Cadastrar Tecido</button>
-      <button onclick="showPage('entrada',this)"><span class="icon">📥</span> Registrar Entrada</button>
-      <button onclick="showPage('saida',this)"><span class="icon">📤</span> Registrar Saída</button>
-      <button onclick="showPage('estoque',this)"><span class="icon">📦</span> Consultar Estoque</button>
+      <button onclick="showPage('estoque',this)"><span class="icon">📦</span> Estoque</button>
       <button onclick="showPage('historico',this)"><span class="icon">📜</span> Histórico</button>
+      <div class="nav-section admin-only">Administração</div>
+      <button class="admin-only" onclick="showPage('cadastro',this)"><span class="icon">📝</span> Cadastrar Produto</button>
+      <button class="admin-only" onclick="showPage('entrada',this)"><span class="icon">📥</span> Registrar Entrada</button>
+      <button onclick="showPage('saida',this)"><span class="icon">📤</span> Registrar Saída</button>
+      <div class="nav-section">Conta</div>
+      <button onclick="showPage('perfil',this)"><span class="icon">👤</span> Meu Perfil</button>
     </nav>
     <div class="sidebar-footer">
-      <div style="font-size:.7rem;color:var(--blue-400);display:flex;align-items:center;padding:.3rem 0;"><span class="realtime-dot"></span> Sincronizado em tempo real</div>
-      <button onclick="exportData()">⬇ Exportar Backup (JSON)</button>
-      <button class="logout-btn" onclick="handleLogout()">🚪 Sair da Conta</button>
+      <button onclick="exportData()">↓ Exportar Backup</button>
+      <button class="logout-btn" onclick="handleLogout()">Sair</button>
     </div>
   </aside>
 
   <div class="main">
     <!-- DASHBOARD -->
     <div id="page-dashboard" class="page">
-      <div class="topbar"><h2>Dashboard</h2><div class="topbar-actions"><button class="btn btn-primary" onclick="showPage('cadastro',navBtn('cadastro'))">+ Novo Tecido</button></div></div>
+      <div class="topbar"><h2>Dashboard</h2><div class="topbar-actions"><button class="btn btn-primary admin-only" onclick="showPage('cadastro',navBtn('cadastro'))">+ Novo Produto</button></div></div>
       <div class="content">
-        <div class="stats-grid" id="dashStats"><div class="loading"><span class="spinner"></span>Carregando...</div></div>
-        <h3 style="font-family:var(--serif);font-size:1.1rem;color:var(--blue-900);margin-bottom:.5rem;">Últimas Movimentações</h3>
-        <div class="table-wrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Tecido</th><th>Qtd</th><th>Detalhe</th></tr></thead><tbody id="dashMovements"><tr><td colspan="5"><div class="loading"><span class="spinner"></span>Carregando...</div></td></tr></tbody></table></div>
+        <div class="stats-grid" id="dashStats"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem;">
+          <h3 style="font-size:.85rem;font-weight:700;">Últimas Movimentações</h3>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Produto</th><th>Qtd</th><th>Quem</th><th>Detalhe</th></tr></thead><tbody id="dashMov"></tbody></table></div>
       </div>
     </div>
 
-    <!-- CADASTRO -->
-    <div id="page-cadastro" class="page" style="display:none">
-      <div class="topbar"><h2>Cadastrar Tecido</h2></div>
+    <!-- CADASTRO (admin only) -->
+    <div id="page-cadastro" class="page hidden">
+      <div class="topbar"><h2>Cadastrar Produto</h2></div>
       <div class="content">
         <div class="form-card">
           <form id="formCadastro" onsubmit="return saveFabric(event)">
-            <input type="hidden" id="editFabricId">
+            <input type="hidden" id="editId">
             <div class="form-row">
-              <div class="form-group"><label>Nome / Tipo</label><input id="fabName" required placeholder="Ex: Oxford, Gabardine..."></div>
-              <div class="form-group"><label>Cor</label><input id="fabColor" required placeholder="Ex: Branco, Azul Marinho..."></div>
+              <div class="form-group"><label>Nome / Tipo</label><input id="fabName" required placeholder="Ex: Oxford, Linha, Botão..."></div>
+              <div class="form-group"><label>Cor / Variação</label><input id="fabColor" required placeholder="Ex: Branco, Azul Marinho..."></div>
             </div>
             <div class="form-row">
               <div class="form-group"><label>Fornecedor</label><input id="fabSupplier" placeholder="Ex: Têxtil São Paulo"></div>
-              <div class="form-group"><label>Unidade</label><select id="fabUnit"><option value="metros">Metros</option><option value="kg">Quilos (kg)</option><option value="unidades">Unidades</option></select></div>
+              <div class="form-group"><label>Unidade</label><select id="fabUnit"><option value="metros">Metros</option><option value="kg">Quilos (kg)</option><option value="unidades">Unidades</option><option value="rolos">Rolos</option><option value="caixas">Caixas</option></select></div>
             </div>
             <div class="form-row">
-              <div class="form-group"><label>Estoque Mínimo (alerta)</label><input id="fabMinStock" type="number" min="0" step="0.1" value="10" required></div>
-              <div class="form-group"><label>Estoque Inicial</label><input id="fabInitialStock" type="number" min="0" step="0.1" value="0"></div>
+              <div class="form-group"><label>Estoque Mínimo</label><input id="fabMin" type="number" min="0" step="0.1" value="10" required></div>
+              <div class="form-group"><label>Estoque Inicial</label><input id="fabInit" type="number" min="0" step="0.1" value="0"></div>
             </div>
             <div class="form-actions">
-              <button type="submit" class="btn btn-primary">Salvar Tecido</button>
-              <button type="button" class="btn" onclick="resetFabricForm()">Limpar</button>
+              <button type="submit" class="btn btn-primary">Salvar</button>
+              <button type="button" class="btn" onclick="resetForm()">Limpar</button>
             </div>
           </form>
         </div>
-        <h3 style="font-family:var(--serif);font-size:1.1rem;color:var(--blue-900);margin:2rem 0 .5rem;">Tecidos Cadastrados</h3>
-        <div class="table-wrap"><table><thead><tr><th>Nome</th><th>Cor</th><th>Fornecedor</th><th>Unidade</th><th>Est. Mínimo</th><th>Ações</th></tr></thead><tbody id="fabricList"></tbody></table></div>
+        <h3 style="font-size:.85rem;font-weight:700;margin:1.5rem 0 .3rem;">Produtos Cadastrados</h3>
+        <div class="table-wrap"><table><thead><tr><th>Nome</th><th>Cor/Variação</th><th>Fornecedor</th><th>Unidade</th><th>Mínimo</th><th>Ações</th></tr></thead><tbody id="fabList"></tbody></table></div>
       </div>
     </div>
 
-    <!-- ENTRADA -->
-    <div id="page-entrada" class="page" style="display:none">
-      <div class="topbar"><h2>Registrar Entrada de Tecido</h2></div>
+    <!-- ENTRADA (admin only) -->
+    <div id="page-entrada" class="page hidden">
+      <div class="topbar"><h2>Registrar Entrada</h2></div>
       <div class="content">
         <div class="form-card">
           <form onsubmit="return saveEntry(event)">
-            <div class="form-group"><label>Tecido</label><select id="entryFabric" required></select></div>
+            <div class="form-group"><label>Produto</label><select id="entryFab" required></select></div>
             <div class="form-row">
               <div class="form-group"><label>Quantidade</label><input id="entryQty" type="number" min="0.1" step="0.1" required placeholder="Ex: 50"></div>
               <div class="form-group"><label>Data</label><input id="entryDate" type="date" required></div>
             </div>
-            <div class="form-group"><label>Fornecedor</label><input id="entrySupplier" placeholder="Ex: Têxtil São Paulo"></div>
+            <div class="form-group"><label>Fornecedor</label><input id="entrySup" placeholder="Ex: Têxtil São Paulo"></div>
             <div class="form-group"><label>Observações</label><textarea id="entryNotes" placeholder="Nota fiscal, lote, etc."></textarea></div>
             <div class="form-actions"><button type="submit" class="btn btn-primary">Registrar Entrada</button></div>
           </form>
@@ -367,20 +387,20 @@ body{font-family:var(--sans);color:var(--gray-800);background:var(--gray-50);min
       </div>
     </div>
 
-    <!-- SAIDA -->
-    <div id="page-saida" class="page" style="display:none">
-      <div class="topbar"><h2>Registrar Saída de Tecido</h2></div>
+    <!-- SAÍDA -->
+    <div id="page-saida" class="page hidden">
+      <div class="topbar"><h2>Registrar Saída</h2></div>
       <div class="content">
         <div class="form-card">
           <form onsubmit="return saveExit(event)">
-            <div class="form-group"><label>Tecido</label><select id="exitFabric" required></select></div>
-            <div id="exitAvailable" style="font-size:.82rem;color:var(--blue-400);margin-top:-.8rem;margin-bottom:1rem;"></div>
+            <div class="form-group"><label>Produto</label><select id="exitFab" required></select></div>
+            <div id="exitAvail" style="font-size:.78rem;color:var(--text-muted);margin-top:-.6rem;margin-bottom:.8rem;"></div>
             <div class="form-row">
               <div class="form-group"><label>Quantidade</label><input id="exitQty" type="number" min="0.1" step="0.1" required placeholder="Ex: 15"></div>
               <div class="form-group"><label>Data</label><input id="exitDate" type="date" required></div>
             </div>
+            <div class="form-group"><label>Responsável</label><input id="exitWho" readonly></div>
             <div class="form-group"><label>Destino / Pedido</label><input id="exitDest" placeholder="Ex: Pedido #142 — 10 jalecos"></div>
-            <div class="form-group"><label>Quem Retirou</label><input id="exitWho" placeholder="Ex: Maria"></div>
             <div class="form-actions"><button type="submit" class="btn btn-primary">Registrar Saída</button></div>
           </form>
         </div>
@@ -388,41 +408,51 @@ body{font-family:var(--sans);color:var(--gray-800);background:var(--gray-50);min
     </div>
 
     <!-- ESTOQUE -->
-    <div id="page-estoque" class="page" style="display:none">
-      <div class="topbar"><h2>Consultar Estoque</h2></div>
+    <div id="page-estoque" class="page hidden">
+      <div class="topbar"><h2>Estoque</h2></div>
       <div class="content">
         <div class="filter-bar">
-          <input id="stockSearch" placeholder="Buscar tecido..." oninput="renderStock()">
-          <select id="stockFilter" onchange="renderStock()"><option value="all">Todos</option><option value="ok">OK</option><option value="low">Estoque Baixo</option><option value="critical">Crítico</option></select>
+          <input id="sSearch" placeholder="Buscar..." oninput="renderStock()">
+          <select id="sFilter" onchange="renderStock()"><option value="all">Todos</option><option value="ok">OK</option><option value="low">Baixo</option><option value="critical">Crítico</option></select>
         </div>
-        <div class="table-wrap"><table><thead><tr><th>Tecido</th><th>Cor</th><th>Fornecedor</th><th>Estoque Atual</th><th>Mínimo</th><th>Status</th></tr></thead><tbody id="stockList"></tbody></table></div>
+        <div class="table-wrap"><table><thead><tr><th>Produto</th><th>Cor/Variação</th><th>Fornecedor</th><th>Estoque</th><th>Mínimo</th><th>Status</th></tr></thead><tbody id="stockList"></tbody></table></div>
       </div>
     </div>
 
-    <!-- HISTORICO -->
-    <div id="page-historico" class="page" style="display:none">
-      <div class="topbar"><h2>Histórico de Movimentações</h2></div>
+    <!-- HISTÓRICO -->
+    <div id="page-historico" class="page hidden">
+      <div class="topbar"><h2>Histórico</h2></div>
       <div class="content">
         <div class="filter-bar">
-          <select id="histFabric" onchange="renderHistory()"><option value="all">Todos os tecidos</option></select>
-          <select id="histType" onchange="renderHistory()"><option value="all">Todas</option><option value="entrada">Entradas</option><option value="saida">Saídas</option></select>
-          <input id="histFrom" type="date" onchange="renderHistory()" title="De">
-          <input id="histTo" type="date" onchange="renderHistory()" title="Até">
+          <select id="hFab" onchange="renderHist()"><option value="all">Todos os produtos</option></select>
+          <select id="hType" onchange="renderHist()"><option value="all">Todas</option><option value="entrada">Entradas</option><option value="saida">Saídas</option></select>
+          <input id="hFrom" type="date" onchange="renderHist()">
+          <input id="hTo" type="date" onchange="renderHist()">
         </div>
-        <div class="table-wrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Tecido</th><th>Qtd</th><th>Detalhe</th><th>Ações</th></tr></thead><tbody id="histList"></tbody></table></div>
+        <div class="table-wrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Produto</th><th>Qtd</th><th>Quem</th><th>Detalhe</th><th class="admin-only">Ações</th></tr></thead><tbody id="histList"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- PERFIL -->
+    <div id="page-perfil" class="page hidden">
+      <div class="topbar"><h2>Meu Perfil</h2></div>
+      <div class="content">
+        <div class="form-card">
+          <div class="form-group"><label>Email</label><input id="profEmail" readonly></div>
+          <div class="form-group"><label>Nome de Exibição</label><input id="profName" placeholder="Seu nome"></div>
+          <div class="form-group"><label>Cargo</label><input id="profRole" readonly></div>
+          <div class="form-actions"><button class="btn btn-primary" onclick="updateProfile()">Salvar Alterações</button></div>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- TOAST -->
 <div class="toast" id="toast"></div>
-
-<!-- MODAL -->
 <div class="modal-overlay" id="confirmModal">
   <div class="modal">
     <h3 id="confirmTitle">Confirmar</h3>
-    <p id="confirmMsg" style="font-size:.9rem;color:var(--gray-600);"></p>
+    <p id="confirmMsg"></p>
     <div class="modal-actions">
       <button class="btn" onclick="closeModal()">Cancelar</button>
       <button class="btn btn-danger" id="confirmBtn">Confirmar</button>
@@ -431,421 +461,362 @@ body{font-family:var(--sans);color:var(--gray-800);background:var(--gray-50);min
 </div>
 
 <script>
-// ═══════════════ SUPABASE INIT ═══════════════
-const SUPABASE_URL = 'https://lvhvcxfhdabcpvbfrooj.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2aHZjeGZoZGFiY3B2YmZyb29qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDg4MDksImV4cCI6MjA5MTMyNDgwOX0.-3iOkL2JlOXYe0tMoaFhAUwFITqFcJJcw5UcXrn1848';
+const SUPA_URL='https://lvhvcxfhdabcpvbfrooj.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2aHZjeGZoZGFiY3B2YmZyb29qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDg4MDksImV4cCI6MjA5MTMyNDgwOX0.-3iOkL2JlOXYe0tMoaFhAUwFITqFcJJcw5UcXrn1848';
+const sb=supabase.createClient(SUPA_URL,SUPA_KEY);
 
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let user=null,profile=null,fabrics=[],movements=[],profiles=[];
 
-let currentUser = null;
-let fabricsCache = [];
-let movementsCache = [];
-
-// ═══════════════ AUTH ═══════════════
-function switchLoginTab(tab, btn) {
-  document.querySelectorAll('.login-tabs button').forEach(b => b.classList.remove('active'));
+// ═══ AUTH ═══
+function switchTab(t,btn){
+  document.querySelectorAll('.login-tabs button').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  document.getElementById('loginForm').style.display = tab === 'login' ? '' : 'none';
-  document.getElementById('registerForm').style.display = tab === 'register' ? '' : 'none';
-  document.getElementById('loginError').style.display = 'none';
-  document.getElementById('loginSuccess').style.display = 'none';
-  document.getElementById('loginFooter').style.display = tab === 'login' ? '' : 'none';
+  document.getElementById('loginForm').style.display=t==='login'?'':'none';
+  document.getElementById('registerForm').style.display=t==='register'?'':'none';
+  hide('loginError');hide('loginSuccess');
 }
-
-async function handleLogin(e) {
+async function handleLogin(e){
   e.preventDefault();
-  const btn = document.getElementById('loginSubmitBtn');
-  btn.textContent = 'Entrando...'; btn.disabled = true;
-  hideMessages();
-  const { error } = await sb.auth.signInWithPassword({
-    email: document.getElementById('loginEmail').value,
-    password: document.getElementById('loginPassword').value
-  });
-  btn.textContent = 'Entrar'; btn.disabled = false;
-  if (error) showLoginError(error.message === 'Invalid login credentials' ? 'Email ou senha incorretos.' : error.message);
+  const btn=document.getElementById('loginSubmitBtn');
+  btn.textContent='Entrando...';btn.disabled=true;hide('loginError');
+  const{error}=await sb.auth.signInWithPassword({email:$('loginEmail').value,password:$('loginPassword').value});
+  btn.textContent='Entrar';btn.disabled=false;
+  if(error)showErr(error.message==='Invalid login credentials'?'Email ou senha incorretos.':error.message);
 }
-
-async function handleRegister(e) {
+async function handleRegister(e){
   e.preventDefault();
-  const pw = document.getElementById('regPassword').value;
-  const pw2 = document.getElementById('regPassword2').value;
-  if (pw !== pw2) { showLoginError('As senhas não conferem.'); return; }
-  const btn = document.getElementById('regSubmitBtn');
-  btn.textContent = 'Criando...'; btn.disabled = true;
-  hideMessages();
-  const { error } = await sb.auth.signUp({
-    email: document.getElementById('regEmail').value,
-    password: pw
-  });
-  btn.textContent = 'Criar Conta'; btn.disabled = false;
-  if (error) { showLoginError(error.message); return; }
-  showLoginSuccess('Conta criada! Verifique seu email para confirmar, ou entre agora se a confirmação estiver desativada.');
+  if($('regPassword').value!==$('regPassword2').value){showErr('Senhas não conferem.');return;}
+  const btn=document.getElementById('regSubmitBtn');
+  btn.textContent='Criando...';btn.disabled=true;hide('loginError');
+  const{error}=await sb.auth.signUp({email:$('regEmail').value,password:$('regPassword').value});
+  btn.textContent='Criar Conta';btn.disabled=false;
+  if(error){showErr(error.message);return;}
+  showOk('Conta criada! Entre com seu email e senha.');
 }
-
-async function handleLogout() {
-  await sb.auth.signOut();
-  currentUser = null;
-  document.getElementById('app').style.display = 'none';
-  document.getElementById('loginPage').style.display = '';
+async function handleLogout(){await sb.auth.signOut();location.reload();}
+async function showForgotPw(){
+  const em=$('loginEmail').value;
+  if(!em){showErr('Digite seu email primeiro.');return;}
+  hide('loginError');
+  const{error}=await sb.auth.resetPasswordForEmail(em,{redirectTo:location.href});
+  if(error){showErr(error.message);return;}
+  showOk('Email de recuperação enviado!');
 }
+function showErr(m){const el=$('loginError');el.textContent=m;el.style.display='';}
+function showOk(m){const el=$('loginSuccess');el.textContent=m;el.style.display='';}
+function hide(id){$(id).style.display='none';}
 
-async function showForgotPassword() {
-  const email = document.getElementById('loginEmail').value;
-  if (!email) { showLoginError('Digite seu email primeiro.'); return; }
-  hideMessages();
-  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
-  if (error) { showLoginError(error.message); return; }
-  showLoginSuccess('Email de recuperação enviado! Verifique sua caixa de entrada.');
-}
-
-function showLoginError(msg) { const el = document.getElementById('loginError'); el.textContent = msg; el.style.display = ''; }
-function showLoginSuccess(msg) { const el = document.getElementById('loginSuccess'); el.textContent = msg; el.style.display = ''; }
-function hideMessages() { document.getElementById('loginError').style.display = 'none'; document.getElementById('loginSuccess').style.display = 'none'; }
-
-// Auth state listener
-sb.auth.onAuthStateChange(async (event, session) => {
-  if (session?.user) {
-    currentUser = session.user;
-    document.getElementById('loginPage').style.display = 'none';
-    document.getElementById('app').style.display = 'flex';
-    document.getElementById('userEmail').textContent = currentUser.email;
-    await loadAllData();
-    renderDashboard();
-    setupRealtime();
+// ═══ AUTH STATE ═══
+sb.auth.onAuthStateChange(async(ev,session)=>{
+  if(session?.user){
+    user=session.user;
+    // Load profile
+    const{data}=await sb.from('profiles').select('*').eq('id',user.id).single();
+    profile=data;
+    if(!profile){
+      // Create profile if trigger didn't work
+      await sb.from('profiles').insert({id:user.id,display_name:'',role:'user'});
+      profile={id:user.id,display_name:'',role:'user'};
+    }
+    if(!profile.display_name){
+      // Show profile setup
+      $('loginPage').style.display='none';
+      $('profileSetup').style.display='flex';
+      return;
+    }
+    enterApp();
   } else {
-    currentUser = null;
-    document.getElementById('app').style.display = 'none';
-    document.getElementById('loginPage').style.display = '';
+    user=null;profile=null;
+    $('loginPage').style.display='';
+    $('profileSetup').style.display='none';
+    $('app').style.display='none';
   }
 });
 
-// ═══════════════ DATA LAYER (SUPABASE) ═══════════════
-async function loadAllData() {
-  const [fabRes, movRes] = await Promise.all([
-    sb.from('fabrics').select('*').order('created_at', { ascending: false }),
-    sb.from('movements').select('*').order('created_at', { ascending: false })
-  ]);
-  fabricsCache = fabRes.data || [];
-  movementsCache = movRes.data || [];
+async function saveProfile(){
+  const name=$('profileNameInput').value.trim();
+  if(!name){toast('Digite seu nome.');return;}
+  await sb.from('profiles').update({display_name:name}).eq('id',user.id);
+  profile.display_name=name;
+  $('profileSetup').style.display='none';
+  enterApp();
 }
 
-function setupRealtime() {
-  sb.channel('db-changes')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'fabrics' }, async () => {
-      const { data } = await sb.from('fabrics').select('*').order('created_at', { ascending: false });
-      fabricsCache = data || [];
-      renderCurrentPage();
+async function enterApp(){
+  $('loginPage').style.display='none';
+  $('profileSetup').style.display='none';
+  $('app').style.display='flex';
+  // Set user info
+  $('userName').textContent=profile.display_name;
+  $('userRole').textContent=profile.role==='admin'?'Administrador':'Usuário';
+  $('userAvatar').textContent=profile.display_name.charAt(0).toUpperCase();
+  // Toggle admin elements
+  const isAdmin=profile.role==='admin';
+  document.querySelectorAll('.admin-only').forEach(el=>{
+    el.style.display=isAdmin?'':'none';
+  });
+  await loadAll();
+  showPage('dashboard',navBtn('dashboard'));
+  setupRealtime();
+}
+
+// ═══ DATA ═══
+async function loadAll(){
+  const[f,m,p]=await Promise.all([
+    sb.from('fabrics').select('*').order('created_at',{ascending:false}),
+    sb.from('movements').select('*').order('created_at',{ascending:false}),
+    sb.from('profiles').select('*')
+  ]);
+  fabrics=f.data||[];movements=m.data||[];profiles=p.data||[];
+}
+function setupRealtime(){
+  sb.channel('changes')
+    .on('postgres_changes',{event:'*',schema:'public',table:'fabrics'},async()=>{
+      const{data}=await sb.from('fabrics').select('*').order('created_at',{ascending:false});
+      fabrics=data||[];renderCurrent();
     })
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'movements' }, async () => {
-      const { data } = await sb.from('movements').select('*').order('created_at', { ascending: false });
-      movementsCache = data || [];
-      renderCurrentPage();
+    .on('postgres_changes',{event:'*',schema:'public',table:'movements'},async()=>{
+      const{data}=await sb.from('movements').select('*').order('created_at',{ascending:false});
+      movements=data||[];renderCurrent();
     })
     .subscribe();
 }
-
-function renderCurrentPage() {
-  const visible = document.querySelector('.page:not([style*="display: none"]),.page:not([style*="display:none"])');
-  if (!visible) return;
-  const id = visible.id.replace('page-', '');
-  if (id === 'dashboard') renderDashboard();
-  else if (id === 'estoque') renderStock();
-  else if (id === 'historico') renderHistory();
-  else if (id === 'cadastro') renderFabricList();
+function renderCurrent(){
+  const p=document.querySelector('.page:not(.hidden)');
+  if(!p)return;const id=p.id.replace('page-','');
+  if(id==='dashboard')renderDash();
+  else if(id==='estoque')renderStock();
+  else if(id==='historico')renderHist();
+  else if(id==='cadastro')renderFabList();
 }
 
-// ═══════════════ NAVIGATION ═══════════════
-function showPage(name, btn) {
-  document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
-  document.getElementById('page-' + name).style.display = '';
-  document.querySelectorAll('.sidebar-nav button').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
+// ═══ NAV ═══
+function showPage(name,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));
+  $('page-'+name).classList.remove('hidden');
+  document.querySelectorAll('.sidebar-nav button').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
   document.querySelector('.sidebar').classList.remove('open');
-  if (name === 'dashboard') renderDashboard();
-  if (name === 'cadastro') renderFabricList();
-  if (name === 'entrada') { populateFabricSelect('entryFabric'); document.getElementById('entryDate').value = today(); }
-  if (name === 'saida') { populateFabricSelect('exitFabric'); document.getElementById('exitDate').value = today(); updateExitAvailable(); }
-  if (name === 'estoque') renderStock();
-  if (name === 'historico') { populateHistFabricFilter(); renderHistory(); }
+  const td=today();
+  if(name==='dashboard')renderDash();
+  if(name==='cadastro')renderFabList();
+  if(name==='entrada'){popSel('entryFab');$('entryDate').value=td;}
+  if(name==='saida'){popSel('exitFab');$('exitDate').value=td;$('exitWho').value=profile.display_name;updAvail();}
+  if(name==='estoque')renderStock();
+  if(name==='historico'){popHistFilter();renderHist();}
+  if(name==='perfil'){$('profEmail').value=user.email;$('profName').value=profile.display_name;$('profRole').value=profile.role==='admin'?'Administrador':'Usuário';}
 }
-function navBtn(page) {
-  const btns = document.querySelectorAll('.sidebar-nav button');
-  const map = { dashboard:0, cadastro:1, entrada:2, saida:3, estoque:4, historico:5 };
+function navBtn(page){
+  const btns=document.querySelectorAll('.sidebar-nav button:not(.nav-section)');
+  const map={dashboard:0,estoque:1,historico:2,cadastro:3,entrada:4,saida:5,perfil:6};
   return btns[map[page]];
 }
-function today() { return new Date().toISOString().slice(0, 10); }
+function today(){return new Date().toISOString().slice(0,10);}
 
-// ═══════════════ FABRIC CRUD ═══════════════
-async function saveFabric(e) {
+// ═══ PRODUCT CRUD ═══
+async function saveFabric(e){
   e.preventDefault();
-  const editId = document.getElementById('editFabricId').value;
-  const data = {
-    name: document.getElementById('fabName').value.trim(),
-    color: document.getElementById('fabColor').value.trim(),
-    supplier: document.getElementById('fabSupplier').value.trim(),
-    unit: document.getElementById('fabUnit').value,
-    min_stock: parseFloat(document.getElementById('fabMinStock').value) || 0,
-  };
-
-  if (editId) {
-    const { error } = await sb.from('fabrics').update(data).eq('id', editId);
-    if (error) { toast('Erro: ' + error.message); return; }
-    toast('Tecido atualizado!');
+  const editId=$('editId').value;
+  const d={name:$('fabName').value.trim(),color:$('fabColor').value.trim(),supplier:$('fabSupplier').value.trim(),unit:$('fabUnit').value,min_stock:parseFloat($('fabMin').value)||0};
+  if(editId){
+    const{error}=await sb.from('fabrics').update(d).eq('id',editId);
+    if(error){toast('Erro: '+error.message);return;}
+    toast('Produto atualizado!');
   } else {
-    data.user_id = currentUser.id;
-    data.stock = parseFloat(document.getElementById('fabInitialStock').value) || 0;
-    const { data: newFab, error } = await sb.from('fabrics').insert(data).select().single();
-    if (error) { toast('Erro: ' + error.message); return; }
-    if (data.stock > 0) {
-      await sb.from('movements').insert({
-        user_id: currentUser.id, fabric_id: newFab.id,
-        type: 'entrada', qty: data.stock, date: today(), detail: 'Estoque inicial'
-      });
-    }
-    toast('Tecido cadastrado!');
+    d.user_id=user.id;d.stock=parseFloat($('fabInit').value)||0;
+    const{data:nf,error}=await sb.from('fabrics').insert(d).select().single();
+    if(error){toast('Erro: '+error.message);return;}
+    if(d.stock>0)await sb.from('movements').insert({user_id:user.id,fabric_id:nf.id,type:'entrada',qty:d.stock,date:today(),detail:'Estoque inicial',who:profile.display_name});
+    toast('Produto cadastrado!');
   }
-  resetFabricForm();
-  await loadAllData();
-  renderFabricList();
+  resetForm();await loadAll();renderFabList();
 }
-
-function resetFabricForm() {
-  document.getElementById('formCadastro').reset();
-  document.getElementById('editFabricId').value = '';
-  document.getElementById('fabMinStock').value = '10';
-  document.getElementById('fabInitialStock').value = '0';
+function resetForm(){$('formCadastro').reset();$('editId').value='';$('fabMin').value='10';$('fabInit').value='0';}
+function editFab(id){
+  const f=fabrics.find(x=>x.id===id);if(!f)return;
+  $('editId').value=f.id;$('fabName').value=f.name;$('fabColor').value=f.color;
+  $('fabSupplier').value=f.supplier||'';$('fabUnit').value=f.unit;$('fabMin').value=f.min_stock;$('fabInit').value=f.stock;
+  scrollTo({top:0,behavior:'smooth'});
 }
-
-function editFabric(id) {
-  const f = fabricsCache.find(x => x.id === id);
-  if (!f) return;
-  document.getElementById('editFabricId').value = f.id;
-  document.getElementById('fabName').value = f.name;
-  document.getElementById('fabColor').value = f.color;
-  document.getElementById('fabSupplier').value = f.supplier || '';
-  document.getElementById('fabUnit').value = f.unit;
-  document.getElementById('fabMinStock').value = f.min_stock;
-  document.getElementById('fabInitialStock').value = f.stock;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function deleteFabric(id) {
-  const f = fabricsCache.find(x => x.id === id);
-  showConfirm('Excluir Tecido', `Tem certeza que deseja excluir "${f.name} — ${f.color}"? As movimentações serão removidas.`, async () => {
-    await sb.from('movements').delete().eq('fabric_id', id);
-    await sb.from('fabrics').delete().eq('id', id);
-    await loadAllData();
-    renderFabricList();
-    toast('Tecido excluído.');
+function delFab(id){
+  const f=fabrics.find(x=>x.id===id);
+  showConfirm('Excluir Produto',`Excluir "${f.name} — ${f.color}"?`,async()=>{
+    await sb.from('movements').delete().eq('fabric_id',id);
+    await sb.from('fabrics').delete().eq('id',id);
+    await loadAll();renderFabList();toast('Excluído.');
   });
 }
-
-function renderFabricList() {
-  const tb = document.getElementById('fabricList');
-  if (!fabricsCache.length) { tb.innerHTML = '<tr><td colspan="6"><div class="empty-state"><span class="icon">🧵</span><p>Nenhum tecido cadastrado ainda.</p></div></td></tr>'; return; }
-  tb.innerHTML = fabricsCache.map(f => `<tr>
-    <td><strong>${esc(f.name)}</strong></td><td>${esc(f.color)}</td><td>${esc(f.supplier||'')}</td>
-    <td>${f.unit}</td><td>${f.min_stock}</td>
-    <td><button class="btn btn-sm" onclick="editFabric('${f.id}')">Editar</button> <button class="btn btn-sm btn-danger" onclick="deleteFabric('${f.id}')">Excluir</button></td>
-  </tr>`).join('');
+function renderFabList(){
+  const tb=$('fabList');
+  if(!fabrics.length){tb.innerHTML='<tr><td colspan="6"><div class="empty-state"><span class="icon">📦</span><p>Nenhum produto cadastrado.</p></div></td></tr>';return;}
+  tb.innerHTML=fabrics.map(f=>`<tr><td><strong>${esc(f.name)}</strong></td><td>${esc(f.color)}</td><td>${esc(f.supplier||'')}</td><td>${f.unit}</td><td>${f.min_stock}</td><td><button class="btn btn-sm" onclick="editFab('${f.id}')">Editar</button> <button class="btn btn-sm btn-danger" onclick="delFab('${f.id}')">Excluir</button></td></tr>`).join('');
 }
 
-// ═══════════════ ENTRIES ═══════════════
-async function saveEntry(e) {
+// ═══ ENTRY ═══
+async function saveEntry(e){
   e.preventDefault();
-  const fabricId = document.getElementById('entryFabric').value;
-  const qty = parseFloat(document.getElementById('entryQty').value);
-  if (!fabricId || !qty) return;
-
-  const fab = fabricsCache.find(f => f.id === fabricId);
-  const newStock = (fab.stock || 0) + qty;
-
-  const [movRes, fabRes] = await Promise.all([
-    sb.from('movements').insert({
-      user_id: currentUser.id, fabric_id: fabricId, type: 'entrada', qty,
-      date: document.getElementById('entryDate').value,
-      detail: [document.getElementById('entrySupplier').value, document.getElementById('entryNotes').value].filter(Boolean).join(' — ')
-    }),
-    sb.from('fabrics').update({ stock: newStock }).eq('id', fabricId)
+  const fid=$('entryFab').value,qty=parseFloat($('entryQty').value);
+  if(!fid||!qty)return;
+  const fab=fabrics.find(f=>f.id===fid);
+  await Promise.all([
+    sb.from('movements').insert({user_id:user.id,fabric_id:fid,type:'entrada',qty,date:$('entryDate').value,detail:[$('entrySup').value,$('entryNotes').value].filter(Boolean).join(' — '),who:profile.display_name}),
+    sb.from('fabrics').update({stock:(fab.stock||0)+qty}).eq('id',fid)
   ]);
-
-  if (movRes.error || fabRes.error) { toast('Erro ao salvar.'); return; }
-  toast(`+${qty} ${fab.unit} de ${fab.name} ${fab.color} registrados!`);
-  e.target.reset();
-  document.getElementById('entryDate').value = today();
-  await loadAllData();
-  populateFabricSelect('entryFabric');
+  toast(`+${qty} ${fab.unit} de ${fab.name} registrados!`);
+  e.target.reset();$('entryDate').value=today();await loadAll();popSel('entryFab');
 }
 
-// ═══════════════ EXITS ═══════════════
-async function saveExit(e) {
+// ═══ EXIT ═══
+async function saveExit(e){
   e.preventDefault();
-  const fabricId = document.getElementById('exitFabric').value;
-  const qty = parseFloat(document.getElementById('exitQty').value);
-  if (!fabricId || !qty) return;
-
-  const fab = fabricsCache.find(f => f.id === fabricId);
-  if (qty > fab.stock) { toast('Quantidade maior que o estoque!'); return; }
-  const newStock = fab.stock - qty;
-
-  const [movRes, fabRes] = await Promise.all([
-    sb.from('movements').insert({
-      user_id: currentUser.id, fabric_id: fabricId, type: 'saida', qty,
-      date: document.getElementById('exitDate').value,
-      detail: document.getElementById('exitDest').value,
-      who: document.getElementById('exitWho').value
-    }),
-    sb.from('fabrics').update({ stock: newStock }).eq('id', fabricId)
+  const fid=$('exitFab').value,qty=parseFloat($('exitQty').value);
+  if(!fid||!qty)return;
+  const fab=fabrics.find(f=>f.id===fid);
+  if(qty>fab.stock){toast('Quantidade maior que o estoque!');return;}
+  await Promise.all([
+    sb.from('movements').insert({user_id:user.id,fabric_id:fid,type:'saida',qty,date:$('exitDate').value,detail:$('exitDest').value,who:profile.display_name}),
+    sb.from('fabrics').update({stock:fab.stock-qty}).eq('id',fid)
   ]);
-
-  if (movRes.error || fabRes.error) { toast('Erro ao salvar.'); return; }
-  toast(`-${qty} ${fab.unit} de ${fab.name} ${fab.color} registrados!`);
-  e.target.reset();
-  document.getElementById('exitDate').value = today();
-  await loadAllData();
-  populateFabricSelect('exitFabric');
-  updateExitAvailable();
+  toast(`-${qty} ${fab.unit} de ${fab.name} registrados!`);
+  e.target.reset();$('exitDate').value=today();$('exitWho').value=profile.display_name;
+  await loadAll();popSel('exitFab');updAvail();
+}
+function updAvail(){
+  const f=fabrics.find(x=>x.id===$('exitFab').value);
+  $('exitAvail').textContent=f?`Disponível: ${f.stock} ${f.unit}`:'';
 }
 
-function updateExitAvailable() {
-  const sel = document.getElementById('exitFabric');
-  const f = fabricsCache.find(x => x.id === sel.value);
-  document.getElementById('exitAvailable').textContent = f ? `Disponível: ${f.stock} ${f.unit}` : '';
+// ═══ PROFILE ═══
+async function updateProfile(){
+  const name=$('profName').value.trim();
+  if(!name){toast('Digite seu nome.');return;}
+  await sb.from('profiles').update({display_name:name}).eq('id',user.id);
+  profile.display_name=name;
+  $('userName').textContent=name;
+  $('userAvatar').textContent=name.charAt(0).toUpperCase();
+  toast('Perfil atualizado!');
 }
 
-// ═══════════════ HELPERS ═══════════════
-function populateFabricSelect(id) {
-  const sel = document.getElementById(id);
-  sel.innerHTML = '<option value="">Selecione...</option>' + fabricsCache.map(f =>
-    `<option value="${f.id}">${esc(f.name)} — ${esc(f.color)} (${f.stock} ${f.unit})</option>`
-  ).join('');
-  if (id === 'exitFabric') sel.onchange = updateExitAvailable;
+// ═══ HELPERS ═══
+function popSel(id){
+  const s=$(id);
+  s.innerHTML='<option value="">Selecione...</option>'+fabrics.map(f=>`<option value="${f.id}">${esc(f.name)} — ${esc(f.color)} (${f.stock} ${f.unit})</option>`).join('');
+  if(id==='exitFab')s.onchange=updAvail;
 }
-function populateHistFabricFilter() {
-  const sel = document.getElementById('histFabric');
-  sel.innerHTML = '<option value="all">Todos os tecidos</option>' + fabricsCache.map(f =>
-    `<option value="${f.id}">${esc(f.name)} — ${esc(f.color)}</option>`
-  ).join('');
+function popHistFilter(){
+  $('hFab').innerHTML='<option value="all">Todos</option>'+fabrics.map(f=>`<option value="${f.id}">${esc(f.name)} — ${esc(f.color)}</option>`).join('');
 }
-function getFabric(id) { return fabricsCache.find(x => x.id === id); }
-function getFabricLabel(id) { const f = getFabric(id); return f ? `${f.name} — ${f.color}` : '(excluído)'; }
-function getFabricUnit(id) { const f = getFabric(id); return f ? f.unit : ''; }
+function getFab(id){return fabrics.find(x=>x.id===id);}
+function getFabLabel(id){const f=getFab(id);return f?`${f.name} — ${f.color}`:'(removido)';}
+function getFabUnit(id){const f=getFab(id);return f?f.unit:'';}
+function getWho(m){return m.who||profName(m.user_id)||'—';}
+function profName(uid){const p=profiles.find(x=>x.id===uid);return p?p.display_name:'';}
 
-// ═══════════════ DASHBOARD ═══════════════
-function renderDashboard() {
-  const totalStock = fabricsCache.reduce((s, f) => s + (f.stock || 0), 0);
-  const lowCount = fabricsCache.filter(f => f.stock > 0 && f.stock <= f.min_stock).length;
-  const critCount = fabricsCache.filter(f => f.stock <= 0).length;
+// ═══ DASHBOARD ═══
+function renderDash(){
+  const total=fabrics.reduce((s,f)=>s+(f.stock||0),0);
+  const low=fabrics.filter(f=>f.stock>0&&f.stock<=f.min_stock).length;
+  const crit=fabrics.filter(f=>f.stock<=0).length;
+  const thisMonth=movements.filter(m=>m.date>=today().slice(0,7));
+  const entriesMonth=thisMonth.filter(m=>m.type==='entrada').length;
 
-  document.getElementById('dashStats').innerHTML = `
-    <div class="stat-card"><span class="stat-icon">🧵</span><div class="stat-value">${fabricsCache.length}</div><div class="stat-label">Tecidos cadastrados</div></div>
-    <div class="stat-card"><span class="stat-icon">📦</span><div class="stat-value">${totalStock.toFixed(1)}</div><div class="stat-label">Total em estoque</div></div>
-    <div class="stat-card"><span class="stat-icon">${lowCount?'⚠️':'✅'}</span><div class="stat-value" style="color:${lowCount?'var(--orange)':'var(--green)'}">${lowCount}</div><div class="stat-label">Estoque baixo</div></div>
-    <div class="stat-card"><span class="stat-icon">${critCount?'🔴':'✅'}</span><div class="stat-value" style="color:${critCount?'var(--red)':'var(--green)'}">${critCount}</div><div class="stat-label">Sem estoque</div></div>
+  $('dashStats').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Produtos</div><div class="stat-value">${fabrics.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Total em Estoque</div><div class="stat-value">${total.toFixed(1)}</div></div>
+    <div class="stat-card"><div class="stat-label">Estoque Baixo</div><div class="stat-value" style="color:${low?'var(--orange)':'var(--green)'}">${low}</div></div>
+    <div class="stat-card"><div class="stat-label">Sem Estoque</div><div class="stat-value" style="color:${crit?'var(--red)':'var(--green)'}">${crit}</div></div>
+    <div class="stat-card"><div class="stat-label">Entradas este Mês</div><div class="stat-value">${entriesMonth}</div></div>
   `;
 
-  const recent = movementsCache.slice(0, 10);
-  const tb = document.getElementById('dashMovements');
-  if (!recent.length) { tb.innerHTML = '<tr><td colspan="5"><div class="empty-state"><span class="icon">📋</span><p>Nenhuma movimentação ainda.</p></div></td></tr>'; return; }
-  tb.innerHTML = recent.map(m => `<tr>
-    <td>${formatDate(m.date)}</td>
-    <td><span class="status ${m.type==='entrada'?'status-ok':'status-critical'}">${m.type==='entrada'?'📥 Entrada':'📤 Saída'}</span></td>
-    <td>${esc(getFabricLabel(m.fabric_id))}</td>
-    <td>${m.type==='entrada'?'+':'-'}${m.qty} ${getFabricUnit(m.fabric_id)}</td>
-    <td>${esc(m.detail||'')} ${m.who?'('+esc(m.who)+')':''}</td>
+  const recent=movements.slice(0,12);
+  const tb=$('dashMov');
+  if(!recent.length){tb.innerHTML='<tr><td colspan="6"><div class="empty-state"><span class="icon">📋</span><p>Nenhuma movimentação.</p></div></td></tr>';return;}
+  tb.innerHTML=recent.map(m=>`<tr>
+    <td>${fmtDate(m.date)}</td>
+    <td><span class="badge ${m.type==='entrada'?'badge-in':'badge-out'}">${m.type==='entrada'?'↓ Entrada':'↑ Saída'}</span></td>
+    <td>${esc(getFabLabel(m.fabric_id))}</td>
+    <td>${m.type==='entrada'?'+':'-'}${m.qty} ${getFabUnit(m.fabric_id)}</td>
+    <td>${esc(getWho(m))}</td>
+    <td>${esc(m.detail||'')}</td>
   </tr>`).join('');
 }
 
-// ═══════════════ STOCK VIEW ═══════════════
-function renderStock() {
-  const search = (document.getElementById('stockSearch').value||'').toLowerCase();
-  const filter = document.getElementById('stockFilter').value;
-  let list = fabricsCache.filter(f => {
-    const match = (f.name+f.color+(f.supplier||'')).toLowerCase().includes(search);
-    if (filter==='ok') return match && f.stock > f.min_stock;
-    if (filter==='low') return match && f.stock <= f.min_stock && f.stock > 0;
-    if (filter==='critical') return match && f.stock <= 0;
+// ═══ STOCK ═══
+function renderStock(){
+  const search=($('sSearch').value||'').toLowerCase();
+  const filter=$('sFilter').value;
+  let list=fabrics.filter(f=>{
+    const match=(f.name+f.color+(f.supplier||'')).toLowerCase().includes(search);
+    if(filter==='ok')return match&&f.stock>f.min_stock;
+    if(filter==='low')return match&&f.stock<=f.min_stock&&f.stock>0;
+    if(filter==='critical')return match&&f.stock<=0;
     return match;
   });
-  const tb = document.getElementById('stockList');
-  if (!list.length) { tb.innerHTML = '<tr><td colspan="6"><div class="empty-state"><span class="icon">📦</span><p>Nenhum tecido encontrado.</p></div></td></tr>'; return; }
-  tb.innerHTML = list.map(f => {
+  const tb=$('stockList');
+  if(!list.length){tb.innerHTML='<tr><td colspan="6"><div class="empty-state"><span class="icon">📦</span><p>Nenhum produto encontrado.</p></div></td></tr>';return;}
+  tb.innerHTML=list.map(f=>{
     let st='ok',sl='OK';
-    if (f.stock<=0){st='critical';sl='Sem Estoque';}
-    else if(f.stock<=f.min_stock){st='low';sl='Estoque Baixo';}
-    return `<tr>
-      <td><strong>${esc(f.name)}</strong></td><td>${esc(f.color)}</td><td>${esc(f.supplier||'')}</td>
-      <td><strong>${f.stock.toFixed(1)}</strong> ${f.unit}</td><td>${f.min_stock} ${f.unit}</td>
-      <td><span class="status status-${st}">${sl}</span></td>
-    </tr>`;
+    if(f.stock<=0){st='critical';sl='Sem Estoque';}
+    else if(f.stock<=f.min_stock){st='low';sl='Baixo';}
+    return`<tr><td><strong>${esc(f.name)}</strong></td><td>${esc(f.color)}</td><td>${esc(f.supplier||'')}</td><td><strong>${f.stock.toFixed(1)}</strong> ${f.unit}</td><td>${f.min_stock} ${f.unit}</td><td><span class="badge badge-${st}">${sl}</span></td></tr>`;
   }).join('');
 }
 
-// ═══════════════ HISTORY ═══════════════
-function renderHistory() {
-  const fabFilter = document.getElementById('histFabric').value;
-  const typeFilter = document.getElementById('histType').value;
-  const from = document.getElementById('histFrom').value;
-  const to = document.getElementById('histTo').value;
-  let list = movementsCache.filter(m => {
-    if (fabFilter!=='all' && m.fabric_id!==fabFilter) return false;
-    if (typeFilter!=='all' && m.type!==typeFilter) return false;
-    if (from && m.date<from) return false;
-    if (to && m.date>to) return false;
+// ═══ HISTORY ═══
+function renderHist(){
+  const ff=$('hFab').value,tf=$('hType').value,from=$('hFrom').value,to=$('hTo').value;
+  let list=movements.filter(m=>{
+    if(ff!=='all'&&m.fabric_id!==ff)return false;
+    if(tf!=='all'&&m.type!==tf)return false;
+    if(from&&m.date<from)return false;
+    if(to&&m.date>to)return false;
     return true;
   });
-  const tb = document.getElementById('histList');
-  if (!list.length) { tb.innerHTML = '<tr><td colspan="6"><div class="empty-state"><span class="icon">📜</span><p>Nenhuma movimentação encontrada.</p></div></td></tr>'; return; }
-  tb.innerHTML = list.map(m => `<tr>
-    <td>${formatDate(m.date)}</td>
-    <td><span class="status ${m.type==='entrada'?'status-ok':'status-critical'}">${m.type==='entrada'?'📥 Entrada':'📤 Saída'}</span></td>
-    <td>${esc(getFabricLabel(m.fabric_id))}</td>
-    <td>${m.type==='entrada'?'+':'-'}${m.qty} ${getFabricUnit(m.fabric_id)}</td>
-    <td>${esc(m.detail||'')} ${m.who?'('+esc(m.who)+')':''}</td>
-    <td><button class="btn btn-sm btn-danger" onclick="deleteMovement('${m.id}')">Excluir</button></td>
+  const tb=$('histList');
+  const isAdmin=profile.role==='admin';
+  if(!list.length){tb.innerHTML=`<tr><td colspan="${isAdmin?7:6}"><div class="empty-state"><span class="icon">📜</span><p>Nenhuma movimentação.</p></div></td></tr>`;return;}
+  tb.innerHTML=list.map(m=>`<tr>
+    <td>${fmtDate(m.date)}</td>
+    <td><span class="badge ${m.type==='entrada'?'badge-in':'badge-out'}">${m.type==='entrada'?'↓ Entrada':'↑ Saída'}</span></td>
+    <td>${esc(getFabLabel(m.fabric_id))}</td>
+    <td>${m.type==='entrada'?'+':'-'}${m.qty} ${getFabUnit(m.fabric_id)}</td>
+    <td>${esc(getWho(m))}</td>
+    <td>${esc(m.detail||'')}</td>
+    ${isAdmin?`<td><button class="btn btn-sm btn-danger" onclick="delMov('${m.id}')">Excluir</button></td>`:''}
   </tr>`).join('');
 }
-
-async function deleteMovement(id) {
-  const m = movementsCache.find(x => x.id === id);
-  showConfirm('Excluir Movimentação', 'Tem certeza? O estoque será recalculado.', async () => {
-    const fab = getFabric(m.fabric_id);
-    if (fab) {
-      const newStock = m.type === 'entrada' ? fab.stock - m.qty : fab.stock + m.qty;
-      await sb.from('fabrics').update({ stock: newStock }).eq('id', m.fabric_id);
+async function delMov(id){
+  const m=movements.find(x=>x.id===id);
+  showConfirm('Excluir','Excluir movimentação? Estoque será recalculado.',async()=>{
+    const fab=getFab(m.fabric_id);
+    if(fab){
+      const ns=m.type==='entrada'?fab.stock-m.qty:fab.stock+m.qty;
+      await sb.from('fabrics').update({stock:ns}).eq('id',m.fabric_id);
     }
-    await sb.from('movements').delete().eq('id', id);
-    await loadAllData();
-    renderHistory();
-    toast('Movimentação excluída.');
+    await sb.from('movements').delete().eq('id',id);
+    await loadAll();renderHist();toast('Excluído.');
   });
 }
 
-// ═══════════════ EXPORT ═══════════════
-function exportData() {
-  const data = {
-    fabrics: fabricsCache, movements: movementsCache,
-    exportDate: new Date().toISOString(), version: '2.0-supabase'
-  };
-  const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `estoque-dana-jalecos-${today()}.json`;
-  a.click();
-  toast('Backup exportado!');
+// ═══ EXPORT ═══
+function exportData(){
+  const d={fabrics,movements,profiles,exportDate:new Date().toISOString(),version:'3.0'};
+  const b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);
+  a.download=`estoque-dana-${today()}.json`;a.click();toast('Backup exportado!');
 }
 
-// ═══════════════ UTILS ═══════════════
+// ═══ UTILS ═══
+function $(id){return document.getElementById(id);}
 function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
-function formatDate(d){if(!d)return'';const[y,m,day]=d.split('-');return`${day}/${m}/${y}`;}
-function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
-function showConfirm(title,msg,onConfirm){
-  document.getElementById('confirmTitle').textContent=title;
-  document.getElementById('confirmMsg').textContent=msg;
-  document.getElementById('confirmBtn').onclick=()=>{closeModal();onConfirm();};
-  document.getElementById('confirmModal').classList.add('show');
+function fmtDate(d){if(!d)return'';const[y,m,day]=d.split('-');return`${day}/${m}/${y}`;}
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+function showConfirm(title,msg,fn){
+  $('confirmTitle').textContent=title;$('confirmMsg').textContent=msg;
+  $('confirmBtn').onclick=()=>{closeModal();fn();};
+  $('confirmModal').classList.add('show');
 }
-function closeModal(){document.getElementById('confirmModal').classList.remove('show');}
+function closeModal(){$('confirmModal').classList.remove('show');}
 </script>
 </body>
 </html>
