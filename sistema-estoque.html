@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
 <style>
@@ -256,6 +257,7 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
   .content{padding:1rem;}
   .stats-grid{grid-template-columns:1fr 1fr;}
   .form-row{grid-template-columns:1fr;}
+  #chartsGrid{grid-template-columns:1fr!important;}
 }
 </style>
 </head>
@@ -348,6 +350,23 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
       <div class="topbar"><h2>Dashboard</h2><div class="topbar-actions"><button class="btn btn-primary role-admin role-estoquista" onclick="showPage('cadastro',navBtn('cadastro'))">+ Novo Produto</button></div></div>
       <div class="content">
         <div class="stats-grid" id="dashStats"></div>
+
+        <!-- GRÁFICOS -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.8rem;margin-bottom:1.5rem;" id="chartsGrid">
+          <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;">
+            <h4 style="font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.8rem;">Status do Estoque</h4>
+            <div style="max-width:220px;margin:0 auto;"><canvas id="chartStatus"></canvas></div>
+          </div>
+          <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;">
+            <h4 style="font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.8rem;">Top 5 — Maior Estoque</h4>
+            <canvas id="chartTop"></canvas>
+          </div>
+          <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;">
+            <h4 style="font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.8rem;">Movimentações — Últimos 7 Dias</h4>
+            <canvas id="chartMov"></canvas>
+          </div>
+        </div>
+
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem;">
           <h3 style="font-size:.85rem;font-weight:700;">Últimas Movimentações</h3>
         </div>
@@ -1078,6 +1097,8 @@ function renderDash(){
     <div class="stat-card"><div class="stat-label">Entradas este Mês</div><div class="stat-value">${entriesMonth}</div></div>
   `;
 
+  renderCharts();
+
   const recent=movements.slice(0,12);
   const tb=$('dashMov');
   if(!recent.length){tb.innerHTML='<tr><td colspan="6"><div class="empty-state"><span class="icon">📋</span><p>Nenhuma movimentação.</p></div></td></tr>';return;}
@@ -1089,6 +1110,101 @@ function renderDash(){
     <td>${esc(getWho(m))}</td>
     <td>${esc(m.detail||'')}</td>
   </tr>`).join('');
+}
+
+// ═══ CHARTS ═══
+let chartInstances={};
+function destroyChart(id){if(chartInstances[id]){chartInstances[id].destroy();delete chartInstances[id];}}
+
+function renderCharts(){
+  if(typeof Chart==='undefined')return;
+  Chart.defaults.color='#999';
+  Chart.defaults.borderColor='#2a2a2a';
+  Chart.defaults.font.family='Inter,system-ui,sans-serif';
+
+  // 1. Pizza — Status do Estoque
+  const okCount=fabrics.filter(f=>f.stock>f.min_stock).length;
+  const lowCount=fabrics.filter(f=>f.stock>0&&f.stock<=f.min_stock).length;
+  const critCount=fabrics.filter(f=>f.stock<=0).length;
+
+  destroyChart('status');
+  const ctx1=$('chartStatus');
+  if(ctx1){
+    chartInstances.status=new Chart(ctx1,{
+      type:'doughnut',
+      data:{
+        labels:['OK','Baixo','Sem Estoque'],
+        datasets:[{data:[okCount,lowCount,critCount],backgroundColor:['#4ade80','#fbbf24','#f87171'],borderWidth:0,hoverOffset:6}]
+      },
+      options:{
+        responsive:true,cutout:'65%',
+        plugins:{
+          legend:{position:'bottom',labels:{padding:12,usePointStyle:true,pointStyle:'circle',font:{size:11}}},
+          tooltip:{callbacks:{label:function(c){return c.label+': '+c.raw+' produto'+(c.raw!==1?'s':'');}}}
+        }
+      }
+    });
+  }
+
+  // 2. Barras — Top 5 maior estoque
+  const top5=fabrics.slice().sort((a,b)=>b.stock-a.stock).slice(0,5);
+  destroyChart('top');
+  const ctx2=$('chartTop');
+  if(ctx2){
+    chartInstances.top=new Chart(ctx2,{
+      type:'bar',
+      data:{
+        labels:top5.map(f=>f.name+' '+f.color),
+        datasets:[{
+          label:'Estoque',
+          data:top5.map(f=>f.stock),
+          backgroundColor:top5.map(f=>{
+            if(f.stock<=0)return'rgba(248,113,113,.7)';
+            if(f.stock<=f.min_stock)return'rgba(251,191,36,.7)';
+            return'rgba(74,222,128,.7)';
+          }),
+          borderRadius:4,borderSkipped:false
+        }]
+      },
+      options:{
+        responsive:true,indexAxis:'y',
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){const f=top5[c.dataIndex];return fmt(f.stock)+' '+f.unit;}}}},
+        scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{grid:{display:false},ticks:{font:{size:10}}}}
+      }
+    });
+  }
+
+  // 3. Linhas — Movimentações últimos 7 dias
+  const days=[];
+  const entryData=[];
+  const exitData=[];
+  for(let i=6;i>=0;i--){
+    const d=new Date();d.setDate(d.getDate()-i);
+    const ds=d.toISOString().slice(0,10);
+    days.push(d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}));
+    entryData.push(movements.filter(m=>m.date===ds&&m.type==='entrada').reduce((s,m)=>s+m.qty,0));
+    exitData.push(movements.filter(m=>m.date===ds&&m.type==='saida').reduce((s,m)=>s+m.qty,0));
+  }
+
+  destroyChart('mov');
+  const ctx3=$('chartMov');
+  if(ctx3){
+    chartInstances.mov=new Chart(ctx3,{
+      type:'line',
+      data:{
+        labels:days,
+        datasets:[
+          {label:'Entradas',data:entryData,borderColor:'#4ade80',backgroundColor:'rgba(74,222,128,.1)',fill:true,tension:.4,pointRadius:3,pointBackgroundColor:'#4ade80',borderWidth:2},
+          {label:'Saídas',data:exitData,borderColor:'#f87171',backgroundColor:'rgba(248,113,113,.1)',fill:true,tension:.4,pointRadius:3,pointBackgroundColor:'#f87171',borderWidth:2}
+        ]
+      },
+      options:{
+        responsive:true,
+        plugins:{legend:{position:'bottom',labels:{padding:12,usePointStyle:true,pointStyle:'circle',font:{size:11}}}},
+        scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{beginAtZero:true,grid:{color:'rgba(255,255,255,.04)'},ticks:{font:{size:10}}}}
+      }
+    });
+  }
 }
 
 // ═══ STOCK ═══
