@@ -1750,14 +1750,17 @@ function renderStock(){
     const items=groups[name];
     const totalStock=items.reduce((s,f)=>s+f.stock,0);
     const unit=items[0].unit;
-    const supplier=items[0].supplier||'';
+    // Collect unique suppliers from items AND from purchase history
+    const suppliersFromItems=[...new Set(items.map(f=>f.supplier).filter(Boolean))];
+    const suppliersFromPurchases=[...new Set(purchases.filter(p=>items.some(f=>f.id===p.fabric_id)&&p.supplier).map(p=>p.supplier))];
+    const allSuppliers=[...new Set([...suppliersFromItems,...suppliersFromPurchases])];
     const hasAlert=items.some(f=>f.stock<=f.min_stock);
 
     html+=`<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:.8rem;overflow:hidden;">
       <div style="padding:.8rem 1rem;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);background:rgba(255,255,255,.02);">
-        <div style="display:flex;align-items:center;gap:.8rem;">
+        <div style="display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;">
           <strong style="font-size:.95rem;">${esc(name)}</strong>
-          <span style="font-size:.75rem;color:var(--text-muted);">${esc(supplier)}</span>
+          ${allSuppliers.map(s=>`<span style="font-size:.68rem;color:var(--text-muted);background:rgba(255,255,255,.05);padding:.15rem .5rem;border-radius:100px;">${esc(s)}</span>`).join('')}
         </div>
         <div style="display:flex;align-items:center;gap:.8rem;">
           <span style="font-size:.78rem;color:var(--text-muted);">${items.length} variação${items.length>1?'ões':''}</span>
