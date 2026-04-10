@@ -654,7 +654,14 @@ function hideAll(){
 }
 function showScreen(name){
   hideAll();
-  if(name==='login')$('loginPage').style.display='';
+  if(name==='login'){
+    $('loginPage').style.display='';
+    // Always reset login button when showing login screen
+    const btn=$('loginSubmitBtn');
+    if(btn){btn.textContent='Entrar';btn.disabled=false;}
+    const btn2=$('regSubmitBtn');
+    if(btn2){btn2.textContent='Criar Conta';btn2.disabled=false;}
+  }
   else if(name==='loading')$('loadingPage').classList.add('visible');
   else if(name==='profile')$('profileSetup').classList.add('visible');
   else if(name==='app')$('app').style.display='flex';
