@@ -630,7 +630,8 @@ async function handleRegister(e){
 }
 async function handleLogout(){
   try{await sb.auth.signOut();}catch(e){}
-  user=null;profile=null;
+  user=null;profile=null;appReady=false;
+  sessionStorage.removeItem('dana_page');
   showScreen('login');
 }
 async function showForgotPw(){
