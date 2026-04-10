@@ -406,9 +406,56 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
 
     <!-- ENTRADA (admin only) -->
     <div id="page-entrada" class="page hidden">
-      <div class="topbar"><h2>Registrar Entrada</h2></div>
+      <div class="topbar"><h2>Registrar Entrada</h2><div class="topbar-actions"><button class="btn btn-primary" onclick="showNFImport()">📄 Importar Nota Fiscal</button></div></div>
       <div class="content">
+        <!-- NF IMPORT SECTION -->
+        <div id="nfSection" style="display:none;margin-bottom:1.5rem;">
+          <!-- Config Gemini -->
+          <div id="nfKeyConfig" class="form-card" style="margin-bottom:1rem;">
+            <h3 style="font-size:.9rem;font-weight:700;margin-bottom:.5rem;">⚙️ Configurar IA (primeira vez)</h3>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:.8rem;">Para ler notas fiscais automaticamente, precisa de uma chave do Google Gemini (grátis).<br>Pegue em <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--blue);text-decoration:underline;">aistudio.google.com/apikey</a></p>
+            <div class="form-row">
+              <div class="form-group"><label>Chave API do Gemini</label><input id="geminiKeyInput" placeholder="Cole sua API key aqui" type="password"></div>
+              <div class="form-group" style="display:flex;align-items:flex-end;"><button class="btn btn-primary" onclick="saveGeminiKey()">Salvar</button></div>
+            </div>
+          </div>
+          <!-- Upload -->
+          <div id="nfUpload" class="form-card" style="display:none;margin-bottom:1rem;">
+            <h3 style="font-size:.9rem;font-weight:700;margin-bottom:.8rem;">📄 Importar Nota Fiscal</h3>
+            <div id="nfDropZone" style="border:2px dashed var(--border);border-radius:var(--radius);padding:2rem;text-align:center;cursor:pointer;transition:all .2s;" onclick="$('nfFileInput').click()">
+              <div style="font-size:2rem;margin-bottom:.5rem;opacity:.5;">📄</div>
+              <p style="font-size:.85rem;color:var(--text-secondary);">Clique ou arraste a nota fiscal aqui</p>
+              <p style="font-size:.72rem;color:var(--text-muted);margin-top:.3rem;">Aceita: PDF, JPG, PNG</p>
+            </div>
+            <input type="file" id="nfFileInput" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="handleNFUpload(event)">
+            <div id="nfLoading" style="display:none;text-align:center;padding:1.5rem;"><span class="spinner"></span> Lendo nota fiscal com IA...</div>
+            <div id="nfError" style="display:none;margin-top:.8rem;" class="login-error"></div>
+          </div>
+          <!-- Preview results -->
+          <div id="nfResults" style="display:none;">
+            <div class="form-card" style="margin-bottom:1rem;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem;">
+                <h3 style="font-size:.9rem;font-weight:700;">✅ Itens Encontrados na Nota</h3>
+                <button class="btn btn-sm" onclick="hideNFImport()">✕ Fechar</button>
+              </div>
+              <div id="nfSupplierInfo" style="font-size:.82rem;color:var(--text-secondary);margin-bottom:.8rem;"></div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th><input type="checkbox" id="nfSelectAll" checked onchange="toggleNFAll(this.checked)"></th><th>Produto</th><th>Cor</th><th>Qtd</th><th>Unidade</th><th>Status</th></tr></thead>
+                  <tbody id="nfItemsList"></tbody>
+                </table>
+              </div>
+              <div style="margin-top:1rem;display:flex;gap:.5rem;">
+                <button class="btn btn-primary" onclick="confirmNFImport()">Confirmar e Registrar Tudo</button>
+                <button class="btn" onclick="hideNFImport()">Cancelar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MANUAL FORM (existing) -->
         <div class="form-card">
+          <h3 style="font-size:.85rem;font-weight:700;margin-bottom:1rem;color:var(--text-muted);">Entrada Manual</h3>
           <form onsubmit="return saveEntry(event)">
             <div class="form-group"><label>Produto</label><select id="entryFab" required></select></div>
             <div class="form-row">
@@ -872,6 +919,226 @@ function renderFabList(){
   const tb=$('fabList');
   if(!fabrics.length){tb.innerHTML='<tr><td colspan="6"><div class="empty-state"><span class="icon">📦</span><p>Nenhum produto cadastrado.</p></div></td></tr>';return;}
   tb.innerHTML=fabrics.map(f=>`<tr><td><strong>${esc(f.name)}</strong></td><td>${esc(f.color)}</td><td>${esc(f.supplier||'')}</td><td>${f.unit}</td><td>${f.min_stock}</td><td><button class="btn btn-sm" onclick="editFab('${f.id}')">Editar</button> <button class="btn btn-sm btn-danger" onclick="delFab('${f.id}')">Excluir</button></td></tr>`).join('');
+}
+
+// ═══ NOTA FISCAL (AI) ═══
+let nfItems=[];
+let nfSupplier='';
+
+function showNFImport(){
+  $('nfSection').style.display='';
+  const key=localStorage.getItem('dana_gemini_key');
+  if(key){
+    $('nfKeyConfig').style.display='none';
+    $('nfUpload').style.display='';
+  } else {
+    $('nfKeyConfig').style.display='';
+    $('nfUpload').style.display='none';
+  }
+  $('nfResults').style.display='none';
+  $('nfError').style.display='none';
+}
+function hideNFImport(){
+  $('nfSection').style.display='none';
+  nfItems=[];nfSupplier='';
+}
+function saveGeminiKey(){
+  const key=$('geminiKeyInput').value.trim();
+  if(!key){toast('Cole a chave API do Gemini.');return;}
+  localStorage.setItem('dana_gemini_key',key);
+  $('nfKeyConfig').style.display='none';
+  $('nfUpload').style.display='';
+  toast('Chave do Gemini salva!');
+}
+
+async function handleNFUpload(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  const key=localStorage.getItem('dana_gemini_key');
+  if(!key){toast('Configure a chave do Gemini primeiro.');return;}
+
+  $('nfLoading').style.display='';
+  $('nfError').style.display='none';
+  $('nfResults').style.display='none';
+  $('nfDropZone').style.display='none';
+
+  try{
+    // Convert file to base64
+    const base64=await fileToBase64(file);
+    const mimeType=file.type||'image/jpeg';
+
+    // Call Gemini
+    const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+key,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        contents:[{parts:[
+          {inlineData:{mimeType,data:base64}},
+          {text:`Analise esta nota fiscal brasileira e extraia os produtos listados.
+
+Retorne APENAS um JSON válido no seguinte formato (sem markdown, sem texto extra):
+{
+  "fornecedor": "nome do fornecedor",
+  "itens": [
+    {"nome": "nome do produto/tecido", "cor": "cor se mencionada ou vazio", "quantidade": 10, "unidade": "metros"}
+  ]
+}
+
+Regras:
+- "unidade" pode ser: "metros", "kg", "unidades", "rolos", "caixas"
+- Se não encontrar a cor, coloque ""
+- Se não encontrar a unidade, use "unidades"
+- Se não encontrar o fornecedor, coloque ""
+- Extraia TODOS os produtos da nota
+- Quantidade deve ser número`}
+        ]}]
+      })
+    });
+
+    if(!res.ok){
+      const err=await res.json();
+      throw new Error(err.error?.message||'Erro na API do Gemini');
+    }
+
+    const data=await res.json();
+    const text=data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+
+    // Parse JSON from response (remove markdown code blocks if present)
+    const jsonStr=text.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
+    const parsed=JSON.parse(jsonStr);
+
+    if(!parsed.itens||!parsed.itens.length){
+      throw new Error('Nenhum produto encontrado na nota fiscal.');
+    }
+
+    nfSupplier=parsed.fornecedor||'';
+    nfItems=parsed.itens.map((item,i)=>({
+      id:i,
+      nome:item.nome||'',
+      cor:item.cor||'',
+      quantidade:parseFloat(item.quantidade)||0,
+      unidade:item.unidade||'unidades',
+      selected:true,
+      // Try to match with existing product
+      matchId:findMatchingProduct(item.nome,item.cor)
+    }));
+
+    renderNFResults();
+
+  }catch(err){
+    console.error('NF Error:',err);
+    $('nfError').textContent='Erro ao ler nota: '+err.message;
+    $('nfError').style.display='block';
+    $('nfDropZone').style.display='';
+  }finally{
+    $('nfLoading').style.display='none';
+    e.target.value='';
+  }
+}
+
+function fileToBase64(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(reader.result.split(',')[1]);
+    reader.onerror=reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function findMatchingProduct(nome,cor){
+  // Try exact match first
+  const exact=fabrics.find(f=>
+    f.name.toLowerCase()===nome.toLowerCase()&&
+    f.color.toLowerCase()===(cor||'').toLowerCase()
+  );
+  if(exact)return exact.id;
+  // Try partial match on name
+  const partial=fabrics.find(f=>
+    f.name.toLowerCase().includes(nome.toLowerCase())||
+    nome.toLowerCase().includes(f.name.toLowerCase())
+  );
+  if(partial)return partial.id;
+  return null;
+}
+
+function renderNFResults(){
+  $('nfResults').style.display='';
+  $('nfDropZone').style.display='none';
+  $('nfSupplierInfo').textContent=nfSupplier?'Fornecedor: '+nfSupplier:'Fornecedor não identificado';
+
+  const tb=$('nfItemsList');
+  tb.innerHTML=nfItems.map(item=>{
+    const match=item.matchId?getFab(item.matchId):null;
+    const statusHtml=match
+      ?`<span class="badge badge-ok">Encontrado: ${esc(match.name)} ${esc(match.color)}</span>`
+      :`<span class="badge badge-low">Novo produto</span>`;
+    return`<tr>
+      <td><input type="checkbox" ${item.selected?'checked':''} onchange="nfItems[${item.id}].selected=this.checked"></td>
+      <td><strong>${esc(item.nome)}</strong></td>
+      <td>${esc(item.cor)}</td>
+      <td>${fmt(item.quantidade)}</td>
+      <td>${item.unidade}</td>
+      <td>${statusHtml}</td>
+    </tr>`;
+  }).join('');
+}
+
+function toggleNFAll(checked){
+  nfItems.forEach(item=>item.selected=checked);
+  renderNFResults();
+  $('nfSelectAll').checked=checked;
+}
+
+async function confirmNFImport(){
+  const selected=nfItems.filter(item=>item.selected&&item.quantidade>0);
+  if(!selected.length){toast('Selecione pelo menos um item.');return;}
+
+  let registered=0;
+  let created=0;
+
+  for(const item of selected){
+    let fabricId=item.matchId;
+
+    // If product doesn't exist, create it
+    if(!fabricId){
+      const{data:newFab,error}=await sb.from('fabrics').insert({
+        user_id:user.id,
+        name:item.nome,
+        color:item.cor||'—',
+        supplier:nfSupplier,
+        unit:item.unidade,
+        min_stock:10,
+        stock:0
+      }).select().single();
+      if(error){toast('Erro ao criar produto: '+item.nome);continue;}
+      fabricId=newFab.id;
+      created++;
+    }
+
+    // Update stock
+    const fab=fabrics.find(f=>f.id===fabricId);
+    const currentStock=fab?fab.stock:0;
+    await sb.from('fabrics').update({stock:currentStock+item.quantidade}).eq('id',fabricId);
+
+    // Register movement
+    await sb.from('movements').insert({
+      user_id:user.id,
+      fabric_id:fabricId,
+      type:'entrada',
+      qty:item.quantidade,
+      date:today(),
+      detail:'Nota Fiscal'+(nfSupplier?' — '+nfSupplier:''),
+      who:profile.display_name
+    });
+    registered++;
+  }
+
+  await loadAll();
+  hideNFImport();
+
+  let msg=registered+' entrada'+(registered>1?'s':'')+' registrada'+(registered>1?'s':'')+'!';
+  if(created)msg+=' ('+created+' novo'+(created>1?'s':'')+' produto'+(created>1?'s':'')+' cadastrado'+(created>1?'s':'')+')';
+  toast(msg);
 }
 
 // ═══ ENTRY ═══
