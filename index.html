@@ -1116,19 +1116,30 @@ async function parseNFPDF(file){
 
   // Find supplier - look for line after "Razão Social" or "Nome/Razão Social" or just the company name near top
   nfSupplier='';
-  for(let i=0;i<Math.min(lines.length,15);i++){
-    const line=lines[i];
-    if(line.match(/raz[aã]o social|nome.*fantasia|emitente/i)){
-      // Supplier is usually on the same line or next line
-      const nameMatch=line.match(/(?:raz[aã]o social|fantasia)[:\s]*(.{3,60})/i);
-      if(nameMatch){nfSupplier=nameMatch[1].trim();break;}
-      if(i+1<lines.length&&lines[i+1].length>3&&!lines[i+1].match(/^(CNPJ|CPF|IE |End)/i)){
-        nfSupplier=lines[i+1].trim();break;
-      }
+  // Strategy 1: Find company name with legal suffix (LTDA, S.A., etc) in first 20 lines
+  const legalSuffix=/(?:LTDA\.?|EIRELI|S[\.\s]*A[\.\s]*|ME|EPP|INDUSTRIA.*LTDA|IND.*COM.*LTDA)/i;
+  for(let i=0;i<Math.min(lines.length,20);i++){
+    const line=lines[i].trim();
+    if(line.match(legalSuffix)&&line.length>5&&line.length<100){
+      // Skip lines that are about the destination (DESTINATÁRIO)
+      const isDestSection=lines.slice(Math.max(0,i-3),i).some(l=>l.match(/DESTINAT[AÁ]RIO|REMETENTE/i));
+      if(isDestSection)continue;
+      // Skip transport lines
+      if(line.match(/TRANSPORTA/i))continue;
+      // Clean up
+      let name=line.replace(/\s*CNPJ.*$/i,'').replace(/\s*IE\s*:?.*$/i,'').replace(/\s*Inscri.*$/i,'').trim();
+      if(name.length>3){nfSupplier=name;break;}
     }
-    // Also check for a standalone company name near the top (after DANFE header)
-    if(!nfSupplier&&line.match(/Ltda|LTDA|EIRELI|S\.?A\.?|ME$|EPP$|Ltda CNPJ/i)){
-      nfSupplier=line.replace(/\s*CNPJ.*$/i,'').trim();
+  }
+  // Strategy 2: Look for "Razão Social" label
+  if(!nfSupplier){
+    for(let i=0;i<Math.min(lines.length,15);i++){
+      if(lines[i].match(/raz[aã]o social|emitente/i)){
+        const nameMatch=lines[i].match(/(?:raz[aã]o social|fantasia)[:\s]*(.{3,60})/i);
+        if(nameMatch){nfSupplier=nameMatch[1].trim();break;}
+        if(i+1<lines.length&&lines[i+1].length>3)nfSupplier=lines[i+1].trim();
+        break;
+      }
     }
   }
 
@@ -1152,7 +1163,10 @@ async function parseNFPDF(file){
     matches.forEach(m=>{
       let nome=m[2].trim()
         .replace(/^[A-Z0-9\-\/]{5,20}\s+/,'') // remove product code stuck at start
+        .replace(/\s*Lote\(s\)\s*:?\s*\d+/gi,'') // remove lot info
+        .replace(/\s*Lote\s*:?\s*\d+/gi,'')
         .replace(/R\$\s*[\d.,]*/g,'')
+        .replace(/[-–]\s*$/,'') // remove trailing dash
         .replace(/\s+/g,' ').trim();
       const qtd=parseFloat(m[7].replace(/\./g,'').replace(',','.'))||0;
       const un=m[6];
