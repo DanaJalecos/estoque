@@ -74,9 +74,16 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
 
 /* ═══ PROFILE SETUP ═══ */
 .profile-setup{
-  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  min-height:100vh;align-items:center;justify-content:center;
   background:var(--bg);display:none;
 }
+.profile-setup.visible{display:flex;}
+.loading-page{
+  min-height:100vh;display:none;align-items:center;justify-content:center;
+  background:var(--bg);color:var(--text-secondary);font-size:.9rem;
+}
+.loading-page.visible{display:flex;}
+.loading-page .spinner{width:24px;height:24px;border-width:3px;margin-right:.6rem;}
 .profile-card{
   background:var(--bg-card);border:1px solid var(--border);border-radius:16px;
   padding:2.5rem;width:90%;max-width:400px;text-align:center;
@@ -284,6 +291,11 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
       </form>
     </div>
   </div>
+</div>
+
+<!-- ═══ LOADING ═══ -->
+<div class="loading-page" id="loadingPage">
+  <div><span class="spinner"></span>Entrando...</div>
 </div>
 
 <!-- ═══ PROFILE SETUP ═══ -->
@@ -528,39 +540,49 @@ function showOk(m){const el=$('loginSuccess');el.textContent=m;el.style.display=
 function hide(id){$(id).style.display='none';}
 
 // ═══ AUTH STATE ═══
+function hideAll(){
+  $('loginPage').style.display='none';
+  $('loadingPage').classList.remove('visible');
+  $('profileSetup').classList.remove('visible');
+  $('app').style.display='none';
+}
+function showScreen(name){
+  hideAll();
+  if(name==='login')$('loginPage').style.display='';
+  else if(name==='loading')$('loadingPage').classList.add('visible');
+  else if(name==='profile')$('profileSetup').classList.add('visible');
+  else if(name==='app')$('app').style.display='flex';
+}
+
 sb.auth.onAuthStateChange(async(ev,session)=>{
+  if(!session?.user){
+    user=null;profile=null;
+    showScreen('login');
+    return;
+  }
+  user=session.user;
+  showScreen('loading');
   try{
-    if(session?.user){
-      user=session.user;
-      // Load profile
-      const{data,error}=await sb.from('profiles').select('*').eq('id',user.id).maybeSingle();
+    // 1. Try to load profile
+    const{data}=await sb.from('profiles').select('*').eq('id',user.id).maybeSingle();
+    if(data){
       profile=data;
-      if(error||!profile){
-        // Create profile if it doesn't exist
-        const{data:newProf,error:insErr}=await sb.from('profiles').upsert({id:user.id,display_name:'',role:'user'}).select().single();
-        if(insErr){
-          // If RLS blocks insert, use fallback
-          profile={id:user.id,display_name:'',role:'user'};
-        } else {
-          profile=newProf;
-        }
-      }
-      if(!profile.display_name){
-        $('loginPage').style.display='none';
-        $('profileSetup').style.display='flex';
-        return;
-      }
-      enterApp();
     } else {
-      user=null;profile=null;
-      $('loginPage').style.display='';
-      $('profileSetup').style.display='none';
-      $('app').style.display='none';
+      // 2. Profile doesn't exist — create it
+      const{data:np}=await sb.from('profiles').upsert({id:user.id,display_name:'',role:'user'}).select().single();
+      profile=np||{id:user.id,display_name:'',role:'user'};
+    }
+    // 3. Check if name is set
+    if(!profile.display_name){
+      showScreen('profile');
+    } else {
+      enterApp();
     }
   }catch(err){
     console.error('Auth error:',err);
-    toast('Erro ao carregar perfil. Tente novamente.');
-    $('loginPage').style.display='';
+    // Fallback: create local profile and show name screen
+    profile={id:user.id,display_name:'',role:'user'};
+    showScreen('profile');
   }
 });
 
@@ -574,9 +596,7 @@ async function saveProfile(){
 }
 
 async function enterApp(){
-  $('loginPage').style.display='none';
-  $('profileSetup').style.display='none';
-  $('app').style.display='flex';
+  showScreen('app');
   // Set user info
   $('userName').textContent=profile.display_name;
   $('userRole').textContent=profile.role==='admin'?'Administrador':'Usuário';
