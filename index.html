@@ -386,7 +386,7 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
             <input type="hidden" id="editId">
             <div class="form-row">
               <div class="form-group"><label>Nome / Tipo</label><input id="fabName" required placeholder="Ex: Oxford, Linha, Botão..."></div>
-              <div class="form-group"><label>Cor / Variação</label><input id="fabColor" required placeholder="Ex: Branco, Azul Marinho..."></div>
+              <div class="form-group"><label>Variação</label><input id="fabColor" required placeholder="Ex: Azul, Branco, P, M, G..."></div>
             </div>
             <div class="form-row">
               <div class="form-group"><label>Fornecedor</label><input id="fabSupplier" placeholder="Ex: Têxtil São Paulo"></div>
@@ -403,7 +403,7 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
           </form>
         </div>
         <h3 style="font-size:.85rem;font-weight:700;margin:1.5rem 0 .3rem;">Produtos Cadastrados</h3>
-        <div class="table-wrap"><table><thead><tr><th>Nome</th><th>Cor/Variação</th><th>Fornecedor</th><th>Unidade</th><th>Mínimo</th><th>Ações</th></tr></thead><tbody id="fabList"></tbody></table></div>
+        <div class="table-wrap"><table><thead><tr><th>Nome</th><th>Variação</th><th>Fornecedor</th><th>Unidade</th><th>Mínimo</th><th>Ações</th></tr></thead><tbody id="fabList"></tbody></table></div>
       </div>
     </div>
 
@@ -436,7 +436,7 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
               <div id="nfSupplierInfo" style="font-size:.82rem;color:var(--text-secondary);margin-bottom:.8rem;"></div>
               <div class="table-wrap">
                 <table>
-                  <thead><tr><th><input type="checkbox" id="nfSelectAll" checked onchange="toggleNFAll(this.checked)"></th><th>Produto</th><th>Cor</th><th>Qtd</th><th>Unidade</th><th>Preço Unit.</th><th>Status</th></tr></thead>
+                  <thead><tr><th><input type="checkbox" id="nfSelectAll" checked onchange="toggleNFAll(this.checked)"></th><th>Produto</th><th>Variação</th><th>Qtd</th><th>Unidade</th><th>Preço Unit.</th><th>Status</th></tr></thead>
                   <tbody id="nfItemsList"></tbody>
                 </table>
               </div>
@@ -493,7 +493,7 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
           <input id="sSearch" placeholder="Buscar..." oninput="renderStock()">
           <select id="sFilter" onchange="renderStock()"><option value="all">Todos</option><option value="ok">OK</option><option value="low">Baixo</option><option value="critical">Crítico</option></select>
         </div>
-        <div class="table-wrap"><table><thead><tr><th>Produto</th><th>Cor/Variação</th><th>Fornecedor</th><th>Estoque</th><th>Mínimo</th><th>Status</th></tr></thead><tbody id="stockList"></tbody></table></div>
+        <div class="table-wrap"><table><thead><tr><th>Produto</th><th>Variação</th><th>Fornecedor</th><th>Estoque</th><th>Mínimo</th><th>Status</th></tr></thead><tbody id="stockList"></tbody></table></div>
       </div>
     </div>
 
@@ -1689,7 +1689,7 @@ function renderAlerts(){
         <h3 style="font-size:.9rem;font-weight:700;color:var(--red);">Sem Estoque — Reposição Urgente</h3>
       </div>
       <div class="table-wrap"><table>
-        <thead><tr><th>Produto</th><th>Cor/Variação</th><th>Fornecedor</th><th>Estoque</th><th>Mínimo</th></tr></thead>
+        <thead><tr><th>Produto</th><th>Variação</th><th>Fornecedor</th><th>Estoque</th><th>Mínimo</th></tr></thead>
         <tbody>${critical.map(f=>`<tr>
           <td><strong>${esc(f.name)}</strong></td><td>${esc(f.color)}</td><td>${esc(f.supplier||'—')}</td>
           <td style="color:var(--red);font-weight:700;">${fmt(f.stock)} ${f.unit}</td>
@@ -1708,7 +1708,7 @@ function renderAlerts(){
         <h3 style="font-size:.9rem;font-weight:700;color:var(--orange);">Estoque Baixo — Atenção</h3>
       </div>
       <div class="table-wrap"><table>
-        <thead><tr><th>Produto</th><th>Cor/Variação</th><th>Fornecedor</th><th>Estoque</th><th>Mínimo</th><th>Faltam</th></tr></thead>
+        <thead><tr><th>Produto</th><th>Variação</th><th>Fornecedor</th><th>Estoque</th><th>Mínimo</th><th>Faltam</th></tr></thead>
         <tbody>${low.map(f=>{
           const falta=fmt(f.min_stock-f.stock);
           return`<tr>
@@ -1914,7 +1914,7 @@ function exportPDF(){
     doc.text('SEM ESTOQUE — Reposição Urgente',14,startY);
     doc.autoTable({
       startY:startY+4,
-      head:[['Produto','Cor/Variação','Fornecedor','Estoque','Mínimo']],
+      head:[['Produto','Variação','Fornecedor','Estoque','Mínimo']],
       body:critical.map(f=>[f.name,f.color,f.supplier||'—',fmt(f.stock)+' '+f.unit,f.min_stock+' '+f.unit]),
       styles:{fontSize:9,cellPadding:3},
       headStyles:{fillColor:[220,50,50],textColor:255,fontStyle:'bold'},
@@ -1933,7 +1933,7 @@ function exportPDF(){
     doc.text('ESTOQUE BAIXO — Atenção',14,startY);
     doc.autoTable({
       startY:startY+4,
-      head:[['Produto','Cor/Variação','Fornecedor','Estoque','Mínimo','Faltam']],
+      head:[['Produto','Variação','Fornecedor','Estoque','Mínimo','Faltam']],
       body:low.map(f=>[f.name,f.color,f.supplier||'—',fmt(f.stock)+' '+f.unit,f.min_stock+' '+f.unit,fmt(f.min_stock-f.stock)+' '+f.unit]),
       styles:{fontSize:9,cellPadding:3},
       headStyles:{fillColor:[200,150,0],textColor:255,fontStyle:'bold'},
@@ -1952,7 +1952,7 @@ function exportPDF(){
     doc.text('ESTOQUE OK',14,startY);
     doc.autoTable({
       startY:startY+4,
-      head:[['Produto','Cor/Variação','Fornecedor','Estoque','Mínimo']],
+      head:[['Produto','Variação','Fornecedor','Estoque','Mínimo']],
       body:ok.map(f=>[f.name,f.color,f.supplier||'—',fmt(f.stock)+' '+f.unit,f.min_stock+' '+f.unit]),
       styles:{fontSize:9,cellPadding:3},
       headStyles:{fillColor:[50,180,100],textColor:255,fontStyle:'bold'},
