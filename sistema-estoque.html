@@ -697,11 +697,16 @@ async function handleAuthSession(session){
   }
 }
 
+let appReady=false;
 sb.auth.onAuthStateChange((ev,session)=>{
-  // Only handle events that matter
   if(ev==='SIGNED_OUT'){
-    user=null;profile=null;
+    user=null;profile=null;appReady=false;
     showScreen('login');
+    return;
+  }
+  // If app is already open and it's just a token refresh, only reload data
+  if(appReady&&ev==='TOKEN_REFRESHED'){
+    loadAll().then(()=>renderCurrent());
     return;
   }
   if(ev==='INITIAL_SESSION'||ev==='SIGNED_IN'||ev==='TOKEN_REFRESHED'){
@@ -734,8 +739,11 @@ async function enterApp(){
   // Legacy admin-only class
   document.querySelectorAll('.admin-only').forEach(el=>el.style.display=r==='admin'?'':'none');
   await loadAll();
-  showPage('dashboard',navBtn('dashboard'));
+  // Restore last page or go to dashboard
+  const lastPage=sessionStorage.getItem('dana_page')||'dashboard';
+  showPage(lastPage,navBtn(lastPage));
   setupRealtime();
+  appReady=true;
 }
 
 // ═══ DATA ═══
@@ -770,6 +778,7 @@ function renderCurrent(){
 
 // ═══ NAV ═══
 function showPage(name,btn){
+  sessionStorage.setItem('dana_page',name);
   document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));
   $('page-'+name).classList.remove('hidden');
   document.querySelectorAll('.sidebar-nav button').forEach(b=>b.classList.remove('active'));
