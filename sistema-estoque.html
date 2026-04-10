@@ -1183,18 +1183,26 @@ function mapUnit(raw){
 }
 
 function findMatchingProduct(nome,cor){
-  // Try exact match first
-  const exact=fabrics.find(f=>
-    f.name.toLowerCase()===nome.toLowerCase()&&
-    f.color.toLowerCase()===(cor||'').toLowerCase()
-  );
+  const n=nome.toLowerCase();
+  const c=(cor||'').toLowerCase();
+  // Try exact match (name + variation)
+  const exact=fabrics.find(f=>f.name.toLowerCase()===n&&f.color.toLowerCase()===c);
   if(exact)return exact.id;
-  // Try partial match on name
-  const partial=fabrics.find(f=>
-    f.name.toLowerCase().includes(nome.toLowerCase())||
-    nome.toLowerCase().includes(f.name.toLowerCase())
-  );
-  if(partial)return partial.id;
+  // Try partial match on name BUT only if variation also matches
+  if(c){
+    const partialWithColor=fabrics.find(f=>
+      (f.name.toLowerCase().includes(n)||n.includes(f.name.toLowerCase()))&&
+      f.color.toLowerCase()===c
+    );
+    if(partialWithColor)return partialWithColor.id;
+  }
+  // Try partial match on name only if there's no variation to compare
+  if(!c){
+    const partial=fabrics.find(f=>
+      f.name.toLowerCase().includes(n)||n.includes(f.name.toLowerCase())
+    );
+    if(partial)return partial.id;
+  }
   return null;
 }
 
