@@ -493,7 +493,7 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
           <input id="sSearch" placeholder="Buscar..." oninput="renderStock()">
           <select id="sFilter" onchange="renderStock()"><option value="all">Todos</option><option value="ok">OK</option><option value="low">Baixo</option><option value="critical">Crítico</option></select>
         </div>
-        <div class="table-wrap"><table><thead><tr><th>Produto</th><th>Variação</th><th>Fornecedor</th><th>Estoque</th><th>Mínimo</th><th>Status</th></tr></thead><tbody id="stockList"></tbody></table></div>
+        <div id="stockGrouped"></div>
       </div>
     </div>
 
@@ -1667,14 +1667,64 @@ function renderStock(){
     if(filter==='critical')return match&&f.stock<=0;
     return match;
   });
-  const tb=$('stockList');
-  if(!list.length){tb.innerHTML='<tr><td colspan="6"><div class="empty-state"><span class="icon">📦</span><p>Nenhum produto encontrado.</p></div></td></tr>';return;}
-  tb.innerHTML=list.map(f=>{
-    let st='ok',sl='OK';
-    if(f.stock<=0){st='critical';sl='Sem Estoque';}
-    else if(f.stock<=f.min_stock){st='low';sl='Baixo';}
-    return`<tr><td><strong>${esc(f.name)}</strong></td><td>${esc(f.color)}</td><td>${esc(f.supplier||'')}</td><td><strong>${fmt(f.stock)}</strong> ${f.unit}</td><td>${f.min_stock} ${f.unit}</td><td><span class="badge badge-${st}">${sl}</span></td></tr>`;
-  }).join('');
+
+  const container=$('stockGrouped');
+  if(!list.length){container.innerHTML='<div class="empty-state"><span class="icon">📦</span><p>Nenhum produto encontrado.</p></div>';return;}
+
+  // Group by product name
+  const groups={};
+  list.forEach(f=>{
+    const key=f.name;
+    if(!groups[key])groups[key]=[];
+    groups[key].push(f);
+  });
+
+  let html='';
+  Object.keys(groups).sort().forEach(name=>{
+    const items=groups[name];
+    const totalStock=items.reduce((s,f)=>s+f.stock,0);
+    const unit=items[0].unit;
+    const supplier=items[0].supplier||'';
+    const hasAlert=items.some(f=>f.stock<=f.min_stock);
+
+    html+=`<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:.8rem;overflow:hidden;">
+      <div style="padding:.8rem 1rem;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);background:rgba(255,255,255,.02);">
+        <div style="display:flex;align-items:center;gap:.8rem;">
+          <strong style="font-size:.95rem;">${esc(name)}</strong>
+          <span style="font-size:.75rem;color:var(--text-muted);">${esc(supplier)}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:.8rem;">
+          <span style="font-size:.78rem;color:var(--text-muted);">${items.length} variação${items.length>1?'ões':''}</span>
+          <span style="font-size:.85rem;font-weight:700;">${fmt(totalStock)} ${unit}</span>
+          ${hasAlert?'<span class="badge badge-low">!</span>':''}
+        </div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;">
+        <thead><tr>
+          <th style="padding:.4rem 1rem;font-size:.68rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;text-align:left;font-weight:600;">Variação</th>
+          <th style="padding:.4rem 1rem;font-size:.68rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;text-align:left;font-weight:600;">Estoque</th>
+          <th style="padding:.4rem 1rem;font-size:.68rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;text-align:left;font-weight:600;">Mínimo</th>
+          <th style="padding:.4rem 1rem;font-size:.68rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;text-align:left;font-weight:600;">Status</th>
+        </tr></thead>
+        <tbody>${items.map(f=>{
+          let st='ok',sl='OK';
+          if(f.stock<=0){st='critical';sl='Sem Estoque';}
+          else if(f.stock<=f.min_stock){st='low';sl='Baixo';}
+          return`<tr style="border-top:1px solid var(--border);">
+            <td style="padding:.6rem 1rem;font-size:.85rem;color:var(--text-secondary);">
+              <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${st==='ok'?'var(--green)':st==='low'?'var(--orange)':'var(--red)'};margin-right:.5rem;"></span>
+              ${esc(f.color)}
+            </td>
+            <td style="padding:.6rem 1rem;font-size:.85rem;font-weight:600;">${fmt(f.stock)} ${f.unit}</td>
+            <td style="padding:.6rem 1rem;font-size:.82rem;color:var(--text-muted);">${f.min_stock} ${f.unit}</td>
+            <td style="padding:.6rem 1rem;"><span class="badge badge-${st}">${sl}</span></td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+    </div>`;
+  });
+
+  container.innerHTML=html;
 }
 
 // ═══ ALERTS ═══
