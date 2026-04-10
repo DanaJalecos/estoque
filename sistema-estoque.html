@@ -967,8 +967,12 @@ async function handleNFUpload(e){
     const base64=await fileToBase64(file);
     const mimeType=file.type||'image/jpeg';
 
-    // Call Gemini
-    const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+key,{
+    // Call Gemini (try multiple models as fallback)
+    const models=['gemini-1.5-flash','gemini-2.0-flash-lite','gemini-2.0-flash'];
+    let res=null;
+    let lastErr='';
+    for(const model of models){
+      const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent?key='+key,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
@@ -992,13 +996,12 @@ Regras:
 - Extraia TODOS os produtos da nota
 - Quantidade deve ser número`}
         ]}]
-      })
-    });
-
-    if(!res.ok){
-      const err=await res.json();
-      throw new Error(err.error?.message||'Erro na API do Gemini');
+      });
+      if(r.ok){res=r;break;}
+      const errData=await r.json().catch(()=>({}));
+      lastErr=errData.error?.message||'Erro modelo '+model;
     }
+    if(!res){throw new Error(lastErr||'Todos os modelos falharam. Tente novamente em alguns segundos.');}
 
     const data=await res.json();
     const text=data.candidates?.[0]?.content?.parts?.[0]?.text||'';
