@@ -1022,7 +1022,9 @@ async function parseNFXML(file){
     const qtd=parseFloat(getXMLText(prod,'qCom')||getXMLText(prod,'qTrib'))||0;
     const unidadeRaw=(getXMLText(prod,'uCom')||getXMLText(prod,'uTrib')||'UN').toUpperCase();
     const unitPrice=parseFloat(getXMLText(prod,'vUnCom')||getXMLText(prod,'vUnTrib'))||0;
-    nfItems.push({id:i,nome,cor:extractColor(nome),quantidade:qtd,unidade:mapUnit(unidadeRaw),unitPrice,selected:true,matchId:findMatchingProduct(nome,extractColor(nome))});
+    const cor=extractColor(nome);
+    const cleanName=removeColorFromName(nome,cor);
+    nfItems.push({id:i,nome:cleanName,cor,quantidade:qtd,unidade:mapUnit(unidadeRaw),unitPrice,selected:true,matchId:findMatchingProduct(nome,cor)});
   });
 }
 
@@ -1114,7 +1116,7 @@ async function parseNFPDF(file){
       // First R$ after qty is usually unit price
       const unitPrice=prices.length?prices[0]:0;
       if(qtd>0&&nome.length>2){
-        nfItems.push({id:itemId++,nome,cor:extractColor(nome),quantidade:qtd,unidade:mapUnit(un),unitPrice,selected:true,matchId:findMatchingProduct(nome,extractColor(nome))});
+        nfItems.push(makeNFItem(itemId++,nome,qtd,un,unitPrice));
       }
     });
   }
@@ -1135,7 +1137,7 @@ async function parseNFPDF(file){
       let nome=lastLine.replace(/^\d{1,6}\s+/,'').replace(/\d{8}\s+\d{4}\s*$/,'').trim();
       if(!nome&&lastLines.length>1)nome=lastLines[lastLines.length-2].replace(/^\d{1,6}\s+/,'').trim();
       if(nome.length>2&&!nome.match(/^(CNPJ|ICMS|PIS|COFINS|TOTAL|BASE|VALOR|FRETE|NCM|CFOP|C[OÓ]D)/i)){
-        nfItems.push({id:itemId++,nome,cor:extractColor(nome),quantidade:qtd,unidade:mapUnit(un),selected:true,matchId:findMatchingProduct(nome,extractColor(nome))});
+        nfItems.push(makeNFItem(itemId++,nome,qtd,un,0));
       }
     });
   }
@@ -1148,7 +1150,7 @@ async function parseNFPDF(file){
         let nome=m[1].replace(/^\d{1,6}\s+/,'').replace(/\d{8}/g,'').trim();
         const qtd=parseFloat(m[2].replace(',','.'))||0;
         if(qtd>0&&nome.length>3&&!nome.match(/^(CNPJ|CPF|ICMS|PIS|COFINS|TOTAL|BASE|VALOR|FRETE|IE|CST|NCM|Chave|R\$)/i)){
-          nfItems.push({id:itemId++,nome,cor:extractColor(nome),quantidade:qtd,unidade:mapUnit(m[3]),selected:true,matchId:findMatchingProduct(nome,extractColor(nome))});
+          nfItems.push(makeNFItem(itemId++,nome,qtd,m[3],0));
         }
       }
     }
@@ -1161,6 +1163,15 @@ async function parseNFPDF(file){
 function extractColor(nome){
   const m=nome.match(/\b(BRANCO|PRETO|AZUL|VERDE|VERMELHO|ROSA|AMARELO|MARINHO|CINZA|BEGE|LIL[AÁ]S?|ROXO|LARANJA|MARROM|CREME|VINHO|CORAL|SALM[AÃ]O|TURQUESA|DOURADO|PRATA|NUDE|AREIA|MOSTARDA|FERRUGEM|TERRACOTA|MENTA|LAVANDA|BURGUNDY|NAVY|OFF\s?WHITE)\b/i);
   return m?m[1].charAt(0).toUpperCase()+m[1].slice(1).toLowerCase():'';
+}
+function removeColorFromName(nome,cor){
+  if(!cor)return nome;
+  return nome.replace(new RegExp('\\b'+cor+'\\b','gi'),'').replace(/\s+/g,' ').trim();
+}
+function makeNFItem(id,nome,qtd,un,unitPrice){
+  const cor=extractColor(nome);
+  const cleanName=removeColorFromName(nome,cor);
+  return{id,nome:cleanName,cor,quantidade:qtd,unidade:mapUnit(un),unitPrice:unitPrice||0,selected:true,matchId:findMatchingProduct(nome,cor)};
 }
 function mapUnit(raw){
   const u=raw.toUpperCase();
@@ -1196,7 +1207,7 @@ function renderNFResults(){
   tb.innerHTML=nfItems.map(item=>{
     const match=item.matchId?getFab(item.matchId):null;
     const statusHtml=match
-      ?`<span class="badge badge-ok">Encontrado: ${esc(match.name)} ${esc(match.color)}</span>`
+      ?`<span class="badge badge-ok">Encontrado: ${esc(match.name)}${match.color?' — '+esc(match.color):''}</span>`
       :`<span class="badge badge-low">Novo produto</span>`;
     const priceHtml=item.unitPrice?'R$ '+fmtMoney(item.unitPrice):'—';
     return`<tr>
