@@ -735,18 +735,21 @@ function showScreen(name){
 }
 
 let authLoading=false;
+let authLoadId=0; // track which load is current
 async function handleAuthSession(session){
-  if(authLoading)return; // prevent double-fire
   if(!session?.user){
     user=null;profile=null;
     showScreen('login');
     return;
   }
+  // Allow new loads to override old ones
+  const myId=++authLoadId;
   authLoading=true;
   user=session.user;
   showScreen('loading');
   try{
-    const{data,error}=await sb.from('profiles').select('*').eq('id',user.id).maybeSingle();
+    const{data}=await sb.from('profiles').select('*').eq('id',user.id).maybeSingle();
+    if(myId!==authLoadId)return; // outdated, newer load took over
     if(data){
       profile=data;
     } else {
@@ -757,6 +760,7 @@ async function handleAuthSession(session){
         profile={id:user.id,display_name:'',role:'user'};
       }
     }
+    if(myId!==authLoadId)return;
     if(!profile.display_name){
       showScreen('profile');
     } else {
@@ -764,27 +768,33 @@ async function handleAuthSession(session){
     }
   }catch(err){
     console.error('Auth error:',err);
+    if(myId!==authLoadId)return;
     profile={id:user.id,display_name:'',role:'user'};
     showScreen('profile');
   }finally{
-    authLoading=false;
+    if(myId===authLoadId)authLoading=false;
   }
 }
 
 let appReady=false;
 sb.auth.onAuthStateChange((ev,session)=>{
+  console.log('Auth event:',ev,session?.user?.email||'no user');
   if(ev==='SIGNED_OUT'){
     user=null;profile=null;appReady=false;
     showScreen('login');
     return;
   }
-  // If app is already open and it's just a token refresh, only reload data
   if(appReady&&ev==='TOKEN_REFRESHED'){
     loadAll().then(()=>renderCurrent());
     return;
   }
-  if(ev==='INITIAL_SESSION'||ev==='SIGNED_IN'||ev==='TOKEN_REFRESHED'){
-    if(session?.user)handleAuthSession(session);
+  if(ev==='INITIAL_SESSION'&&!session?.user){
+    // No saved session, show login
+    showScreen('login');
+    return;
+  }
+  if(session?.user){
+    handleAuthSession(session);
   }
 });
 
