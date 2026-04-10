@@ -577,9 +577,9 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
         <div class="stats-grid" id="forecastStats"></div>
 
         <!-- Chart -->
-        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;margin-bottom:1.2rem;">
-          <h4 style="font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.8rem;">Dias Até Acabar — Por Produto</h4>
-          <canvas id="chartForecast"></canvas>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;margin-bottom:1.2rem;display:flex;align-items:center;gap:2rem;flex-wrap:wrap;">
+          <div style="width:160px;flex-shrink:0;"><canvas id="chartForecast"></canvas></div>
+          <div id="forecastSummary" style="font-size:.85rem;color:var(--text-secondary);"></div>
         </div>
 
         <!-- Tables -->
@@ -1929,35 +1929,31 @@ function renderForecast(){
     <div class="stat-card"><div class="stat-label">Produtos analisados</div><div class="stat-value">${forecasts.length}</div><div class="stat-sub" style="font-size:.68rem;color:var(--text-muted);margin-top:.2rem;">de ${fabrics.length} cadastrados</div></div>
   `;
 
-  // Chart — horizontal bar with days left
+  // Chart — small doughnut
   destroyChart('forecast');
   const ctx=$('chartForecast');
   if(ctx&&forecasts.length){
-    const top10=forecasts.slice(0,10);
     chartInstances.forecast=new Chart(ctx,{
-      type:'bar',
+      type:'doughnut',
       data:{
-        labels:top10.map(f=>f.name+' '+f.color),
-        datasets:[{
-          label:'Dias até acabar',
-          data:top10.map(f=>f.daysLeft),
-          backgroundColor:top10.map(f=>{
-            if(f.daysLeft<=14)return'rgba(248,113,113,.7)';
-            if(f.daysLeft<=30)return'rgba(251,191,36,.7)';
-            return'rgba(74,222,128,.7)';
-          }),
-          borderRadius:4,borderSkipped:false
-        }]
+        labels:['Urgente (14d)','Atenção (30d)','Tranquilo (30d+)'],
+        datasets:[{data:[urgent.length,soon.length,safe.length],backgroundColor:['#f87171','#fbbf24','#4ade80'],borderWidth:0,hoverOffset:4}]
       },
-      options:{
-        responsive:true,indexAxis:'y',
-        plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw+' dias';}}}},
-        scales:{
-          x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{font:{size:10},color:'#666',callback:function(v){return v+'d';}}},
-          y:{grid:{display:false},ticks:{font:{size:10},color:'#999'}}
-        }
-      }
+      options:{responsive:true,cutout:'60%',plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.label+': '+c.raw+' produto'+(c.raw!==1?'s':'');}}}}}
     });
+  }
+  // Summary text next to chart
+  const summaryEl=$('forecastSummary');
+  if(summaryEl){
+    const mostUrgent=forecasts[0];
+    summaryEl.innerHTML=forecasts.length?`
+      <div style="display:flex;flex-direction:column;gap:.5rem;">
+        <div style="display:flex;align-items:center;gap:.4rem;"><span style="width:10px;height:10px;border-radius:50%;background:#f87171;display:inline-block;"></span> <strong>${urgent.length}</strong> urgente${urgent.length!==1?'s':''}</div>
+        <div style="display:flex;align-items:center;gap:.4rem;"><span style="width:10px;height:10px;border-radius:50%;background:#fbbf24;display:inline-block;"></span> <strong>${soon.length}</strong> com atenção</div>
+        <div style="display:flex;align-items:center;gap:.4rem;"><span style="width:10px;height:10px;border-radius:50%;background:#4ade80;display:inline-block;"></span> <strong>${safe.length}</strong> tranquilo${safe.length!==1?'s':''}</div>
+        ${mostUrgent?`<div style="margin-top:.3rem;padding-top:.5rem;border-top:1px solid var(--border);font-size:.78rem;color:var(--text-muted);">Mais urgente: <strong style="color:var(--text);">${esc(mostUrgent.name)} ${esc(mostUrgent.color)}</strong> — ${mostUrgent.daysLeft} dias</div>`:''}
+      </div>
+    `:'';
   }
 
   // Tables
