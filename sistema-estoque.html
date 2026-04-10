@@ -8,6 +8,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
 <style>
@@ -413,13 +415,13 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
           <!-- Upload -->
           <div id="nfUpload" class="form-card" style="margin-bottom:1rem;">
             <h3 style="font-size:.9rem;font-weight:700;margin-bottom:.3rem;">📄 Importar Nota Fiscal</h3>
-            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:.8rem;">Envie o arquivo XML da NF-e. O sistema lê automaticamente os produtos, quantidades e fornecedor.</p>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:.8rem;">Envie o arquivo XML ou PDF da nota fiscal. O sistema lê automaticamente os produtos, quantidades e fornecedor.</p>
             <div id="nfDropZone" style="border:2px dashed var(--border);border-radius:var(--radius);padding:2rem;text-align:center;cursor:pointer;transition:all .2s;" onclick="$('nfFileInput').click()">
               <div style="font-size:2rem;margin-bottom:.5rem;opacity:.5;">📄</div>
-              <p style="font-size:.85rem;color:var(--text-secondary);">Clique ou arraste o arquivo XML aqui</p>
-              <p style="font-size:.72rem;color:var(--text-muted);margin-top:.3rem;">Aceita: XML da NF-e</p>
+              <p style="font-size:.85rem;color:var(--text-secondary);">Clique ou arraste a nota fiscal aqui</p>
+              <p style="font-size:.72rem;color:var(--text-muted);margin-top:.3rem;">Aceita: XML ou PDF da NF-e</p>
             </div>
-            <input type="file" id="nfFileInput" accept=".xml" style="display:none" onchange="handleNFUpload(event)">
+            <input type="file" id="nfFileInput" accept=".xml,.pdf" style="display:none" onchange="handleNFUpload(event)">
             <div id="nfLoading" style="display:none;text-align:center;padding:1.5rem;"><span class="spinner"></span> Lendo nota fiscal...</div>
             <div id="nfError" style="display:none;margin-top:.8rem;" class="login-error"></div>
           </div>
@@ -949,56 +951,17 @@ async function handleNFUpload(e){
   $('nfDropZone').style.display='none';
 
   try{
-    const text=await file.text();
-    const parser=new DOMParser();
-    const xml=parser.parseFromString(text,'text/xml');
+    const ext=file.name.split('.').pop().toLowerCase();
 
-    // Check for parse errors
-    if(xml.querySelector('parsererror')){
-      throw new Error('Arquivo XML inválido. Verifique se é um XML de NF-e.');
+    if(ext==='xml'){
+      await parseNFXML(file);
+    } else if(ext==='pdf'){
+      await parseNFPDF(file);
+    } else {
+      throw new Error('Formato não suportado. Use XML ou PDF.');
     }
 
-    // Extract supplier (emit > CNPJ, xNome)
-    const emit=xml.querySelector('emit');
-    nfSupplier=getXMLText(emit,'xNome')||getXMLText(emit,'xFant')||'';
-
-    // Extract products (det > prod)
-    const dets=xml.querySelectorAll('det');
-    if(!dets.length)throw new Error('Nenhum produto encontrado no XML.');
-
-    nfItems=[];
-    dets.forEach((det,i)=>{
-      const prod=det.querySelector('prod');
-      if(!prod)return;
-      const nome=getXMLText(prod,'xProd')||'';
-      const qtd=parseFloat(getXMLText(prod,'qCom')||getXMLText(prod,'qTrib'))||0;
-      const unidadeRaw=(getXMLText(prod,'uCom')||getXMLText(prod,'uTrib')||'UN').toUpperCase();
-
-      // Map NF-e unit codes to our units
-      let unidade='unidades';
-      if(unidadeRaw.includes('M')||unidadeRaw.includes('MT')||unidadeRaw==='M')unidade='metros';
-      else if(unidadeRaw.includes('KG')||unidadeRaw.includes('K'))unidade='kg';
-      else if(unidadeRaw.includes('RL')||unidadeRaw.includes('ROLO'))unidade='rolos';
-      else if(unidadeRaw.includes('CX')||unidadeRaw.includes('CAIXA'))unidade='caixas';
-      else if(unidadeRaw.includes('UN')||unidadeRaw.includes('PC')||unidadeRaw.includes('PÇ'))unidade='unidades';
-
-      // Try to extract color from product name
-      let cor='';
-      const corMatch=nome.match(/\b(BRANCO|PRETO|AZUL|VERDE|VERMELHO|ROSA|AMARELO|MARINHO|CINZA|BEGE|LILÁS|LILAC|ROXO|LARANJA|MARROM|CREME|VINHO|CORAL|SALMÃO|TURQUESA|DOURADO|PRATA)\b/i);
-      if(corMatch)cor=corMatch[1].charAt(0).toUpperCase()+corMatch[1].slice(1).toLowerCase();
-
-      nfItems.push({
-        id:i,
-        nome:nome,
-        cor:cor,
-        quantidade:qtd,
-        unidade:unidade,
-        selected:true,
-        matchId:findMatchingProduct(nome,cor)
-      });
-    });
-
-    if(!nfItems.length)throw new Error('Nenhum produto encontrado no XML.');
+    if(!nfItems.length)throw new Error('Nenhum produto encontrado na nota.');
     renderNFResults();
 
   }catch(err){
@@ -1012,10 +975,104 @@ async function handleNFUpload(e){
   }
 }
 
+// ── XML Parser ──
+async function parseNFXML(file){
+  const text=await file.text();
+  const parser=new DOMParser();
+  const xml=parser.parseFromString(text,'text/xml');
+  if(xml.querySelector('parsererror'))throw new Error('Arquivo XML inválido.');
+
+  const emit=xml.querySelector('emit');
+  nfSupplier=getXMLText(emit,'xNome')||getXMLText(emit,'xFant')||'';
+
+  const dets=xml.querySelectorAll('det');
+  if(!dets.length)throw new Error('Nenhum produto no XML.');
+
+  nfItems=[];
+  dets.forEach((det,i)=>{
+    const prod=det.querySelector('prod');
+    if(!prod)return;
+    const nome=getXMLText(prod,'xProd')||'';
+    const qtd=parseFloat(getXMLText(prod,'qCom')||getXMLText(prod,'qTrib'))||0;
+    const unidadeRaw=(getXMLText(prod,'uCom')||getXMLText(prod,'uTrib')||'UN').toUpperCase();
+    nfItems.push({id:i,nome,cor:extractColor(nome),quantidade:qtd,unidade:mapUnit(unidadeRaw),selected:true,matchId:findMatchingProduct(nome,extractColor(nome))});
+  });
+}
+
 function getXMLText(parent,tag){
   if(!parent)return'';
   const el=parent.querySelector(tag);
   return el?el.textContent.trim():'';
+}
+
+// ── PDF Parser ──
+async function parseNFPDF(file){
+  if(!window.pdfjsLib)throw new Error('Biblioteca PDF não carregou. Recarregue a página.');
+  const arrayBuf=await file.arrayBuffer();
+  const pdf=await pdfjsLib.getDocument({data:arrayBuf}).promise;
+  let fullText='';
+  for(let i=1;i<=pdf.numPages;i++){
+    const page=await pdf.getPage(i);
+    const content=await page.getTextContent();
+    fullText+=content.items.map(item=>item.str).join(' ')+'\n';
+  }
+  if(!fullText.trim())throw new Error('PDF sem texto. Se for imagem escaneada, use o XML.');
+
+  // Try to find supplier
+  nfSupplier='';
+  const razaoMatch=fullText.match(/(?:Raz[aã]o Social|Nome|Remetente|Emitente)[:\s]*([A-ZÀ-Ü][A-ZÀ-Ü\s&.,\-]{3,50})/i);
+  if(razaoMatch)nfSupplier=razaoMatch[1].trim();
+
+  // Parse products from text
+  nfItems=[];
+  // Strategy 1: look for patterns like "product name QTD UN VALOR"
+  const lines=fullText.split('\n');
+  let itemId=0;
+
+  // Common NF-e PDF pattern: sequential items with code, description, qty, unit, value
+  const itemPattern=/(\d{1,5})\s+(.{5,80}?)\s+(\d+[.,]?\d*)\s+(UN|MT|M|KG|RL|PC|PÇ|CX|ROLO|METRO|UNID|QUILO|PAR|PCT|FD)\s/gi;
+  const matches=[...fullText.matchAll(itemPattern)];
+
+  if(matches.length){
+    matches.forEach(m=>{
+      const nome=m[2].trim();
+      const qtd=parseFloat(m[3].replace(',','.'))||0;
+      const un=m[4].toUpperCase();
+      if(qtd>0&&nome.length>2){
+        nfItems.push({id:itemId++,nome,cor:extractColor(nome),quantidade:qtd,unidade:mapUnit(un),selected:true,matchId:findMatchingProduct(nome,extractColor(nome))});
+      }
+    });
+  }
+
+  // Strategy 2: if no pattern found, try line-by-line with qty detection
+  if(!nfItems.length){
+    const qtyPattern=/(.{5,60}?)\s+(\d+[.,]?\d*)\s*(metros?|m|kg|un|unid|rolos?|caixas?|pcs?|pçs?)/gi;
+    const matches2=[...fullText.matchAll(qtyPattern)];
+    matches2.forEach(m=>{
+      const nome=m[1].trim();
+      const qtd=parseFloat(m[2].replace(',','.'))||0;
+      const un=m[3].toUpperCase();
+      if(qtd>0&&nome.length>2&&!nome.match(/^(CNPJ|CPF|ICMS|PIS|COFINS|TOTAL|BASE|VALOR|FRETE)/i)){
+        nfItems.push({id:itemId++,nome,cor:extractColor(nome),quantidade:qtd,unidade:mapUnit(un),selected:true,matchId:findMatchingProduct(nome,extractColor(nome))});
+      }
+    });
+  }
+
+  if(!nfItems.length)throw new Error('Não consegui identificar produtos no PDF. Tente usar o arquivo XML.');
+}
+
+// ── Shared helpers ──
+function extractColor(nome){
+  const m=nome.match(/\b(BRANCO|PRETO|AZUL|VERDE|VERMELHO|ROSA|AMARELO|MARINHO|CINZA|BEGE|LIL[AÁ]S?|ROXO|LARANJA|MARROM|CREME|VINHO|CORAL|SALM[AÃ]O|TURQUESA|DOURADO|PRATA|NUDE|AREIA|MOSTARDA|FERRUGEM|TERRACOTA|MENTA|LAVANDA|BURGUNDY|NAVY|OFF\s?WHITE)\b/i);
+  return m?m[1].charAt(0).toUpperCase()+m[1].slice(1).toLowerCase():'';
+}
+function mapUnit(raw){
+  const u=raw.toUpperCase();
+  if(u.includes('MT')||u==='M'||u.includes('METRO'))return'metros';
+  if(u.includes('KG')||u.includes('QUILO'))return'kg';
+  if(u.includes('RL')||u.includes('ROLO'))return'rolos';
+  if(u.includes('CX')||u.includes('CAIXA'))return'caixas';
+  return'unidades';
 }
 
 function findMatchingProduct(nome,cor){
