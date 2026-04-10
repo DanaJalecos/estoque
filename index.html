@@ -330,7 +330,7 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
       <div class="nav-section">Principal</div>
       <button data-perm="dashboard" class="active" onclick="showPage('dashboard',this)"><span class="icon">📊</span> Dashboard</button>
       <button data-perm="estoque" onclick="showPage('estoque',this)"><span class="icon">📦</span> Estoque</button>
-      <button data-perm="alertas" onclick="showPage('alertas',this)"><span class="icon">⚠️</span> Alertas <span id="alertBadge" style="background:var(--red);color:var(--bg);font-size:.65rem;font-weight:700;padding:.1rem .4rem;border-radius:10px;margin-left:.3rem;display:none;">0</span></button>
+      <button data-perm="alertas" onclick="showPage('alertas',this)"><span class="icon">⚠️</span> Alertas e Previsão <span id="alertBadge" style="background:var(--red);color:var(--bg);font-size:.65rem;font-weight:700;padding:.1rem .4rem;border-radius:10px;margin-left:.3rem;display:none;">0</span></button>
       <button data-perm="historico" onclick="showPage('historico',this)"><span class="icon">📜</span> Histórico</button>
       <div class="nav-section" data-perm-section="cadastro,entrada">Estoque</div>
       <button data-perm="cadastro" onclick="showPage('cadastro',this)"><span class="icon">📝</span> Cadastrar Produto</button>
@@ -500,11 +500,14 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
 
     <!-- ALERTAS -->
     <div id="page-alertas" class="page hidden">
-      <div class="topbar"><h2>Alertas de Estoque</h2><div class="topbar-actions"><button class="btn btn-primary" onclick="exportPDF()">↓ Exportar PDF</button></div></div>
+      <div class="topbar"><h2>Alertas e Previsão</h2><div class="topbar-actions"><button class="btn btn-primary" onclick="exportPDF()">↓ Exportar PDF</button></div></div>
       <div class="content">
         <div class="stats-grid" id="alertStats"></div>
         <div id="alertCritical"></div>
         <div id="alertLow" style="margin-top:1.2rem;"></div>
+
+        <!-- PREVISÃO -->
+        <div id="forecastSection" style="margin-top:2rem;"></div>
       </div>
     </div>
 
@@ -1616,12 +1619,23 @@ function renderDash(){
   const thisMonth=movements.filter(m=>m.date>=today().slice(0,7));
   const entriesMonth=thisMonth.filter(m=>m.type==='entrada').length;
 
+  // Count products running out in 14 days
+  const d30ago=new Date();d30ago.setDate(d30ago.getDate()-30);
+  const d30str=d30ago.toISOString().slice(0,10);
+  let urgentCount=0;
+  fabrics.forEach(f=>{
+    const exits=movements.filter(m=>m.fabric_id===f.id&&m.type==='saida'&&m.date>=d30str);
+    const totalOut=exits.reduce((s,m)=>s+m.qty,0);
+    if(totalOut>0){const daily=totalOut/30;const days=f.stock>0?Math.floor(f.stock/daily):0;if(days<=14)urgentCount++;}
+  });
+
   $('dashStats').innerHTML=`
     <div class="stat-card"><div class="stat-label">Produtos</div><div class="stat-value">${fabrics.length}</div></div>
     <div class="stat-card"><div class="stat-label">Total em Estoque</div><div class="stat-value">${fmt(total)}</div></div>
     <div class="stat-card"><div class="stat-label">Estoque Baixo</div><div class="stat-value" style="color:${low?'var(--orange)':'var(--green)'}">${low}</div></div>
     <div class="stat-card"><div class="stat-label">Sem Estoque</div><div class="stat-value" style="color:${crit?'var(--red)':'var(--green)'}">${crit}</div></div>
     <div class="stat-card"><div class="stat-label">Entradas este Mês</div><div class="stat-value">${entriesMonth}</div></div>
+    <div class="stat-card"><div class="stat-label">🔮 Acabam em 14 dias</div><div class="stat-value" style="color:${urgentCount?'var(--red)':'var(--green)'}">${urgentCount}</div></div>
   `;
 
   renderCharts();
@@ -1866,6 +1880,132 @@ function renderAlerts(){
   if(!critical.length&&!low.length){
     $('alertCritical').innerHTML='<div class="empty-state" style="padding:3rem;"><span class="icon">✅</span><p>Tudo certo! Nenhum produto com estoque baixo.</p></div>';
   }
+
+  // FORECAST
+  renderForecast();
+}
+
+function renderForecast(){
+  const container=$('forecastSection');
+  if(!container)return;
+
+  // Calculate consumption rate for each product (last 30 days)
+  const now=new Date();
+  const d30ago=new Date(now);d30ago.setDate(d30ago.getDate()-30);
+  const d30str=d30ago.toISOString().slice(0,10);
+
+  const forecasts=[];
+  fabrics.forEach(f=>{
+    // Sum exits in last 30 days
+    const exits=movements.filter(m=>m.fabric_id===f.id&&m.type==='saida'&&m.date>=d30str);
+    const totalOut=exits.reduce((s,m)=>s+m.qty,0);
+    if(totalOut<=0)return; // No consumption, skip
+
+    const dailyRate=totalOut/30;
+    const daysLeft=f.stock>0?Math.floor(f.stock/dailyRate):0;
+    const runOutDate=new Date(now);runOutDate.setDate(runOutDate.getDate()+daysLeft);
+    const monthlyConsumption=dailyRate*30;
+    const suggestedOrder=Math.max(monthlyConsumption*1.5-f.stock,0); // 1.5 months buffer
+
+    forecasts.push({
+      id:f.id,name:f.name,color:f.color,unit:f.unit,
+      stock:f.stock,min_stock:f.min_stock,
+      dailyRate,daysLeft,runOutDate,monthlyConsumption,suggestedOrder
+    });
+  });
+
+  // Sort by urgency (days left ascending)
+  forecasts.sort((a,b)=>a.daysLeft-b.daysLeft);
+
+  const urgent=forecasts.filter(f=>f.daysLeft<=14);
+  const soon=forecasts.filter(f=>f.daysLeft>14&&f.daysLeft<=30);
+  const safe=forecasts.filter(f=>f.daysLeft>30);
+
+  let html=`
+    <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1rem;">
+      <span style="font-size:1.3rem;">🔮</span>
+      <h3 style="font-size:1rem;font-weight:700;">Previsão de Estoque</h3>
+      <span style="font-size:.72rem;color:var(--text-muted);background:rgba(255,255,255,.05);padding:.2rem .6rem;border-radius:100px;">Baseado nos últimos 30 dias</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.6rem;margin-bottom:1.2rem;">
+      <div class="stat-card" style="border-left:3px solid var(--red);"><div class="stat-label">Acabam em até 14 dias</div><div class="stat-value" style="color:var(--red)">${urgent.length}</div></div>
+      <div class="stat-card" style="border-left:3px solid var(--orange);"><div class="stat-label">Acabam em até 30 dias</div><div class="stat-value" style="color:var(--orange)">${soon.length}</div></div>
+      <div class="stat-card" style="border-left:3px solid var(--green);"><div class="stat-label">Mais de 30 dias</div><div class="stat-value" style="color:var(--green)">${safe.length}</div></div>
+    </div>`;
+
+  if(!forecasts.length){
+    html+='<div class="empty-state"><span class="icon">📊</span><p>Sem dados suficientes. Registre saídas para gerar previsões.</p></div>';
+    container.innerHTML=html;
+    return;
+  }
+
+  // Urgent table
+  if(urgent.length){
+    html+=`<div style="margin-bottom:1rem;">
+      <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.4rem;">
+        <span style="font-size:1rem;">🔴</span>
+        <h4 style="font-size:.85rem;font-weight:700;color:var(--red);">Ação Urgente — Acabam em até 14 dias</h4>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Produto</th><th>Variação</th><th>Estoque Atual</th><th>Consumo/Dia</th><th>Acaba em</th><th>Data Prevista</th><th>Sugestão de Compra</th></tr></thead>
+        <tbody>${urgent.map(f=>`<tr>
+          <td><strong>${esc(f.name)}</strong></td>
+          <td>${esc(f.color)}</td>
+          <td>${fmt(f.stock)} ${f.unit}</td>
+          <td>${f.dailyRate.toFixed(1)} ${f.unit}/dia</td>
+          <td style="color:var(--red);font-weight:700;">${f.daysLeft} dias</td>
+          <td>${fmtDate(f.runOutDate.toISOString().slice(0,10))}</td>
+          <td style="color:var(--blue);font-weight:600;">${fmt(Math.ceil(f.suggestedOrder))} ${f.unit}</td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+    </div>`;
+  }
+
+  // Soon table
+  if(soon.length){
+    html+=`<div style="margin-bottom:1rem;">
+      <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.4rem;">
+        <span style="font-size:1rem;">🟡</span>
+        <h4 style="font-size:.85rem;font-weight:700;color:var(--orange);">Atenção — Acabam em até 30 dias</h4>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Produto</th><th>Variação</th><th>Estoque Atual</th><th>Consumo/Dia</th><th>Acaba em</th><th>Data Prevista</th><th>Sugestão de Compra</th></tr></thead>
+        <tbody>${soon.map(f=>`<tr>
+          <td><strong>${esc(f.name)}</strong></td>
+          <td>${esc(f.color)}</td>
+          <td>${fmt(f.stock)} ${f.unit}</td>
+          <td>${f.dailyRate.toFixed(1)} ${f.unit}/dia</td>
+          <td style="color:var(--orange);font-weight:700;">${f.daysLeft} dias</td>
+          <td>${fmtDate(f.runOutDate.toISOString().slice(0,10))}</td>
+          <td style="color:var(--blue);font-weight:600;">${fmt(Math.ceil(f.suggestedOrder))} ${f.unit}</td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+    </div>`;
+  }
+
+  // Safe table
+  if(safe.length){
+    html+=`<div>
+      <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.4rem;">
+        <span style="font-size:1rem;">🟢</span>
+        <h4 style="font-size:.85rem;font-weight:700;color:var(--green);">Tranquilo — Mais de 30 dias</h4>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Produto</th><th>Variação</th><th>Estoque Atual</th><th>Consumo/Dia</th><th>Acaba em</th><th>Data Prevista</th></tr></thead>
+        <tbody>${safe.map(f=>`<tr>
+          <td><strong>${esc(f.name)}</strong></td>
+          <td>${esc(f.color)}</td>
+          <td>${fmt(f.stock)} ${f.unit}</td>
+          <td>${f.dailyRate.toFixed(1)} ${f.unit}/dia</td>
+          <td style="color:var(--green);font-weight:600;">${f.daysLeft} dias</td>
+          <td>${fmtDate(f.runOutDate.toISOString().slice(0,10))}</td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+    </div>`;
+  }
+
+  container.innerHTML=html;
 }
 
 // ═══ PURCHASES ═══
