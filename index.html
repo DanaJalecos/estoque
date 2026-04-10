@@ -410,25 +410,17 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
       <div class="content">
         <!-- NF IMPORT SECTION -->
         <div id="nfSection" style="display:none;margin-bottom:1.5rem;">
-          <!-- Config Gemini -->
-          <div id="nfKeyConfig" class="form-card" style="margin-bottom:1rem;">
-            <h3 style="font-size:.9rem;font-weight:700;margin-bottom:.5rem;">⚙️ Configurar IA (primeira vez)</h3>
-            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:.8rem;">Para ler notas fiscais automaticamente, precisa de uma chave do Google Gemini (grátis).<br>Pegue em <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--blue);text-decoration:underline;">aistudio.google.com/apikey</a></p>
-            <div class="form-row">
-              <div class="form-group"><label>Chave API do Gemini</label><input id="geminiKeyInput" placeholder="Cole sua API key aqui" type="password"></div>
-              <div class="form-group" style="display:flex;align-items:flex-end;"><button class="btn btn-primary" onclick="saveGeminiKey()">Salvar</button></div>
-            </div>
-          </div>
           <!-- Upload -->
-          <div id="nfUpload" class="form-card" style="display:none;margin-bottom:1rem;">
-            <h3 style="font-size:.9rem;font-weight:700;margin-bottom:.8rem;">📄 Importar Nota Fiscal</h3>
+          <div id="nfUpload" class="form-card" style="margin-bottom:1rem;">
+            <h3 style="font-size:.9rem;font-weight:700;margin-bottom:.3rem;">📄 Importar Nota Fiscal</h3>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:.8rem;">Envie o arquivo XML da NF-e. O sistema lê automaticamente os produtos, quantidades e fornecedor.</p>
             <div id="nfDropZone" style="border:2px dashed var(--border);border-radius:var(--radius);padding:2rem;text-align:center;cursor:pointer;transition:all .2s;" onclick="$('nfFileInput').click()">
               <div style="font-size:2rem;margin-bottom:.5rem;opacity:.5;">📄</div>
-              <p style="font-size:.85rem;color:var(--text-secondary);">Clique ou arraste a nota fiscal aqui</p>
-              <p style="font-size:.72rem;color:var(--text-muted);margin-top:.3rem;">Aceita: PDF, JPG, PNG</p>
+              <p style="font-size:.85rem;color:var(--text-secondary);">Clique ou arraste o arquivo XML aqui</p>
+              <p style="font-size:.72rem;color:var(--text-muted);margin-top:.3rem;">Aceita: XML da NF-e</p>
             </div>
-            <input type="file" id="nfFileInput" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="handleNFUpload(event)">
-            <div id="nfLoading" style="display:none;text-align:center;padding:1.5rem;"><span class="spinner"></span> Lendo nota fiscal com IA...</div>
+            <input type="file" id="nfFileInput" accept=".xml" style="display:none" onchange="handleNFUpload(event)">
+            <div id="nfLoading" style="display:none;text-align:center;padding:1.5rem;"><span class="spinner"></span> Lendo nota fiscal...</div>
             <div id="nfError" style="display:none;margin-top:.8rem;" class="login-error"></div>
           </div>
           <!-- Preview results -->
@@ -937,35 +929,19 @@ let nfSupplier='';
 
 function showNFImport(){
   $('nfSection').style.display='';
-  const key=localStorage.getItem('dana_gemini_key');
-  if(key){
-    $('nfKeyConfig').style.display='none';
-    $('nfUpload').style.display='';
-  } else {
-    $('nfKeyConfig').style.display='';
-    $('nfUpload').style.display='none';
-  }
+  $('nfUpload').style.display='';
   $('nfResults').style.display='none';
   $('nfError').style.display='none';
+  $('nfDropZone').style.display='';
 }
 function hideNFImport(){
   $('nfSection').style.display='none';
   nfItems=[];nfSupplier='';
 }
-function saveGeminiKey(){
-  const key=$('geminiKeyInput').value.trim();
-  if(!key){toast('Cole a chave API do Gemini.');return;}
-  localStorage.setItem('dana_gemini_key',key);
-  $('nfKeyConfig').style.display='none';
-  $('nfUpload').style.display='';
-  toast('Chave do Gemini salva!');
-}
 
 async function handleNFUpload(e){
   const file=e.target.files[0];
   if(!file)return;
-  const key=localStorage.getItem('dana_gemini_key');
-  if(!key){toast('Configure a chave do Gemini primeiro.');return;}
 
   $('nfLoading').style.display='';
   $('nfError').style.display='none';
@@ -973,74 +949,61 @@ async function handleNFUpload(e){
   $('nfDropZone').style.display='none';
 
   try{
-    // Convert file to base64
-    const base64=await fileToBase64(file);
-    const mimeType=file.type||'image/jpeg';
+    const text=await file.text();
+    const parser=new DOMParser();
+    const xml=parser.parseFromString(text,'text/xml');
 
-    // Call Gemini with retry on quota errors
-    const models=['gemini-1.5-flash','gemini-2.0-flash-lite','gemini-2.0-flash'];
-    let res=null;
-    let lastErr='';
-    const prompt='Analise esta nota fiscal brasileira e extraia os produtos listados. Retorne APENAS um JSON válido no seguinte formato (sem markdown, sem texto extra): {"fornecedor":"nome do fornecedor","itens":[{"nome":"nome do produto/tecido","cor":"cor se mencionada ou vazio","quantidade":10,"unidade":"metros"}]} Regras: "unidade" pode ser metros, kg, unidades, rolos, caixas. Se não encontrar a cor coloque string vazia. Se não encontrar a unidade use unidades. Se não encontrar o fornecedor coloque string vazia. Extraia TODOS os produtos da nota. Quantidade deve ser número.';
-
-    // Try up to 3 rounds with wait between retries
-    for(let attempt=0;attempt<3&&!res;attempt++){
-      if(attempt>0){
-        const waitSec=30*(attempt);
-        $('nfLoading').innerHTML='<span class="spinner"></span> Limite atingido. Tentando novamente em '+waitSec+'s...';
-        await new Promise(r=>setTimeout(r,waitSec*1000));
-        $('nfLoading').innerHTML='<span class="spinner"></span> Lendo nota fiscal com IA... (tentativa '+(attempt+1)+')';
-      }
-      for(const model of models){
-        const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent?key='+key,{
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({
-            contents:[{parts:[
-              {inlineData:{mimeType:mimeType,data:base64}},
-              {text:prompt}
-            ]}]
-          })
-        });
-        if(r.ok){res=r;break;}
-        const errData=await r.json().catch(()=>({}));
-        lastErr=errData.error?.message||'Erro modelo '+model;
-        // If not a quota error, don't retry
-        if(!lastErr.includes('quota')&&!lastErr.includes('rate')&&!lastErr.includes('Quota'))break;
-      }
-      // If got a response or error is not quota-related, stop retrying
-      if(res||(!lastErr.includes('quota')&&!lastErr.includes('rate')&&!lastErr.includes('Quota')))break;
-    }
-    if(!res){throw new Error(lastErr||'Todos os modelos falharam. Tente novamente em alguns segundos.');}
-
-    const data=await res.json();
-    const text=data.candidates?.[0]?.content?.parts?.[0]?.text||'';
-
-    // Parse JSON from response (remove markdown code blocks if present)
-    const jsonStr=text.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
-    const parsed=JSON.parse(jsonStr);
-
-    if(!parsed.itens||!parsed.itens.length){
-      throw new Error('Nenhum produto encontrado na nota fiscal.');
+    // Check for parse errors
+    if(xml.querySelector('parsererror')){
+      throw new Error('Arquivo XML inválido. Verifique se é um XML de NF-e.');
     }
 
-    nfSupplier=parsed.fornecedor||'';
-    nfItems=parsed.itens.map((item,i)=>({
-      id:i,
-      nome:item.nome||'',
-      cor:item.cor||'',
-      quantidade:parseFloat(item.quantidade)||0,
-      unidade:item.unidade||'unidades',
-      selected:true,
-      // Try to match with existing product
-      matchId:findMatchingProduct(item.nome,item.cor)
-    }));
+    // Extract supplier (emit > CNPJ, xNome)
+    const emit=xml.querySelector('emit');
+    nfSupplier=getXMLText(emit,'xNome')||getXMLText(emit,'xFant')||'';
 
+    // Extract products (det > prod)
+    const dets=xml.querySelectorAll('det');
+    if(!dets.length)throw new Error('Nenhum produto encontrado no XML.');
+
+    nfItems=[];
+    dets.forEach((det,i)=>{
+      const prod=det.querySelector('prod');
+      if(!prod)return;
+      const nome=getXMLText(prod,'xProd')||'';
+      const qtd=parseFloat(getXMLText(prod,'qCom')||getXMLText(prod,'qTrib'))||0;
+      const unidadeRaw=(getXMLText(prod,'uCom')||getXMLText(prod,'uTrib')||'UN').toUpperCase();
+
+      // Map NF-e unit codes to our units
+      let unidade='unidades';
+      if(unidadeRaw.includes('M')||unidadeRaw.includes('MT')||unidadeRaw==='M')unidade='metros';
+      else if(unidadeRaw.includes('KG')||unidadeRaw.includes('K'))unidade='kg';
+      else if(unidadeRaw.includes('RL')||unidadeRaw.includes('ROLO'))unidade='rolos';
+      else if(unidadeRaw.includes('CX')||unidadeRaw.includes('CAIXA'))unidade='caixas';
+      else if(unidadeRaw.includes('UN')||unidadeRaw.includes('PC')||unidadeRaw.includes('PÇ'))unidade='unidades';
+
+      // Try to extract color from product name
+      let cor='';
+      const corMatch=nome.match(/\b(BRANCO|PRETO|AZUL|VERDE|VERMELHO|ROSA|AMARELO|MARINHO|CINZA|BEGE|LILÁS|LILAC|ROXO|LARANJA|MARROM|CREME|VINHO|CORAL|SALMÃO|TURQUESA|DOURADO|PRATA)\b/i);
+      if(corMatch)cor=corMatch[1].charAt(0).toUpperCase()+corMatch[1].slice(1).toLowerCase();
+
+      nfItems.push({
+        id:i,
+        nome:nome,
+        cor:cor,
+        quantidade:qtd,
+        unidade:unidade,
+        selected:true,
+        matchId:findMatchingProduct(nome,cor)
+      });
+    });
+
+    if(!nfItems.length)throw new Error('Nenhum produto encontrado no XML.');
     renderNFResults();
 
   }catch(err){
     console.error('NF Error:',err);
-    $('nfError').textContent='Erro ao ler nota: '+err.message;
+    $('nfError').textContent='Erro: '+err.message;
     $('nfError').style.display='block';
     $('nfDropZone').style.display='';
   }finally{
@@ -1049,13 +1012,10 @@ async function handleNFUpload(e){
   }
 }
 
-function fileToBase64(file){
-  return new Promise((resolve,reject)=>{
-    const reader=new FileReader();
-    reader.onload=()=>resolve(reader.result.split(',')[1]);
-    reader.onerror=reject;
-    reader.readAsDataURL(file);
-  });
+function getXMLText(parent,tag){
+  if(!parent)return'';
+  const el=parent.querySelector(tag);
+  return el?el.textContent.trim():'';
 }
 
 function findMatchingProduct(nome,cor){
