@@ -335,6 +335,7 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
       <button class="role-admin role-estoquista" onclick="showPage('cadastro',this)"><span class="icon">📝</span> Cadastrar Produto</button>
       <button class="role-admin role-estoquista" onclick="showPage('entrada',this)"><span class="icon">📥</span> Registrar Entrada</button>
       <button onclick="showPage('saida',this)"><span class="icon">📤</span> Registrar Saída</button>
+      <button class="role-admin role-estoquista" onclick="showPage('compras',this)"><span class="icon">💰</span> Compras</button>
       <div class="nav-section role-admin">Administração</div>
       <button class="role-admin" onclick="showPage('usuarios',this)"><span class="icon">👥</span> Gerenciar Usuários</button>
       <div class="nav-section">Conta</div>
@@ -435,7 +436,7 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
               <div id="nfSupplierInfo" style="font-size:.82rem;color:var(--text-secondary);margin-bottom:.8rem;"></div>
               <div class="table-wrap">
                 <table>
-                  <thead><tr><th><input type="checkbox" id="nfSelectAll" checked onchange="toggleNFAll(this.checked)"></th><th>Produto</th><th>Cor</th><th>Qtd</th><th>Unidade</th><th>Status</th></tr></thead>
+                  <thead><tr><th><input type="checkbox" id="nfSelectAll" checked onchange="toggleNFAll(this.checked)"></th><th>Produto</th><th>Cor</th><th>Qtd</th><th>Unidade</th><th>Preço Unit.</th><th>Status</th></tr></thead>
                   <tbody id="nfItemsList"></tbody>
                 </table>
               </div>
@@ -517,6 +518,28 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
           <input id="hTo" type="date" onchange="renderHist()">
         </div>
         <div class="table-wrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Produto</th><th>Qtd</th><th>Quem</th><th>Detalhe</th><th class="role-admin">Ações</th></tr></thead><tbody id="histList"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- COMPRAS -->
+    <div id="page-compras" class="page hidden">
+      <div class="topbar"><h2>Histórico de Compras</h2><div class="topbar-actions"><button class="btn btn-primary" onclick="exportPurchasesPDF()">↓ Exportar PDF</button></div></div>
+      <div class="content">
+        <div class="stats-grid" id="purchaseStats"></div>
+        <!-- Price alerts -->
+        <div id="priceAlerts" style="margin-bottom:1.2rem;"></div>
+        <!-- Purchase history table -->
+        <div class="filter-bar">
+          <select id="pFab" onchange="renderPurchases()"><option value="all">Todos os produtos</option></select>
+          <input id="pFrom" type="date" onchange="renderPurchases()">
+          <input id="pTo" type="date" onchange="renderPurchases()">
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Data</th><th>Produto</th><th>Fornecedor</th><th>Qtd</th><th>Preço Unit.</th><th>Total</th><th>Variação</th></tr></thead>
+            <tbody id="purchaseList"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -825,13 +848,15 @@ async function enterApp(){
 }
 
 // ═══ DATA ═══
+let purchases=[];
 async function loadAll(){
-  const[f,m,p]=await Promise.all([
+  const[f,m,p,pu]=await Promise.all([
     sb.from('fabrics').select('*').order('created_at',{ascending:false}),
     sb.from('movements').select('*').order('created_at',{ascending:false}),
-    sb.from('profiles').select('*')
+    sb.from('profiles').select('*'),
+    sb.from('purchases').select('*').order('date',{ascending:false})
   ]);
-  fabrics=f.data||[];movements=m.data||[];profiles=p.data||[];
+  fabrics=f.data||[];movements=m.data||[];profiles=p.data||[];purchases=pu.data||[];
 }
 function setupRealtime(){
   sb.channel('changes')
@@ -870,12 +895,13 @@ function showPage(name,btn){
   if(name==='estoque')renderStock();
   if(name==='historico'){popHistFilter();renderHist();}
   if(name==='alertas')renderAlerts();
+  if(name==='compras'){popPurchaseFilter();renderPurchases();}
   if(name==='perfil'){$('profEmail').value=user.email;$('profName').value=profile.display_name;$('profRole').value=ROLE_LABELS[profile.role]||profile.role;}
   if(name==='usuarios')renderUsers();
 }
 function navBtn(page){
   const btns=document.querySelectorAll('.sidebar-nav button:not(.nav-section)');
-  const map={dashboard:0,estoque:1,alertas:2,historico:3,cadastro:4,entrada:5,saida:6,usuarios:7,perfil:8};
+  const map={dashboard:0,estoque:1,alertas:2,historico:3,cadastro:4,entrada:5,saida:6,compras:7,usuarios:8,perfil:9};
   return btns[map[page]];
 }
 function updateAlertBadge(){
@@ -1073,11 +1099,19 @@ async function parseNFPDF(file){
 
   if(matches.length){
     matches.forEach(m=>{
-      const nome=m[2].trim();
+      // Clean product name: remove R$, values, extra codes
+      let nome=m[2].trim()
+        .replace(/R\$\s*[\d.,]+/g,'')
+        .replace(/Fornecedor de refer[eê]ncia[:\s]*/gi,'')
+        .replace(/\d{1,2}[.,]\d{3}[.,]\d{2}/g,'')
+        .replace(/\s+/g,' ').trim();
       const qtd=parseFloat(m[6].replace(',','.'))||0;
       const un=m[5];
+      // Also try to extract unit price
+      const priceMatch=prodSection.substring(m.index).match(/R\$\s*([\d.,]+)/);
+      const unitPrice=priceMatch?parseFloat(priceMatch[1].replace(/\./g,'').replace(',','.'))||0:0;
       if(qtd>0&&nome.length>2){
-        nfItems.push({id:itemId++,nome,cor:extractColor(nome),quantidade:qtd,unidade:mapUnit(un),selected:true,matchId:findMatchingProduct(nome,extractColor(nome))});
+        nfItems.push({id:itemId++,nome,cor:extractColor(nome),quantidade:qtd,unidade:mapUnit(un),unitPrice,selected:true,matchId:findMatchingProduct(nome,extractColor(nome))});
       }
     });
   }
@@ -1161,12 +1195,14 @@ function renderNFResults(){
     const statusHtml=match
       ?`<span class="badge badge-ok">Encontrado: ${esc(match.name)} ${esc(match.color)}</span>`
       :`<span class="badge badge-low">Novo produto</span>`;
+    const priceHtml=item.unitPrice?'R$ '+fmtMoney(item.unitPrice):'—';
     return`<tr>
       <td><input type="checkbox" ${item.selected?'checked':''} onchange="nfItems[${item.id}].selected=this.checked"></td>
       <td><strong>${esc(item.nome)}</strong></td>
       <td>${esc(item.cor)}</td>
       <td>${fmt(item.quantidade)}</td>
       <td>${item.unidade}</td>
+      <td>${priceHtml}</td>
       <td>${statusHtml}</td>
     </tr>`;
   }).join('');
@@ -1219,15 +1255,50 @@ async function confirmNFImport(){
       detail:'Nota Fiscal'+(nfSupplier?' — '+nfSupplier:''),
       who:profile.display_name
     });
+
+    // Register purchase (if has price)
+    const unitPrice=item.unitPrice||0;
+    const totalPrice=unitPrice*item.quantidade;
+    if(unitPrice>0){
+      await sb.from('purchases').insert({
+        user_id:user.id,
+        fabric_id:fabricId,
+        supplier:nfSupplier,
+        qty:item.quantidade,
+        unit_price:unitPrice,
+        total_price:totalPrice,
+        date:today(),
+        nf_number:'',
+        notes:'Importado via nota fiscal'
+      });
+    }
     registered++;
   }
 
   await loadAll();
   hideNFImport();
 
+  // Check for price alerts
+  let priceMsg='';
+  for(const item of selected){
+    if(!item.unitPrice)continue;
+    const fid=item.matchId;
+    if(!fid)continue;
+    const prevPurchases=purchases.filter(p=>p.fabric_id===fid).sort((a,b)=>b.date.localeCompare(a.date));
+    if(prevPurchases.length>=2){
+      const prev=prevPurchases[1]; // second most recent (before the one we just added)
+      const diff=item.unitPrice-prev.unit_price;
+      const pct=prev.unit_price>0?((diff/prev.unit_price)*100):0;
+      if(Math.abs(pct)>=1){
+        priceMsg+=`\n${item.nome}: ${diff>0?'↑ subiu':'↓ desceu'} ${Math.abs(pct).toFixed(1)}% (era R$ ${fmtMoney(prev.unit_price)}, agora R$ ${fmtMoney(item.unitPrice)})`;
+      }
+    }
+  }
+
   let msg=registered+' entrada'+(registered>1?'s':'')+' registrada'+(registered>1?'s':'')+'!';
   if(created)msg+=' ('+created+' novo'+(created>1?'s':'')+' produto'+(created>1?'s':'')+' cadastrado'+(created>1?'s':'')+')';
   toast(msg);
+  if(priceMsg)setTimeout(()=>alert('⚠️ Alerta de Preço:'+priceMsg),500);
 }
 
 // ═══ ENTRY ═══
@@ -1641,6 +1712,143 @@ function renderAlerts(){
   if(!critical.length&&!low.length){
     $('alertCritical').innerHTML='<div class="empty-state" style="padding:3rem;"><span class="icon">✅</span><p>Tudo certo! Nenhum produto com estoque baixo.</p></div>';
   }
+}
+
+// ═══ PURCHASES ═══
+function popPurchaseFilter(){
+  $('pFab').innerHTML='<option value="all">Todos os produtos</option>'+fabrics.map(f=>`<option value="${f.id}">${esc(f.name)} — ${esc(f.color)}</option>`).join('');
+}
+
+function getLastPrice(fabricId,beforeDate){
+  const prev=purchases.filter(p=>p.fabric_id===fabricId&&p.date<beforeDate).sort((a,b)=>b.date.localeCompare(a.date));
+  return prev.length?prev[0].unit_price:null;
+}
+
+function renderPurchases(){
+  const ff=$('pFab').value,from=$('pFrom').value,to=$('pTo').value;
+  let list=purchases.filter(p=>{
+    if(ff!=='all'&&p.fabric_id!==ff)return false;
+    if(from&&p.date<from)return false;
+    if(to&&p.date>to)return false;
+    return true;
+  });
+
+  // Stats
+  const totalSpent=list.reduce((s,p)=>s+p.total_price,0);
+  const totalItems=list.length;
+  const avgPrice=totalItems?totalSpent/list.reduce((s,p)=>s+p.qty,0):0;
+  const priceIncreases=list.filter(p=>{const lp=getLastPrice(p.fabric_id,p.date);return lp!==null&&p.unit_price>lp;}).length;
+
+  $('purchaseStats').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Total de Compras</div><div class="stat-value">${totalItems}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Gasto</div><div class="stat-value" style="font-size:1.4rem;">R$ ${fmtMoney(totalSpent)}</div></div>
+    <div class="stat-card"><div class="stat-label">Preço Médio/Unid.</div><div class="stat-value" style="font-size:1.4rem;">R$ ${fmtMoney(avgPrice)}</div></div>
+    <div class="stat-card"><div class="stat-label">Aumentos de Preço</div><div class="stat-value" style="color:${priceIncreases?'var(--red)':'var(--green)'}">${priceIncreases}</div></div>
+  `;
+
+  // Price alerts
+  const alerts=[];
+  const latestByProduct={};
+  purchases.forEach(p=>{
+    if(!latestByProduct[p.fabric_id]||p.date>latestByProduct[p.fabric_id].date)latestByProduct[p.fabric_id]=p;
+  });
+  Object.values(latestByProduct).forEach(p=>{
+    const prev=getLastPrice(p.fabric_id,p.date);
+    if(prev===null)return;
+    const diff=p.unit_price-prev;
+    const pct=prev>0?((diff/prev)*100):0;
+    if(Math.abs(pct)>=1)alerts.push({...p,prev,diff,pct});
+  });
+
+  if(alerts.length){
+    $('priceAlerts').innerHTML='<div style="margin-bottom:.8rem;"><h3 style="font-size:.85rem;font-weight:700;margin-bottom:.5rem;">📊 Variações de Preço Recentes</h3>'+
+      alerts.map(a=>{
+        const fab=getFab(a.fabric_id);
+        const nome=fab?fab.name+' '+fab.color:'Produto';
+        const isUp=a.diff>0;
+        return`<div style="background:var(--bg-card);border:1px solid var(--border);border-left:3px solid ${isUp?'var(--red)':'var(--green)'};border-radius:var(--radius);padding:.8rem 1rem;margin-bottom:.4rem;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <strong style="font-size:.85rem;">${esc(nome)}</strong>
+            <span style="font-size:.78rem;color:var(--text-muted);margin-left:.5rem;">${esc(a.supplier)}</span>
+          </div>
+          <div style="text-align:right;">
+            <span style="font-size:.78rem;color:var(--text-muted);">R$ ${fmtMoney(a.prev)} → R$ ${fmtMoney(a.unit_price)}</span>
+            <span class="badge ${isUp?'badge-critical':'badge-ok'}" style="margin-left:.5rem;">${isUp?'↑':'↓'} ${Math.abs(a.pct).toFixed(1)}%</span>
+          </div>
+        </div>`;
+      }).join('')+'</div>';
+  } else {
+    $('priceAlerts').innerHTML='';
+  }
+
+  // Table
+  const tb=$('purchaseList');
+  if(!list.length){tb.innerHTML='<tr><td colspan="7"><div class="empty-state"><span class="icon">💰</span><p>Nenhuma compra registrada.</p></div></td></tr>';return;}
+  tb.innerHTML=list.map(p=>{
+    const fab=getFab(p.fabric_id);
+    const nome=fab?fab.name+' '+fab.color:'(removido)';
+    const unit=fab?fab.unit:'';
+    const prev=getLastPrice(p.fabric_id,p.date);
+    let varHtml='<span style="color:var(--text-muted);">—</span>';
+    if(prev!==null){
+      const diff=p.unit_price-prev;
+      const pct=prev>0?((diff/prev)*100):0;
+      if(Math.abs(pct)>=0.5){
+        const isUp=diff>0;
+        varHtml=`<span class="badge ${isUp?'badge-critical':'badge-ok'}">${isUp?'↑':'↓'} ${Math.abs(pct).toFixed(1)}% (era R$ ${fmtMoney(prev)})</span>`;
+      } else {
+        varHtml='<span class="badge" style="background:rgba(255,255,255,.05);color:var(--text-muted);">= mesmo preço</span>';
+      }
+    }
+    return`<tr>
+      <td>${fmtDate(p.date)}</td>
+      <td><strong>${esc(nome)}</strong></td>
+      <td>${esc(p.supplier)}</td>
+      <td>${fmt(p.qty)} ${unit}</td>
+      <td>R$ ${fmtMoney(p.unit_price)}</td>
+      <td>R$ ${fmtMoney(p.total_price)}</td>
+      <td>${varHtml}</td>
+    </tr>`;
+  }).join('');
+}
+
+function fmtMoney(v){return(parseFloat(v)||0).toFixed(2).replace('.',',');}
+
+function exportPurchasesPDF(){
+  const{jsPDF}=window.jspdf;
+  const doc=new jsPDF();
+  const dateStr=new Date().toLocaleDateString('pt-BR');
+  doc.setFontSize(20);doc.setFont('helvetica','bold');doc.text('Dana Jalecos',14,20);
+  doc.setFontSize(11);doc.setFont('helvetica','normal');doc.setTextColor(100);
+  doc.text('Histórico de Compras — '+dateStr,14,28);
+  doc.setDrawColor(200);doc.line(14,32,196,32);
+
+  const totalSpent=purchases.reduce((s,p)=>s+p.total_price,0);
+  doc.setTextColor(0);doc.setFontSize(10);
+  doc.text('Total de compras: '+purchases.length,14,40);
+  doc.text('Total gasto: R$ '+fmtMoney(totalSpent),14,46);
+
+  doc.autoTable({
+    startY:54,
+    head:[['Data','Produto','Fornecedor','Qtd','Preço Unit.','Total','Variação']],
+    body:purchases.map(p=>{
+      const fab=getFab(p.fabric_id);
+      const nome=fab?fab.name+' '+fab.color:'—';
+      const prev=getLastPrice(p.fabric_id,p.date);
+      let varText='—';
+      if(prev!==null){const pct=prev>0?((p.unit_price-prev)/prev*100):0;if(Math.abs(pct)>=0.5)varText=(pct>0?'+':'')+pct.toFixed(1)+'%';}
+      return[fmtDate(p.date),nome,p.supplier||'—',fmt(p.qty),`R$ ${fmtMoney(p.unit_price)}`,`R$ ${fmtMoney(p.total_price)}`,varText];
+    }),
+    styles:{fontSize:8,cellPadding:2.5},
+    headStyles:{fillColor:[30,30,30],textColor:255,fontStyle:'bold'},
+    alternateRowStyles:{fillColor:[245,245,245]},
+    margin:{left:14,right:14}
+  });
+
+  const pages=doc.internal.getNumberOfPages();
+  for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(150);doc.text('Dana Jalecos — Compras | Pág. '+i+'/'+pages,14,290);}
+  doc.save('compras-dana-jalecos-'+today()+'.pdf');
+  toast('PDF de compras exportado!');
 }
 
 // ═══ EXPORT PDF ═══
