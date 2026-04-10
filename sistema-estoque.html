@@ -511,7 +511,7 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Nome</th><th>Email</th><th>Cargo</th><th>Alterar Cargo</th></tr></thead>
+            <thead><tr><th>Nome</th><th>Email</th><th>Cargo</th><th>Alterar Cargo</th><th>Ações</th></tr></thead>
             <tbody id="usrList"></tbody>
           </table>
         </div>
@@ -893,8 +893,27 @@ async function updateProfile(){
 }
 
 // ═══ USER MANAGEMENT (admin only) ═══
-function renderUsers(){
+const SERVICE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2aHZjeGZoZGFiY3B2YmZyb29qIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTc0ODgwOSwiZXhwIjoyMDkxMzI0ODA5fQ.PaKBaV7sVNI5lDVvSiA3I6ihxIJ1KhTwZ0ZwR6saFFc';
+let authUsers=[];
+
+async function loadAuthUsers(){
+  try{
+    const res=await fetch(SUPA_URL+'/auth/v1/admin/users',{
+      headers:{'apikey':SERVICE_KEY,'Authorization':'Bearer '+SERVICE_KEY}
+    });
+    const data=await res.json();
+    authUsers=data.users||data||[];
+  }catch(e){authUsers=[];}
+}
+function getEmailById(uid){
+  if(uid===user.id)return user.email;
+  const u=authUsers.find(x=>x.id===uid);
+  return u?u.email:'—';
+}
+
+async function renderUsers(){
   if(!hasRole('admin'))return;
+  await loadAuthUsers();
   $('usrTotal').textContent=profiles.length;
   $('usrAdmins').textContent=profiles.filter(p=>p.role==='admin').length;
   $('usrEstoq').textContent=profiles.filter(p=>p.role==='estoquista').length;
@@ -906,7 +925,7 @@ function renderUsers(){
     const badgeColor=p.role==='admin'?'blue':p.role==='estoquista'?'ok':p.role==='costureira'?'low':'';
     return`<tr>
       <td><strong>${esc(p.display_name||'(sem nome)')}</strong>${isMe?' <span style="font-size:.68rem;color:var(--text-muted);">(você)</span>':''}</td>
-      <td style="font-size:.78rem;color:var(--text-muted);">${esc(getUserEmail(p.id))}</td>
+      <td style="font-size:.78rem;color:var(--text-muted);">${esc(getEmailById(p.id))}</td>
       <td><span class="badge badge-${badgeColor}">${rl}</span></td>
       <td>${isMe?'<span style="font-size:.78rem;color:var(--text-muted);">—</span>':`
         <select onchange="changeRole('${p.id}',this.value)" style="padding:.3rem .5rem;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;font-size:.78rem;color:var(--text);font-family:var(--body);cursor:pointer;">
@@ -915,25 +934,41 @@ function renderUsers(){
           <option value="costureira"${p.role==='costureira'?' selected':''}>Costureira</option>
         </select>`}
       </td>
+      <td>${isMe?'':'<button class="btn btn-sm btn-danger" onclick="deleteUser(\''+p.id+'\')">Apagar</button>'}</td>
     </tr>`;
   }).join('');
 }
-function getUserEmail(uid){
-  // We don't have emails in profiles, show ID hint
-  if(uid===user.id)return user.email;
-  // For other users, try to find from auth (not available client-side)
-  return '—';
-}
+
 async function changeRole(uid,newRole){
   if(!hasRole('admin')){toast('Sem permissão.');return;}
   if(uid===user.id){toast('Você não pode alterar seu próprio cargo.');return;}
   const{error}=await sb.from('profiles').update({role:newRole}).eq('id',uid);
   if(error){toast('Erro: '+error.message);return;}
-  // Update local cache
   const p=profiles.find(x=>x.id===uid);
   if(p)p.role=newRole;
   renderUsers();
   toast('Cargo alterado para '+ROLE_LABELS[newRole]+'!');
+}
+
+async function deleteUser(uid){
+  if(!hasRole('admin')){toast('Sem permissão.');return;}
+  if(uid===user.id){toast('Você não pode apagar sua própria conta.');return;}
+  const p=profiles.find(x=>x.id===uid);
+  const email=getEmailById(uid);
+  showConfirm('Apagar Usuário','Tem certeza que deseja apagar "'+( p?.display_name||'')+ '" ('+email+')? Essa ação não pode ser desfeita.',async()=>{
+    try{
+      // Delete from auth (cascades to profile)
+      const res=await fetch(SUPA_URL+'/auth/v1/admin/users/'+uid,{
+        method:'DELETE',
+        headers:{'apikey':SERVICE_KEY,'Authorization':'Bearer '+SERVICE_KEY}
+      });
+      if(!res.ok){toast('Erro ao apagar usuário.');return;}
+      // Remove from local cache
+      profiles=profiles.filter(x=>x.id!==uid);
+      renderUsers();
+      toast('Usuário apagado.');
+    }catch(e){toast('Erro: '+e.message);}
+  });
 }
 
 // ═══ CREATE USER (admin) ═══
@@ -960,7 +995,6 @@ async function createUser(e){
 
   try{
     // Use Admin API directly to create user WITHOUT changing current session
-    const SERVICE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2aHZjeGZoZGFiY3B2YmZyb29qIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTc0ODgwOSwiZXhwIjoyMDkxMzI0ODA5fQ.PaKBaV7sVNI5lDVvSiA3I6ihxIJ1KhTwZ0ZwR6saFFc';
     const res=await fetch(SUPA_URL+'/auth/v1/admin/users',{
       method:'POST',
       headers:{'apikey':SERVICE_KEY,'Authorization':'Bearer '+SERVICE_KEY,'Content-Type':'application/json'},
