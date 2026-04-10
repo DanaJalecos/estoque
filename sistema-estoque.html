@@ -508,28 +508,38 @@ function hide(id){$(id).style.display='none';}
 
 // ═══ AUTH STATE ═══
 sb.auth.onAuthStateChange(async(ev,session)=>{
-  if(session?.user){
-    user=session.user;
-    // Load profile
-    const{data}=await sb.from('profiles').select('*').eq('id',user.id).single();
-    profile=data;
-    if(!profile){
-      // Create profile if trigger didn't work
-      await sb.from('profiles').insert({id:user.id,display_name:'',role:'user'});
-      profile={id:user.id,display_name:'',role:'user'};
+  try{
+    if(session?.user){
+      user=session.user;
+      // Load profile
+      const{data,error}=await sb.from('profiles').select('*').eq('id',user.id).maybeSingle();
+      profile=data;
+      if(error||!profile){
+        // Create profile if it doesn't exist
+        const{data:newProf,error:insErr}=await sb.from('profiles').upsert({id:user.id,display_name:'',role:'user'}).select().single();
+        if(insErr){
+          // If RLS blocks insert, use fallback
+          profile={id:user.id,display_name:'',role:'user'};
+        } else {
+          profile=newProf;
+        }
+      }
+      if(!profile.display_name){
+        $('loginPage').style.display='none';
+        $('profileSetup').style.display='flex';
+        return;
+      }
+      enterApp();
+    } else {
+      user=null;profile=null;
+      $('loginPage').style.display='';
+      $('profileSetup').style.display='none';
+      $('app').style.display='none';
     }
-    if(!profile.display_name){
-      // Show profile setup
-      $('loginPage').style.display='none';
-      $('profileSetup').style.display='flex';
-      return;
-    }
-    enterApp();
-  } else {
-    user=null;profile=null;
+  }catch(err){
+    console.error('Auth error:',err);
+    toast('Erro ao carregar perfil. Tente novamente.');
     $('loginPage').style.display='';
-    $('profileSetup').style.display='none';
-    $('app').style.display='none';
   }
 });
 
