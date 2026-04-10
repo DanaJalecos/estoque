@@ -632,6 +632,14 @@ function showScreen(name){
   else if(name==='app')$('app').style.display='flex';
 }
 
+// Helper: run async with timeout
+function withTimeout(promise,ms){
+  return Promise.race([
+    promise,
+    new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms))
+  ]);
+}
+
 sb.auth.onAuthStateChange(async(ev,session)=>{
   if(!session?.user){
     user=null;profile=null;
@@ -641,14 +649,25 @@ sb.auth.onAuthStateChange(async(ev,session)=>{
   user=session.user;
   showScreen('loading');
   try{
-    // 1. Try to load profile
-    const{data}=await sb.from('profiles').select('*').eq('id',user.id).maybeSingle();
+    // 1. Try to load profile (max 8 seconds)
+    const{data,error}=await withTimeout(
+      sb.from('profiles').select('*').eq('id',user.id).maybeSingle(),
+      8000
+    );
+    if(error){console.error('Profile load error:',error);}
     if(data){
       profile=data;
     } else {
       // 2. Profile doesn't exist — create it
-      const{data:np}=await sb.from('profiles').upsert({id:user.id,display_name:'',role:'user'}).select().single();
-      profile=np||{id:user.id,display_name:'',role:'user'};
+      try{
+        const{data:np}=await withTimeout(
+          sb.from('profiles').upsert({id:user.id,display_name:'',role:'user'}).select().single(),
+          5000
+        );
+        profile=np||{id:user.id,display_name:'',role:'user'};
+      }catch(e){
+        profile={id:user.id,display_name:'',role:'user'};
+      }
     }
     // 3. Check if name is set
     if(!profile.display_name){
@@ -658,9 +677,14 @@ sb.auth.onAuthStateChange(async(ev,session)=>{
     }
   }catch(err){
     console.error('Auth error:',err);
-    // Fallback: create local profile and show name screen
-    profile={id:user.id,display_name:'',role:'user'};
-    showScreen('profile');
+    if(err.message==='timeout'){
+      // Session exists but can't load profile — try to enter with fallback
+      profile={id:user.id,display_name:'',role:'user'};
+      showScreen('profile');
+    } else {
+      profile={id:user.id,display_name:'',role:'user'};
+      showScreen('profile');
+    }
   }
 });
 
