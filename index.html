@@ -244,6 +244,10 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
 .modal p{font-size:.85rem;color:var(--text-secondary);}
 .modal-actions{display:flex;gap:.4rem;justify-content:flex-end;margin-top:1.2rem;}
 .hidden{display:none!important;}
+.drw-tab{border-radius:6px 6px 0 0;border-bottom:2px solid transparent;}
+.drw-tab.active{background:var(--bg-card);border-color:var(--text);color:var(--text);}
+.bling-tab{border-radius:6px 6px 0 0;border-bottom:2px solid transparent;}
+.bling-tab.active{background:var(--bg-card);border-color:var(--text);color:var(--text);}
 
 .menu-toggle{
   display:none;position:fixed;top:.6rem;left:.6rem;z-index:60;
@@ -329,7 +333,7 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
     <nav class="sidebar-nav">
       <div class="nav-section">Principal</div>
       <button data-perm="dashboard" class="active" onclick="showPage('dashboard',this)"><span class="icon">📊</span> Dashboard</button>
-      <button data-perm="estoque" onclick="showPage('estoque',this)"><span class="icon">📦</span> Estoque</button>
+      <button data-perm="estoque" onclick="showPage('estoque',this)"><span class="icon">🧵</span> Matéria-prima</button>
       <button data-perm="alertas" onclick="showPage('alertas',this)"><span class="icon">⚠️</span> Alertas <span id="alertBadge" style="background:var(--red);color:var(--bg);font-size:.65rem;font-weight:700;padding:.1rem .4rem;border-radius:10px;margin-left:.3rem;display:none;">0</span></button>
       <button data-perm="historico" onclick="showPage('historico',this)"><span class="icon">📜</span> Histórico</button>
       <div class="nav-section" data-perm-section="cadastro,entrada">Estoque</div>
@@ -337,6 +341,8 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
       <button data-perm="entrada" onclick="showPage('entrada',this)"><span class="icon">📥</span> Registrar Entrada</button>
       <button data-perm="saida" onclick="showPage('saida',this)"><span class="icon">📤</span> Registrar Saída</button>
       <button data-perm="compras" onclick="showPage('compras',this)"><span class="icon">💰</span> Compras</button>
+      <button data-perm="fornecedores" onclick="showPage('fornecedores',this)"><span class="icon">🏭</span> Fornecedores</button>
+      <button data-perm="bling" onclick="showPage('bling',this)"><span class="icon">📊</span> Vendas (Bling)</button>
       <div class="nav-section" data-perm-admin>Administração</div>
       <button data-perm-admin onclick="showPage('previsoes',this)"><span class="icon">🔮</span> Previsões Futuras</button>
       <button data-perm-admin onclick="showPage('usuarios',this)"><span class="icon">👥</span> Gerenciar Usuários</button>
@@ -355,6 +361,9 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
       <div class="topbar"><h2>Dashboard</h2><div class="topbar-actions"><button class="btn btn-primary" data-perm-btn="cadastro" onclick="showPage('cadastro',navBtn('cadastro'))">+ Novo Produto</button></div></div>
       <div class="content">
         <div class="stats-grid" id="dashStats"></div>
+
+        <!-- Tira de vendas Bling -->
+        <div id="dashBlingStrip" data-perm="bling" style="display:none;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.2rem;margin-bottom:1.2rem;"></div>
 
         <!-- GRÁFICOS -->
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.8rem;margin-bottom:1.5rem;" id="chartsGrid">
@@ -391,7 +400,14 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
               <div class="form-group"><label>Variação</label><input id="fabColor" required placeholder="Ex: Azul, Branco, P, M, G..."></div>
             </div>
             <div class="form-row">
-              <div class="form-group"><label>Fornecedor</label><input id="fabSupplier" placeholder="Ex: Têxtil São Paulo"></div>
+              <div class="form-group">
+                <label>Fornecedor</label>
+                <div style="display:flex;gap:.4rem;">
+                  <select id="fabFornecedorId" style="flex:1;" onchange="onFabFornecedorChange()"></select>
+                  <button type="button" class="btn btn-sm" data-perm-btn="fornecedores_editar" onclick="openSupplierModal()" title="Novo fornecedor">+</button>
+                </div>
+                <input id="fabSupplier" type="hidden">
+              </div>
               <div class="form-group"><label>Unidade</label><select id="fabUnit"><option value="metros">Metros</option><option value="kg">Quilos (kg)</option><option value="unidades">Unidades</option><option value="rolos">Rolos</option><option value="caixas">Caixas</option></select></div>
             </div>
             <div class="form-row">
@@ -459,7 +475,14 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
               <div class="form-group"><label>Quantidade</label><input id="entryQty" type="number" min="0.1" step="0.1" required placeholder="Ex: 50"></div>
               <div class="form-group"><label>Data</label><input id="entryDate" type="date" required></div>
             </div>
-            <div class="form-group"><label>Fornecedor</label><input id="entrySup" placeholder="Ex: Têxtil São Paulo"></div>
+            <div class="form-group">
+              <label>Fornecedor</label>
+              <div style="display:flex;gap:.4rem;">
+                <select id="entryFornecedorId" style="flex:1;" onchange="onEntryFornecedorChange()"></select>
+                <button type="button" class="btn btn-sm" data-perm-btn="fornecedores_editar" onclick="openSupplierModal()" title="Novo fornecedor">+</button>
+              </div>
+              <input id="entrySup" type="hidden">
+            </div>
             <div class="form-group"><label>Observações</label><textarea id="entryNotes" placeholder="Nota fiscal, lote, etc."></textarea></div>
             <div class="form-actions"><button type="submit" class="btn btn-primary">Registrar Entrada</button></div>
           </form>
@@ -489,7 +512,7 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
 
     <!-- ESTOQUE -->
     <div id="page-estoque" class="page hidden">
-      <div class="topbar"><h2>Estoque</h2><div class="topbar-actions"><button class="btn" data-perm-btn="entrada" onclick="showPage('entrada',navBtn('entrada'))">📥 Registrar Entrada</button><button class="btn btn-primary" data-perm-btn="cadastro" onclick="showPage('cadastro',navBtn('cadastro'))">+ Novo Produto</button></div></div>
+      <div class="topbar"><h2>Matéria-prima em Estoque</h2><div class="topbar-actions"><button class="btn" data-perm-btn="entrada" onclick="showPage('entrada',navBtn('entrada'))">📥 Registrar Entrada</button><button class="btn btn-primary" data-perm-btn="cadastro" onclick="showPage('cadastro',navBtn('cadastro'))">+ Novo Produto</button></div></div>
       <div class="content">
         <div class="filter-bar">
           <input id="sSearch" placeholder="Buscar..." oninput="renderStock()">
@@ -552,6 +575,201 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
             <thead><tr><th>Data / Hora</th><th>Produto</th><th>Variação</th><th>Fornecedor</th><th>Qtd</th><th>Preço Unit.</th><th>Total</th><th>Preço Anterior</th></tr></thead>
             <tbody id="purchaseList"></tbody>
           </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- FORNECEDORES -->
+    <div id="page-fornecedores" class="page hidden" data-perm="fornecedores">
+      <div class="topbar">
+        <h2>Fornecedores</h2>
+        <div class="topbar-actions">
+          <button class="btn btn-primary" data-perm-btn="fornecedores_editar" onclick="openSupplierModal()">+ Novo Fornecedor</button>
+        </div>
+      </div>
+      <div class="content">
+        <div class="stats-grid" id="supplierStats"></div>
+        <div class="filter-bar" style="margin-top:1rem;">
+          <input id="supSearch" placeholder="Buscar nome, CNPJ, cidade..." oninput="renderSuppliers()" style="flex:1;min-width:200px;">
+          <select id="supCatFilter" onchange="renderSuppliers()">
+            <option value="all">Todas categorias</option>
+            <option value="tecido">🧵 Tecido</option>
+            <option value="aviamento">🧷 Aviamento</option>
+            <option value="embalagem">📦 Embalagem</option>
+            <option value="etiqueta">🏷️ Etiqueta</option>
+            <option value="linha">🧶 Linha</option>
+            <option value="botao">⭕ Botão</option>
+            <option value="zipper">⚡ Zíper</option>
+            <option value="papelaria">📝 Papelaria</option>
+            <option value="outro">📌 Outro</option>
+          </select>
+          <select id="supActiveFilter" onchange="renderSuppliers()">
+            <option value="active">Somente ativos</option>
+            <option value="all">Todos</option>
+            <option value="inactive">Somente inativos</option>
+          </select>
+        </div>
+        <div class="table-wrap" style="margin-top:1rem;">
+          <table>
+            <thead><tr><th>Nome</th><th>Categorias</th><th>Cidade/UF</th><th>Contato</th><th>Prazo</th><th>Último Pedido</th><th>Ações</th></tr></thead>
+            <tbody id="supplierList"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL FORNECEDOR -->
+    <div class="modal-overlay" id="supplierModalOverlay" onclick="if(event.target===this)closeSupplierModal()">
+      <div class="modal" style="max-width:640px;max-height:90vh;overflow-y:auto;">
+        <h3 id="supplierModalTitle">Novo Fornecedor</h3>
+        <form id="formSupplier" onsubmit="return saveSupplier(event)">
+          <input type="hidden" id="supId">
+          <div class="form-row">
+            <div class="form-group"><label>Nome / Apelido *</label><input id="supNome" required placeholder="Ex: Têxtil SP"></div>
+            <div class="form-group"><label>Razão Social</label><input id="supRazao" placeholder="Ex: Têxtil São Paulo LTDA"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>CNPJ</label><input id="supCnpj" placeholder="00.000.000/0000-00" oninput="maskCNPJ(this)"></div>
+            <div class="form-group"><label>Inscrição Estadual</label><input id="supIE" placeholder="Ex: 123.456.789.000"></div>
+          </div>
+          <div class="form-group">
+            <label>Categorias * (o que o fornecedor vende)</label>
+            <div id="supCategorias" style="display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.3rem;"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Contato (nome)</label><input id="supContato" placeholder="Ex: João"></div>
+            <div class="form-group"><label>Telefone</label><input id="supTel" placeholder="(11) 1234-5678"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>WhatsApp</label><input id="supWhats" placeholder="5511999998888"></div>
+            <div class="form-group"><label>Email</label><input id="supEmail" type="email" placeholder="contato@exemplo.com"></div>
+          </div>
+          <div class="form-group"><label>Website</label><input id="supWeb" placeholder="https://..."></div>
+          <div class="form-row">
+            <div class="form-group"><label>Cidade</label><input id="supCidade" placeholder="São Paulo"></div>
+            <div class="form-group"><label>UF</label><input id="supUF" maxlength="2" placeholder="SP" style="text-transform:uppercase;"></div>
+          </div>
+          <div class="form-group"><label>Endereço</label><input id="supEnd" placeholder="Rua / número / bairro"></div>
+          <div class="form-group"><label>CEP</label><input id="supCEP" placeholder="00000-000"></div>
+          <div class="form-row">
+            <div class="form-group"><label>Prazo de entrega (dias)</label><input id="supPrazo" type="number" min="0" placeholder="Ex: 7"></div>
+            <div class="form-group"><label>Pedido mínimo (R$)</label><input id="supMin" type="number" min="0" step="0.01" placeholder="Ex: 500"></div>
+          </div>
+          <div class="form-group"><label>Condições de pagamento</label><input id="supPgto" placeholder="Ex: 30/60/90 ou à vista 5% off"></div>
+          <div class="form-group"><label>Observações</label><textarea id="supObs" placeholder="Notas gerais..."></textarea></div>
+          <div class="form-group">
+            <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;">
+              <input id="supAtivo" type="checkbox" checked style="width:auto;"> Fornecedor ativo
+            </label>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn" onclick="closeSupplierModal()">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Salvar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- DRAWER DETALHE FORNECEDOR -->
+    <div class="modal-overlay" id="supplierDrawerOverlay" onclick="if(event.target===this)closeSupplierDrawer()">
+      <div class="modal" style="max-width:800px;max-height:90vh;overflow-y:auto;width:92%;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.8rem;gap:1rem;">
+          <div>
+            <h3 id="drwNome" style="margin-bottom:.2rem;">-</h3>
+            <div id="drwBadges"></div>
+            <div id="drwMeta" style="font-size:.75rem;color:var(--text-muted);margin-top:.4rem;"></div>
+          </div>
+          <button class="btn" onclick="closeSupplierDrawer()" style="padding:.3rem .6rem;">✕</button>
+        </div>
+        <div style="display:flex;gap:.3rem;border-bottom:1px solid var(--border);margin-bottom:1rem;flex-wrap:wrap;">
+          <button class="btn btn-sm drw-tab active" onclick="switchDrwTab('dados',this)">Dados</button>
+          <button class="btn btn-sm drw-tab" onclick="switchDrwTab('produtos',this)">Produtos</button>
+          <button class="btn btn-sm drw-tab" onclick="switchDrwTab('compras',this)">Histórico</button>
+          <button class="btn btn-sm drw-tab" onclick="switchDrwTab('contato',this)">Contato</button>
+        </div>
+        <div id="drwTabDados"></div>
+        <div id="drwTabProdutos" style="display:none;"></div>
+        <div id="drwTabCompras" style="display:none;"></div>
+        <div id="drwTabContato" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- BLING (vendas Matriz) -->
+    <div id="page-bling" class="page hidden" data-perm="bling">
+      <div class="topbar">
+        <h2>Vendas (Bling) — Matriz</h2>
+        <div class="topbar-actions">
+          <button class="btn" onclick="refreshBlingFromDMS()" title="Puxar dados atualizados do DMS (precisa DMS anon key)">🔄 Atualizar do Bling</button>
+        </div>
+      </div>
+      <div class="content">
+        <div id="blingSyncMeta" style="font-size:.75rem;color:var(--text-muted);margin-bottom:1rem;"></div>
+
+        <!-- Trend 30/90/180 -->
+        <div class="stats-grid" id="blingTrendStats"></div>
+
+        <!-- Chart vendas por mes + dia da semana -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-top:1.2rem;margin-bottom:1.2rem;" id="blingChartsGrid">
+          <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;">
+            <h4 style="font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.8rem;">Faturamento mensal (12 meses)</h4>
+            <canvas id="chartBlingMes"></canvas>
+          </div>
+          <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;">
+            <h4 style="font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.8rem;">Pedidos por dia da semana</h4>
+            <canvas id="chartBlingDow"></canvas>
+          </div>
+        </div>
+
+        <!-- Tabs: top produtos / velocidade / catalogo -->
+        <div style="display:flex;gap:.3rem;border-bottom:1px solid var(--border);margin-bottom:1rem;flex-wrap:wrap;">
+          <button class="btn btn-sm bling-tab active" onclick="switchBlingTab('top',this)">🏆 Top produtos</button>
+          <button class="btn btn-sm bling-tab" onclick="switchBlingTab('vel',this)">⚡ Velocidade 90d</button>
+          <button class="btn btn-sm bling-tab" onclick="switchBlingTab('cat',this)">📦 Catálogo (2205)</button>
+        </div>
+
+        <!-- TOP PRODUTOS -->
+        <div id="blingTabTop">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>#</th><th>Produto</th><th>Pedidos</th><th>Quantidade</th><th>Receita</th><th>Preço médio</th></tr></thead>
+              <tbody id="blingTopList"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- VELOCIDADE -->
+        <div id="blingTabVel" style="display:none;">
+          <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:.6rem;">Velocidade de venda nos últimos 90 dias (Top 100)</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>#</th><th>Produto</th><th>Qtd 90d</th><th>Média diária</th><th>Projeção mensal</th></tr></thead>
+              <tbody id="blingVelList"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- CATALOGO -->
+        <div id="blingTabCat" style="display:none;">
+          <div class="filter-bar" style="margin-bottom:.6rem;">
+            <input id="blingCatSearch" placeholder="Buscar por nome ou código..." oninput="renderBlingCatalogo()" style="flex:1;min-width:220px;">
+            <select id="blingCatSituacao" onchange="renderBlingCatalogo()">
+              <option value="A">Ativos</option>
+              <option value="all">Todos</option>
+              <option value="I">Inativos</option>
+            </select>
+            <select id="blingCatFormato" onchange="renderBlingCatalogo()">
+              <option value="all">Todos formatos</option>
+              <option value="V">Com variação</option>
+              <option value="S">Simples</option>
+            </select>
+          </div>
+          <div id="blingCatCount" style="font-size:.75rem;color:var(--text-muted);margin-bottom:.4rem;"></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Nome</th><th>Código</th><th>Preço</th><th>Custo</th><th>Estoque Bling</th><th>Situação</th></tr></thead>
+              <tbody id="blingCatList"></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -655,8 +873,8 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
 </div>
 
 <script>
-const SUPA_URL='https://lvhvcxfhdabcpvbfrooj.supabase.co';
-const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2aHZjeGZoZGFiY3B2YmZyb29qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDg4MDksImV4cCI6MjA5MTMyNDgwOX0.-3iOkL2JlOXYe0tMoaFhAUwFITqFcJJcw5UcXrn1848';
+const SUPA_URL='https://jkvoqqqiwtpsruwoioxl.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imprdm9xcXFpd3Rwc3J1d29pb3hsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcwNDI4NTcsImV4cCI6MjA5MjYxODg1N30.iUZL9Tdx7qF5eWD1Viai2I-zOOrbqnV28xYM8Wq8KL0';
 const sb=supabase.createClient(SUPA_URL,SUPA_KEY);
 
 let user=null,profile=null,fabrics=[],movements=[],profiles=[];
@@ -895,16 +1113,35 @@ async function enterApp(){
 
 // ═══ DATA ═══
 let purchases=[];
+let fornecedores=[];
+// Bling caches
+let blingTrendPeriodo=[],blingVendasMes=[],blingDiaSemana=[],blingTopProdutos=[],blingVelocidade=[],blingCatalogo=[],blingSyncMeta=null;
 async function loadAll(){
-  const[f,m,p,pu,rp]=await Promise.all([
+  const[f,m,p,pu,rp,fo,btp,bvm,bds,btop,bvel,bmeta]=await Promise.all([
     sb.from('fabrics').select('*').order('created_at',{ascending:false}),
     sb.from('movements').select('*').order('created_at',{ascending:false}),
     sb.from('profiles').select('*'),
     sb.from('purchases').select('*').order('date',{ascending:false}),
-    sb.from('role_permissions').select('*').eq('id',1).maybeSingle()
+    sb.from('role_permissions').select('*').eq('id',1).maybeSingle(),
+    sb.from('fornecedores').select('*').order('nome',{ascending:true}),
+    sb.from('bling_trend_periodo').select('*'),
+    sb.from('bling_vendas_mes').select('*').order('mes',{ascending:true}),
+    sb.from('bling_vendas_dia_semana').select('*').order('dia_semana',{ascending:true}),
+    sb.from('bling_top_produtos').select('*').order('total_quantidade',{ascending:false}),
+    sb.from('bling_velocidade_90d').select('*').order('qtd_90d',{ascending:false}),
+    sb.from('bling_sync_meta').select('*').eq('id',1).maybeSingle()
   ]);
   fabrics=f.data||[];movements=m.data||[];profiles=p.data||[];purchases=pu.data||[];
   rolePerms=(rp.data?.permissions)||{};
+  fornecedores=fo.data||[];
+  blingTrendPeriodo=btp.data||[];blingVendasMes=bvm.data||[];blingDiaSemana=bds.data||[];
+  blingTopProdutos=btop.data||[];blingVelocidade=bvel.data||[];blingSyncMeta=bmeta.data||null;
+}
+// bling_produtos (catalogo) carrega lazy — 2205 linhas, so carrega ao abrir a aba
+async function loadBlingCatalogo(){
+  if(blingCatalogo.length)return;
+  const{data}=await sb.from('bling_produtos').select('*').order('nome',{ascending:true});
+  blingCatalogo=data||[];
 }
 function setupRealtime(){
   sb.channel('changes')
@@ -916,6 +1153,10 @@ function setupRealtime(){
       const{data}=await sb.from('movements').select('*').order('created_at',{ascending:false});
       movements=data||[];renderCurrent();
     })
+    .on('postgres_changes',{event:'*',schema:'public',table:'fornecedores'},async()=>{
+      const{data}=await sb.from('fornecedores').select('*').order('nome',{ascending:true});
+      fornecedores=data||[];renderCurrent();
+    })
     .subscribe();
 }
 function renderCurrent(){
@@ -925,6 +1166,8 @@ function renderCurrent(){
   else if(id==='estoque')renderStock();
   else if(id==='historico')renderHist();
   else if(id==='cadastro')renderFabList();
+  else if(id==='fornecedores')renderSuppliers();
+  else if(id==='bling')renderBling();
 }
 
 // ═══ NAV ═══
@@ -937,20 +1180,22 @@ function showPage(name,btn){
   document.querySelector('.sidebar').classList.remove('open');
   const td=today();
   if(name==='dashboard')renderDash();
-  if(name==='cadastro')renderFabList();
-  if(name==='entrada'){popSel('entryFab');$('entryDate').value=td;}
+  if(name==='cadastro'){renderFabList();popSupSelect('fabFornecedorId',$('fabFornecedorId')?.value||'');}
+  if(name==='entrada'){popSel('entryFab');$('entryDate').value=td;popSupSelect('entryFornecedorId');}
   if(name==='saida'){popSel('exitFab');$('exitDate').value=td;$('exitWho').value=profile.display_name;updAvail();}
   if(name==='estoque')renderStock();
   if(name==='historico'){popHistFilter();renderHist();}
   if(name==='alertas')renderAlerts();
   if(name==='compras'){popPurchaseFilter();renderPurchases();}
+  if(name==='fornecedores')renderSuppliers();
+  if(name==='bling')renderBling();
   if(name==='previsoes')renderForecast();
   if(name==='perfil'){$('profEmail').value=user.email;$('profName').value=profile.display_name;$('profRole').value=ROLE_LABELS[profile.role]||profile.role;}
   if(name==='usuarios')renderUsers();
 }
 function navBtn(page){
   const btns=document.querySelectorAll('.sidebar-nav button:not(.nav-section)');
-  const map={dashboard:0,estoque:1,alertas:2,historico:3,cadastro:4,entrada:5,saida:6,compras:7,previsoes:8,usuarios:9,perfil:10};
+  const map={dashboard:0,estoque:1,alertas:2,historico:3,cadastro:4,entrada:5,saida:6,compras:7,fornecedores:8,bling:9,previsoes:10,usuarios:11,perfil:12};
   return btns[map[page]];
 }
 function updateAlertBadge(){
@@ -962,10 +1207,24 @@ function updateAlertBadge(){
 function today(){return new Date().toISOString().slice(0,10);}
 
 // ═══ PRODUCT CRUD ═══
+function onFabFornecedorChange(){
+  const id=$('fabFornecedorId').value;
+  const f=fornecedores.find(x=>x.id===id);
+  $('fabSupplier').value=f?f.nome:'';
+}
 async function saveFabric(e){
   e.preventDefault();
   const editId=$('editId').value;
-  const d={name:$('fabName').value.trim(),color:$('fabColor').value.trim(),supplier:$('fabSupplier').value.trim(),unit:$('fabUnit').value,min_stock:parseFloat($('fabMin').value)||0};
+  const fornId=$('fabFornecedorId').value||null;
+  const forn=fornecedores.find(x=>x.id===fornId);
+  const d={
+    name:$('fabName').value.trim(),
+    color:$('fabColor').value.trim(),
+    supplier:forn?forn.nome:'',
+    fornecedor_id:fornId,
+    unit:$('fabUnit').value,
+    min_stock:parseFloat($('fabMin').value)||0
+  };
   if(editId){
     const{error}=await sb.from('fabrics').update(d).eq('id',editId);
     if(error){toast('Erro: '+error.message);return;}
@@ -979,11 +1238,15 @@ async function saveFabric(e){
   }
   resetForm();await loadAll();renderFabList();
 }
-function resetForm(){$('formCadastro').reset();$('editId').value='';$('fabMin').value='10';$('fabInit').value='0';}
+function resetForm(){
+  $('formCadastro').reset();$('editId').value='';$('fabMin').value='10';$('fabInit').value='0';
+  popSupSelect('fabFornecedorId');
+}
 function editFab(id){
   const f=fabrics.find(x=>x.id===id);if(!f)return;
   $('editId').value=f.id;$('fabName').value=f.name;$('fabColor').value=f.color;
   $('fabSupplier').value=f.supplier||'';$('fabUnit').value=f.unit;$('fabMin').value=f.min_stock;$('fabInit').value=f.stock;
+  popSupSelect('fabFornecedorId',f.fornecedor_id||'');
   scrollTo({top:0,behavior:'smooth'});
 }
 function delFab(id){
@@ -1003,6 +1266,8 @@ function renderFabList(){
 // ═══ NOTA FISCAL (AI) ═══
 let nfItems=[];
 let nfSupplier='';
+let nfCNPJ='';
+let nfEmitEnd={endereco:'',cidade:'',uf:'',cep:''};
 
 function showNFImport(){
   $('nfSection').style.display='';
@@ -1013,7 +1278,7 @@ function showNFImport(){
 }
 function hideNFImport(){
   $('nfSection').style.display='none';
-  nfItems=[];nfSupplier='';
+  nfItems=[];nfSupplier='';nfCNPJ='';nfEmitEnd={endereco:'',cidade:'',uf:'',cep:''};
 }
 
 async function handleNFUpload(e){
@@ -1059,6 +1324,14 @@ async function parseNFXML(file){
 
   const emit=xml.querySelector('emit');
   nfSupplier=getXMLText(emit,'xNome')||getXMLText(emit,'xFant')||'';
+  nfCNPJ=digits(getXMLText(emit,'CNPJ'));
+  const ender=emit?emit.querySelector('enderEmit'):null;
+  nfEmitEnd={
+    endereco:[getXMLText(ender,'xLgr'),getXMLText(ender,'nro'),getXMLText(ender,'xBairro')].filter(Boolean).join(', '),
+    cidade:getXMLText(ender,'xMun')||'',
+    uf:getXMLText(ender,'UF')||'',
+    cep:getXMLText(ender,'CEP')||''
+  };
 
   const dets=xml.querySelectorAll('det');
   if(!dets.length)throw new Error('Nenhum produto no XML.');
@@ -1113,6 +1386,17 @@ async function parseNFPDF(file){
 
   const fullText=lines.join('\n');
   console.log('PDF text extracted:\n',fullText);
+
+  // Find supplier CNPJ — first CNPJ in first 30 lines (emitente aparece no topo do DANFE)
+  nfCNPJ='';
+  const cnpjRe=/(\d{2}[.\s]?\d{3}[.\s]?\d{3}[\/\s]?\d{4}[-\s]?\d{2})/;
+  for(let i=0;i<Math.min(lines.length,30);i++){
+    // Pular linhas de DESTINATARIO
+    if(lines.slice(Math.max(0,i-3),i).some(l=>/DESTINAT[AÁ]RIO|REMETENTE/i.test(l)))continue;
+    const m=lines[i].match(cnpjRe);
+    if(m){nfCNPJ=digits(m[1]);break;}
+  }
+  nfEmitEnd={endereco:'',cidade:'',uf:'',cep:''};
 
   // Find supplier - look for line after "Razão Social" or "Nome/Razão Social" or just the company name near top
   nfSupplier='';
@@ -1294,9 +1578,45 @@ function toggleNFAll(checked){
   $('nfSelectAll').checked=checked;
 }
 
+async function vincularFornecedorNF(){
+  // Retorna {id, nome} ou null. Usa CNPJ primeiro, depois nome exato.
+  if(!nfCNPJ && !nfSupplier)return null;
+  if(nfCNPJ){
+    const byCnpj=fornecedores.find(f=>digits(f.cnpj||'')===nfCNPJ);
+    if(byCnpj)return byCnpj;
+  }
+  if(nfSupplier){
+    const norm=s=>(s||'').trim().toUpperCase();
+    const byNome=fornecedores.find(f=>norm(f.nome)===norm(nfSupplier)||norm(f.razao_social)===norm(nfSupplier));
+    if(byNome)return byNome;
+  }
+  // Nao existe — criar se usuario for admin/gerente
+  if(!canAccess('fornecedores_editar'))return null;
+  const novoFornecedor={
+    nome:nfSupplier||('CNPJ '+nfCNPJ),
+    razao_social:nfSupplier||null,
+    cnpj:nfCNPJ||null,
+    endereco:nfEmitEnd.endereco||null,
+    cidade:nfEmitEnd.cidade||null,
+    uf:nfEmitEnd.uf||null,
+    cep:nfEmitEnd.cep?digits(nfEmitEnd.cep):null,
+    categorias:['outro'],
+    ativo:true
+  };
+  const{data,error}=await sb.from('fornecedores').insert(novoFornecedor).select().single();
+  if(error){console.warn('Falhou criar fornecedor auto:',error.message);return null;}
+  fornecedores.push(data);
+  toast(`Fornecedor "${data.nome}" cadastrado. Classifique as categorias!`);
+  return data;
+}
+
 async function confirmNFImport(){
   const selected=nfItems.filter(item=>item.selected&&item.quantidade>0);
   if(!selected.length){toast('Selecione pelo menos um item.');return;}
+
+  // Vincula/cria fornecedor baseado no emitente da NF
+  const fornecedor=await vincularFornecedorNF();
+  const fornId=fornecedor?fornecedor.id:null;
 
   let registered=0;
   let created=0;
@@ -1311,6 +1631,7 @@ async function confirmNFImport(){
         name:item.nome,
         color:item.cor||'—',
         supplier:nfSupplier,
+        fornecedor_id:fornId,
         unit:item.unidade,
         min_stock:10,
         stock:0
@@ -1344,6 +1665,7 @@ async function confirmNFImport(){
         user_id:user.id,
         fabric_id:fabricId,
         supplier:nfSupplier,
+        fornecedor_id:fornId,
         qty:item.quantidade,
         unit_price:unitPrice,
         total_price:totalPrice,
@@ -1381,18 +1703,585 @@ async function confirmNFImport(){
   if(priceMsg)setTimeout(()=>alert('⚠️ Alerta de Preço:'+priceMsg),500);
 }
 
+// ═══ FORNECEDORES ═══
+const CATEGORIAS_FORN={
+  tecido:    {label:'Tecido',    cor:'#3b82f6',icon:'🧵'},
+  aviamento: {label:'Aviamento', cor:'#a855f7',icon:'🧷'},
+  embalagem: {label:'Embalagem', cor:'#10b981',icon:'📦'},
+  etiqueta:  {label:'Etiqueta',  cor:'#f59e0b',icon:'🏷️'},
+  linha:     {label:'Linha',     cor:'#ec4899',icon:'🧶'},
+  botao:     {label:'Botão',     cor:'#06b6d4',icon:'⭕'},
+  zipper:    {label:'Zíper',     cor:'#64748b',icon:'⚡'},
+  papelaria: {label:'Papelaria', cor:'#8b5cf6',icon:'📝'},
+  outro:     {label:'Outro',     cor:'#71717a',icon:'📌'}
+};
+function catBadge(c){
+  const m=CATEGORIAS_FORN[c]||CATEGORIAS_FORN.outro;
+  return `<span style="display:inline-block;padding:2px 8px;background:${m.cor}22;color:${m.cor};border:1px solid ${m.cor}60;border-radius:999px;font-size:11px;font-weight:600;margin-right:4px;margin-bottom:2px;">${m.icon} ${m.label}</span>`;
+}
+function renderCategoriaBadges(cats){return (cats||[]).map(catBadge).join('');}
+function digits(s){return (s||'').replace(/\D/g,'');}
+function maskCNPJ(el){
+  let v=digits(el.value).slice(0,14);
+  if(v.length>12)v=v.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{1,2})/, '$1.$2.$3/$4-$5');
+  else if(v.length>8)v=v.replace(/(\d{2})(\d{3})(\d{3})(\d{1,4})/, '$1.$2.$3/$4');
+  else if(v.length>5)v=v.replace(/(\d{2})(\d{3})(\d{1,3})/, '$1.$2.$3');
+  else if(v.length>2)v=v.replace(/(\d{2})(\d{1,3})/, '$1.$2');
+  el.value=v;
+}
+
+function renderSuppliers(){
+  const q=($('supSearch')?.value||'').toLowerCase().trim();
+  const cat=$('supCatFilter')?.value||'all';
+  const act=$('supActiveFilter')?.value||'active';
+
+  let list=[...fornecedores];
+  if(act==='active')list=list.filter(f=>f.ativo);
+  else if(act==='inactive')list=list.filter(f=>!f.ativo);
+  if(cat!=='all')list=list.filter(f=>(f.categorias||[]).includes(cat));
+  if(q)list=list.filter(f=>{
+    const hay=[f.nome,f.razao_social,f.cnpj,f.cidade,f.contato_nome,f.email].filter(Boolean).join(' ').toLowerCase();
+    return hay.includes(q);
+  });
+
+  // Stats
+  const stats=$('supplierStats');
+  if(stats){
+    const ativos=fornecedores.filter(f=>f.ativo).length;
+    const porCat={};
+    for(const f of fornecedores){if(!f.ativo)continue;for(const c of (f.categorias||[])){porCat[c]=(porCat[c]||0)+1;}}
+    const top=Object.entries(porCat).sort((a,b)=>b[1]-a[1]).slice(0,3);
+    stats.innerHTML=`
+      <div class="stat-card"><div class="stat-label">Total</div><div class="stat-value">${fornecedores.length}</div></div>
+      <div class="stat-card"><div class="stat-label">Ativos</div><div class="stat-value">${ativos}</div></div>
+      <div class="stat-card"><div class="stat-label">Categorias</div><div class="stat-value">${Object.keys(porCat).length}</div></div>
+      <div class="stat-card"><div class="stat-label">Top</div><div class="stat-value" style="font-size:.9rem;">${top.map(t=>(CATEGORIAS_FORN[t[0]]?.icon||'')+t[1]).join(' · ')||'—'}</div></div>`;
+  }
+
+  const tb=$('supplierList');
+  if(!tb)return;
+  if(!list.length){
+    tb.innerHTML=`<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted);">Nenhum fornecedor encontrado.</td></tr>`;
+    return;
+  }
+  tb.innerHTML=list.map(f=>{
+    const ultPed=ultimaCompraFornecedor(f.id);
+    const contato=[f.contato_nome,f.telefone||f.whatsapp].filter(Boolean).join(' · ')||'—';
+    const cidUF=[f.cidade,f.uf].filter(Boolean).join('/')||'—';
+    const acoesEditar=canAccess('fornecedores_editar')
+      ?`<button class="btn btn-sm" onclick="editSupplier('${f.id}')">Editar</button>`:'';
+    return `<tr style="cursor:pointer;${f.ativo?'':'opacity:.5;'}" onclick="openSupplierDrawer('${f.id}')">
+      <td onclick="event.stopPropagation();openSupplierDrawer('${f.id}')">
+        <strong>${esc(f.nome)}</strong>
+        ${f.razao_social?`<div style="font-size:.7rem;color:var(--text-muted);">${esc(f.razao_social)}</div>`:''}
+      </td>
+      <td>${renderCategoriaBadges(f.categorias)||'<span style="color:var(--text-muted);">—</span>'}</td>
+      <td>${esc(cidUF)}</td>
+      <td style="font-size:.78rem;">${esc(contato)}</td>
+      <td>${f.prazo_entrega_dias?f.prazo_entrega_dias+' dias':'—'}</td>
+      <td style="font-size:.78rem;">${ultPed||'—'}</td>
+      <td onclick="event.stopPropagation();">${acoesEditar}</td>
+    </tr>`;
+  }).join('');
+}
+
+function ultimaCompraFornecedor(fid){
+  const comps=purchases.filter(p=>p.fornecedor_id===fid).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  if(!comps.length)return '';
+  return new Date(comps[0].date).toLocaleDateString('pt-BR');
+}
+
+function openSupplierModal(){
+  if(!canAccess('fornecedores_editar')){toast('Sem permissão pra editar fornecedores.');return;}
+  $('supplierModalTitle').textContent='Novo Fornecedor';
+  $('formSupplier').reset();
+  $('supId').value='';
+  $('supAtivo').checked=true;
+  renderCategoriaCheckboxes([]);
+  $('supplierModalOverlay').classList.add('show');
+}
+function closeSupplierModal(){$('supplierModalOverlay').classList.remove('show');}
+
+function editSupplier(id){
+  if(!canAccess('fornecedores_editar')){toast('Sem permissão.');return;}
+  const f=fornecedores.find(x=>x.id===id);if(!f)return;
+  $('supplierModalTitle').textContent='Editar Fornecedor';
+  $('supId').value=f.id;
+  $('supNome').value=f.nome||'';
+  $('supRazao').value=f.razao_social||'';
+  $('supCnpj').value=f.cnpj||'';
+  $('supIE').value=f.inscricao_estadual||'';
+  $('supContato').value=f.contato_nome||'';
+  $('supTel').value=f.telefone||'';
+  $('supWhats').value=f.whatsapp||'';
+  $('supEmail').value=f.email||'';
+  $('supWeb').value=f.website||'';
+  $('supCidade').value=f.cidade||'';
+  $('supUF').value=f.uf||'';
+  $('supEnd').value=f.endereco||'';
+  $('supCEP').value=f.cep||'';
+  $('supPrazo').value=f.prazo_entrega_dias||'';
+  $('supMin').value=f.valor_minimo_pedido||'';
+  $('supPgto').value=f.condicoes_pagamento||'';
+  $('supObs').value=f.observacoes||'';
+  $('supAtivo').checked=!!f.ativo;
+  renderCategoriaCheckboxes(f.categorias||[]);
+  $('supplierModalOverlay').classList.add('show');
+}
+
+function renderCategoriaCheckboxes(selected){
+  const wrap=$('supCategorias');
+  wrap.innerHTML=Object.keys(CATEGORIAS_FORN).map(k=>{
+    const m=CATEGORIAS_FORN[k];
+    const on=selected.includes(k);
+    return `<label style="display:inline-flex;align-items:center;gap:.3rem;padding:.3rem .6rem;border:1px solid ${on?m.cor:'var(--border)'};border-radius:999px;cursor:pointer;background:${on?m.cor+'22':'transparent'};color:${on?m.cor:'var(--text-secondary)'};font-size:.78rem;font-weight:600;">
+      <input type="checkbox" data-cat="${k}" ${on?'checked':''} style="width:auto;margin:0;" onchange="this.parentElement.style.background=this.checked?'${m.cor}22':'transparent';this.parentElement.style.borderColor=this.checked?'${m.cor}':'var(--border)';this.parentElement.style.color=this.checked?'${m.cor}':'var(--text-secondary)';">
+      ${m.icon} ${m.label}
+    </label>`;
+  }).join('');
+}
+
+async function saveSupplier(e){
+  e.preventDefault();
+  const id=$('supId').value;
+  const cats=Array.from(document.querySelectorAll('#supCategorias input[type=checkbox]:checked')).map(c=>c.dataset.cat);
+  if(!cats.length){toast('Selecione pelo menos 1 categoria.');return false;}
+  const nome=$('supNome').value.trim();
+  if(!nome){toast('Nome é obrigatório.');return false;}
+
+  const d={
+    nome,
+    razao_social:$('supRazao').value.trim()||null,
+    cnpj:digits($('supCnpj').value)||null,
+    inscricao_estadual:$('supIE').value.trim()||null,
+    contato_nome:$('supContato').value.trim()||null,
+    telefone:$('supTel').value.trim()||null,
+    whatsapp:digits($('supWhats').value)||null,
+    email:$('supEmail').value.trim()||null,
+    website:$('supWeb').value.trim()||null,
+    endereco:$('supEnd').value.trim()||null,
+    cidade:$('supCidade').value.trim()||null,
+    uf:$('supUF').value.trim().toUpperCase()||null,
+    cep:$('supCEP').value.trim()||null,
+    categorias:cats,
+    prazo_entrega_dias:parseInt($('supPrazo').value)||null,
+    valor_minimo_pedido:parseFloat($('supMin').value)||null,
+    condicoes_pagamento:$('supPgto').value.trim()||null,
+    observacoes:$('supObs').value.trim()||null,
+    ativo:$('supAtivo').checked
+  };
+
+  if(id){
+    const{error}=await sb.from('fornecedores').update(d).eq('id',id);
+    if(error){toast('Erro: '+error.message);return false;}
+    toast('Fornecedor atualizado!');
+  } else {
+    const{error}=await sb.from('fornecedores').insert(d);
+    if(error){toast('Erro: '+error.message);return false;}
+    toast('Fornecedor cadastrado!');
+  }
+  closeSupplierModal();
+  await loadAll();
+  renderSuppliers();
+  return false;
+}
+
+async function toggleSupplierAtivo(id){
+  if(!canAccess('fornecedores_editar')){toast('Sem permissão.');return;}
+  const f=fornecedores.find(x=>x.id===id);if(!f)return;
+  const{error}=await sb.from('fornecedores').update({ativo:!f.ativo}).eq('id',id);
+  if(error){toast('Erro: '+error.message);return;}
+  toast(f.ativo?'Fornecedor desativado':'Fornecedor reativado');
+  await loadAll();renderSuppliers();
+}
+
+// ── Drawer de detalhe
+let drwCurrentId=null;
+function openSupplierDrawer(id){
+  const f=fornecedores.find(x=>x.id===id);if(!f)return;
+  drwCurrentId=id;
+  $('drwNome').textContent=f.nome+(f.ativo?'':' (inativo)');
+  $('drwBadges').innerHTML=renderCategoriaBadges(f.categorias);
+  const metaParts=[];
+  if(f.cnpj)metaParts.push('CNPJ '+formatCNPJ(f.cnpj));
+  if(f.cidade||f.uf)metaParts.push([f.cidade,f.uf].filter(Boolean).join('/'));
+  if(f.prazo_entrega_dias)metaParts.push('Prazo '+f.prazo_entrega_dias+' dias');
+  $('drwMeta').textContent=metaParts.join(' · ');
+  renderDrwDados(f);
+  renderDrwProdutos(f);
+  renderDrwCompras(f);
+  renderDrwContato(f);
+  // Reset to first tab
+  document.querySelectorAll('.drw-tab').forEach(b=>b.classList.remove('active'));
+  document.querySelector('.drw-tab').classList.add('active');
+  ['Dados','Produtos','Compras','Contato'].forEach((t,i)=>$('drwTab'+t).style.display=i===0?'':'none');
+  $('supplierDrawerOverlay').classList.add('show');
+}
+function closeSupplierDrawer(){$('supplierDrawerOverlay').classList.remove('show');drwCurrentId=null;}
+function switchDrwTab(name,btn){
+  document.querySelectorAll('.drw-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  ['dados','produtos','compras','contato'].forEach(n=>{
+    $('drwTab'+n[0].toUpperCase()+n.slice(1)).style.display=n===name?'':'none';
+  });
+}
+function formatCNPJ(c){c=digits(c);if(c.length!==14)return c;return c.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,'$1.$2.$3/$4-$5');}
+
+function renderDrwDados(f){
+  const canEdit=canAccess('fornecedores_editar');
+  const row=(k,v)=>v?`<div style="padding:.35rem 0;border-bottom:1px solid var(--border);display:flex;gap:.8rem;font-size:.82rem;"><div style="min-width:140px;color:var(--text-muted);">${k}</div><div style="flex:1">${esc(v)}</div></div>`:'';
+
+  // Seção: Informações básicas
+  const cnpjsExtra=(f.cnpjs_adicionais||[]).map(c=>formatCNPJ(c)).join(', ');
+  const bloco_info=`
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:.8rem;">
+      <h4 style="font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem;">📋 Dados cadastrais</h4>
+      ${row('Razão Social',f.razao_social)}
+      ${row('CNPJ principal',f.cnpj?formatCNPJ(f.cnpj):'')}
+      ${cnpjsExtra?row('CNPJs adicionais',cnpjsExtra):''}
+      ${row('Insc. Estadual',f.inscricao_estadual)}
+      ${row('Endereço',f.endereco)}
+      ${row('Cidade/UF',[f.cidade,f.uf].filter(Boolean).join('/'))}
+      ${row('CEP',f.cep)}
+    </div>`;
+
+  // Seção: Categoria (interna Dana) - tags coloridas
+  const cats=f.categorias||[];
+  const bloco_cat=cats.length?`
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:.8rem;">
+      <h4 style="font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem;">🏷️ Categoria (tipo de insumo)</h4>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap;">${renderCategoriaBadges(cats)}</div>
+      <div style="font-size:.72rem;color:var(--text-muted);margin-top:.6rem;">Classificação interna do Dana Estoque — o que o fornecedor fornece</div>
+    </div>`:'';
+
+  // Seção: Natureza de Operação (do Bling)
+  const nats=f.naturezas_operacao||[];
+  const badgeNat=(n)=>{
+    const cor=n.includes('Industrializa')?'#4ade80':n.includes('Uso')?'#60a5fa':'#999';
+    const bg=n.includes('Industrializa')?'rgba(74,222,128,.1)':n.includes('Uso')?'rgba(96,165,250,.1)':'rgba(153,153,153,.1)';
+    return `<span style="display:inline-block;padding:3px 10px;background:${bg};color:${cor};border:1px solid ${cor}33;border-radius:999px;font-size:11px;font-weight:600">${esc(n)}</span>`;
+  };
+  const bloco_nat=nats.length?`
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:.8rem;">
+      <h4 style="font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem;">📑 Natureza de Operação (Bling)</h4>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap;">${nats.map(badgeNat).join('')}</div>
+      <div style="font-size:.72rem;color:var(--text-muted);margin-top:.6rem;">Como a Dana classifica fiscalmente as compras com esse fornecedor</div>
+    </div>`:'';
+
+  const fmtBRL=v=>'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
+
+  // Seção: Comercial (prazo, pagamento)
+  const comercial=[
+    f.prazo_entrega_dias?['Prazo entrega',f.prazo_entrega_dias+' dias']:null,
+    f.valor_minimo_pedido?['Pedido mínimo',fmtBRL(f.valor_minimo_pedido)]:null,
+    f.condicoes_pagamento?['Condições pgto.',f.condicoes_pagamento]:null,
+  ].filter(Boolean);
+  const bloco_comercial=comercial.length?`
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:.8rem;">
+      <h4 style="font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem;">🤝 Comercial</h4>
+      ${comercial.map(([k,v])=>row(k,v)).join('')}
+    </div>`:'';
+
+  // Observações
+  const bloco_obs=f.observacoes?`
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:.8rem;">
+      <h4 style="font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem;">📝 Observações</h4>
+      <pre style="white-space:pre-wrap;font-family:inherit;font-size:.8rem;color:var(--text);margin:0;line-height:1.4;">${esc(f.observacoes)}</pre>
+    </div>`:'';
+
+  $('drwTabDados').innerHTML=`
+    ${bloco_info}
+    ${bloco_cat}
+    ${bloco_nat}
+    ${bloco_comercial}
+    ${bloco_obs}
+    <div style="display:flex;gap:.4rem;margin-top:1rem;">
+      ${canEdit?`<button class="btn btn-primary btn-sm" onclick="editSupplier('${f.id}');closeSupplierDrawer();">Editar</button>`:''}
+      ${canEdit?`<button class="btn btn-sm" onclick="toggleSupplierAtivo('${f.id}')">${f.ativo?'Desativar':'Reativar'}</button>`:''}
+    </div>
+  `;
+}
+function renderDrwProdutos(f){
+  const prods=fabrics.filter(x=>x.fornecedor_id===f.id);
+  const itensHistorico=(f.itens_comprados||[]);
+
+  let html='';
+
+  // Bloco 1: Matéria-prima cadastrada (com estoque real)
+  if(prods.length){
+    html+=`
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:.8rem;">
+        <h4 style="font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem;">📦 Matéria-prima cadastrada (${prods.length})</h4>
+        <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:.6rem;">Produtos ativos no estoque fornecidos por este fornecedor</div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Produto</th><th>Variação</th><th style="text-align:right">Estoque</th><th style="text-align:right">Mínimo</th><th>Status</th></tr></thead>
+          <tbody>${prods.map(p=>{
+            const st=parseFloat(p.stock)||0,mn=parseFloat(p.min_stock)||0;
+            const status=st<=0?'<span style="color:var(--red)">⛔ Zerado</span>':st<mn?'<span style="color:var(--orange)">⚠️ Baixo</span>':'<span style="color:var(--green)">✓ OK</span>';
+            return `<tr><td>${esc(p.name)}</td><td>${esc(p.color)}</td><td style="text-align:right">${st.toLocaleString('pt-BR')} ${p.unit}</td><td style="text-align:right">${mn}</td><td>${status}</td></tr>`;
+          }).join('')}</tbody>
+        </table></div>
+      </div>`;
+  }
+
+  // Bloco 2: Itens já comprados (histórico de todos os SKUs vindos deste fornecedor)
+  if(itensHistorico.length){
+    html+=`
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:.8rem;">
+        <h4 style="font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem;">📋 Histórico de itens comprados (${itensHistorico.length})</h4>
+        <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:.6rem;">Todos os SKUs/descrições que apareceram em NFes deste fornecedor</div>
+        <ul style="list-style:none;padding:0;margin:0;max-height:300px;overflow-y:auto;">
+          ${itensHistorico.slice(0,60).map(i=>`<li style="padding:.35rem 0;border-bottom:1px solid var(--border);font-size:.8rem;">${esc(i)}</li>`).join('')}
+          ${itensHistorico.length>60?`<li style="padding:.5rem 0;font-size:.72rem;color:var(--text-muted);font-style:italic;">+${itensHistorico.length-60} itens não exibidos</li>`:''}
+        </ul>
+      </div>`;
+  }
+
+  if(!html){
+    html=`<p style="color:var(--text-muted);font-size:.85rem;padding:1rem 0;">Nenhum produto vinculado a este fornecedor.</p>`;
+  }
+
+  $('drwTabProdutos').innerHTML=html;
+}
+function renderDrwCompras(f){
+  const fmtBRL=v=>'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
+  const comps=purchases.filter(p=>p.fornecedor_id===f.id).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+
+  // Resumo de cabeçalho (usa campos agregados do fornecedor — vem mesmo sem purchases)
+  const totalV=f.total_compras_valor||comps.reduce((s,c)=>s+(parseFloat(c.total_price)||0),0);
+  const totalN=f.total_compras_nfe||new Set(comps.map(c=>c.nf_number)).size;
+  const ultima=f.ultima_compra||(comps[0]||{}).date;
+
+  const bloco_resumo=`
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:.8rem;">
+      <h4 style="font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem;">💰 Resumo de compras</h4>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;">
+        <div style="padding:.6rem;background:var(--bg);border-radius:6px;">
+          <div style="font-size:.68rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">Total gasto</div>
+          <div style="font-size:1.2rem;font-weight:700;color:var(--green);margin-top:.15rem;">${fmtBRL(totalV)}</div>
+        </div>
+        <div style="padding:.6rem;background:var(--bg);border-radius:6px;">
+          <div style="font-size:.68rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">NFes</div>
+          <div style="font-size:1.2rem;font-weight:700;margin-top:.15rem;">${totalN}</div>
+        </div>
+        <div style="padding:.6rem;background:var(--bg);border-radius:6px;">
+          <div style="font-size:.68rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">Última compra</div>
+          <div style="font-size:1rem;font-weight:600;margin-top:.15rem;">${ultima?new Date(ultima).toLocaleDateString('pt-BR'):'—'}</div>
+        </div>
+      </div>
+    </div>`;
+
+  let tabela='';
+  if(comps.length){
+    tabela=`
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:.8rem;">
+        <h4 style="font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem;">📜 Detalhe das ${comps.length} compras</h4>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Data</th><th>NF</th><th>Produto</th><th style="text-align:right">Qtd</th><th style="text-align:right">Preço Un.</th><th style="text-align:right">Total</th></tr></thead>
+          <tbody>${comps.map(c=>{
+            const fab=fabrics.find(x=>x.id===c.fabric_id);
+            return `<tr>
+              <td>${c.date?new Date(c.date).toLocaleDateString('pt-BR'):'—'}</td>
+              <td style="color:var(--text-muted);font-size:.75rem">${esc(c.nf_number||'—')}</td>
+              <td>${esc(fab?fab.name+' ('+fab.color+')':'—')}</td>
+              <td style="text-align:right">${(parseFloat(c.qty)||0).toLocaleString('pt-BR')}</td>
+              <td style="text-align:right">${fmtBRL(c.unit_price)}</td>
+              <td style="text-align:right;font-weight:600;color:var(--green)">${fmtBRL(c.total_price)}</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table></div>
+      </div>`;
+  } else {
+    tabela=`<p style="color:var(--text-muted);font-size:.85rem;padding:.6rem 0;">Nenhuma compra detalhada registrada (só o resumo acima está disponível).</p>`;
+  }
+
+  $('drwTabCompras').innerHTML=bloco_resumo+tabela;
+}
+function renderDrwContato(f){
+  const wa=digits(f.whatsapp||f.telefone||'');
+  const waBtn=wa?`<a class="btn btn-primary btn-sm" href="https://wa.me/${wa.startsWith('55')?wa:'55'+wa}" target="_blank">💬 WhatsApp</a>`:'';
+  const mailBtn=f.email?`<a class="btn btn-sm" href="mailto:${f.email}" target="_blank">✉️ Email</a>`:'';
+  const webBtn=f.website?`<a class="btn btn-sm" href="${f.website}" target="_blank">🌐 Site</a>`:'';
+  $('drwTabContato').innerHTML=`
+    <div style="padding:.4rem 0;font-size:.82rem;"><strong>Contato:</strong> ${esc(f.contato_nome||'—')}</div>
+    <div style="padding:.4rem 0;font-size:.82rem;"><strong>Telefone:</strong> ${esc(f.telefone||'—')}</div>
+    <div style="padding:.4rem 0;font-size:.82rem;"><strong>WhatsApp:</strong> ${esc(f.whatsapp||'—')}</div>
+    <div style="padding:.4rem 0;font-size:.82rem;"><strong>Email:</strong> ${esc(f.email||'—')}</div>
+    <div style="padding:.4rem 0;font-size:.82rem;"><strong>Site:</strong> ${esc(f.website||'—')}</div>
+    <div style="display:flex;gap:.4rem;margin-top:1rem;flex-wrap:wrap;">${waBtn}${mailBtn}${webBtn}</div>`;
+}
+
+// Popular dropdown de fornecedor em outros forms
+function popSupSelect(selectId,currentValue){
+  const s=$(selectId);if(!s)return;
+  const ativos=fornecedores.filter(f=>f.ativo).sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+  s.innerHTML='<option value="">— Sem fornecedor —</option>'
+    +ativos.map(f=>`<option value="${f.id}">${esc(f.nome)}</option>`).join('');
+  if(currentValue)s.value=currentValue;
+}
+
+// ═══ BLING ═══
+const BLING_MES_NOMES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+let chartBlingMesInst=null,chartBlingDowInst=null;
+
+function renderBling(){
+  renderBlingSyncMeta();
+  renderBlingTrendStats();
+  renderBlingTopProdutos();
+  renderBlingVelocidade();
+  renderBlingChartMes();
+  renderBlingChartDow();
+}
+function renderBlingSyncMeta(){
+  const el=$('blingSyncMeta');if(!el)return;
+  if(!blingSyncMeta||!blingSyncMeta.last_sync_at){el.textContent='Sem sync ainda.';return;}
+  const dt=new Date(blingSyncMeta.last_sync_at).toLocaleString('pt-BR');
+  const src=blingSyncMeta.source==='dms_live'?'live via DMS':'snapshot local';
+  el.textContent=`Última sincronização: ${dt} (fonte: ${src}) · ${blingSyncMeta.total_produtos||0} produtos · ${blingSyncMeta.total_top_produtos||0} top · ${blingSyncMeta.total_produto_mes||0} linhas série`;
+}
+
+function renderBlingTrendStats(){
+  const wrap=$('blingTrendStats');if(!wrap)return;
+  const map={};for(const t of blingTrendPeriodo)map[t.periodo]=t;
+  const fmt=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  const fmtN=n=>Number(n||0).toLocaleString('pt-BR');
+  wrap.innerHTML=['30d','90d','180d'].map(p=>{
+    const d=map[p]||{};
+    return `<div class="stat-card">
+      <div class="stat-label">Últimos ${p}</div>
+      <div class="stat-value">${fmtN(d.pedidos||0)}</div>
+      <div class="stat-sub">pedidos · ${fmt(d.faturamento)} · ${Number(d.pedidos_por_dia||0).toFixed(1)}/dia</div>
+    </div>`;
+  }).join('');
+}
+
+function renderBlingTopProdutos(){
+  const tb=$('blingTopList');if(!tb)return;
+  const top=blingTopProdutos.slice(0,50);
+  if(!top.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem;">Sem dados.</td></tr>';return;}
+  const fmt=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  tb.innerHTML=top.map((r,i)=>`<tr>
+    <td style="color:var(--text-muted);font-variant-numeric:tabular-nums;">${i+1}</td>
+    <td><strong>${esc(r.produto)}</strong></td>
+    <td style="font-variant-numeric:tabular-nums;">${r.total_pedidos}</td>
+    <td style="font-variant-numeric:tabular-nums;">${Number(r.total_quantidade||0).toLocaleString('pt-BR')}</td>
+    <td style="font-variant-numeric:tabular-nums;">${fmt(r.total_receita)}</td>
+    <td style="font-variant-numeric:tabular-nums;">${fmt(r.preco_medio)}</td>
+  </tr>`).join('');
+}
+
+function renderBlingVelocidade(){
+  const tb=$('blingVelList');if(!tb)return;
+  if(!blingVelocidade.length){tb.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:2rem;">Sem dados.</td></tr>';return;}
+  tb.innerHTML=blingVelocidade.map((r,i)=>`<tr>
+    <td style="color:var(--text-muted);font-variant-numeric:tabular-nums;">${i+1}</td>
+    <td><strong>${esc(r.produto)}</strong></td>
+    <td style="font-variant-numeric:tabular-nums;">${Number(r.qtd_90d||0).toLocaleString('pt-BR')}</td>
+    <td style="font-variant-numeric:tabular-nums;">${Number(r.media_diaria_90d||0).toFixed(2)}</td>
+    <td style="font-variant-numeric:tabular-nums;"><strong>${Number(r.projecao_mensal||0).toFixed(1)}</strong>/mês</td>
+  </tr>`).join('');
+}
+
+async function renderBlingCatalogo(){
+  await loadBlingCatalogo();
+  const tb=$('blingCatList');if(!tb)return;
+  const q=($('blingCatSearch')?.value||'').toLowerCase().trim();
+  const sit=$('blingCatSituacao')?.value||'A';
+  const fmt=$('blingCatFormato')?.value||'all';
+  let list=blingCatalogo;
+  if(sit!=='all')list=list.filter(p=>(p.situacao||'')===sit);
+  if(fmt!=='all')list=list.filter(p=>(p.formato||'')===fmt);
+  if(q)list=list.filter(p=>(p.nome||'').toLowerCase().includes(q)||(p.codigo||'').toLowerCase().includes(q));
+  $('blingCatCount').textContent=`${list.length.toLocaleString('pt-BR')} produto(s)`;
+  const limited=list.slice(0,500);
+  const fmtR=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  tb.innerHTML=limited.map(p=>`<tr>
+    <td><strong>${esc(p.nome)}</strong></td>
+    <td style="font-family:monospace;font-size:.75rem;color:var(--text-muted);">${esc(p.codigo||'—')}</td>
+    <td style="font-variant-numeric:tabular-nums;">${fmtR(p.preco)}</td>
+    <td style="font-variant-numeric:tabular-nums;color:var(--text-muted);">${fmtR(p.preco_custo)}</td>
+    <td style="font-variant-numeric:tabular-nums;${(p.estoque_virtual||0)<0?'color:var(--red);':''}">${Number(p.estoque_virtual||0).toLocaleString('pt-BR')}</td>
+    <td>${p.situacao==='A'?'<span style="color:var(--green);">● Ativo</span>':'<span style="color:var(--text-muted);">○ Inativo</span>'}</td>
+  </tr>`).join('');
+  if(list.length>500){
+    tb.innerHTML+=`<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:1rem;">Mostrando 500 de ${list.length.toLocaleString('pt-BR')}. Refine a busca pra ver mais.</td></tr>`;
+  }
+}
+
+function renderBlingChartMes(){
+  const c=$('chartBlingMes');if(!c||!window.Chart)return;
+  if(chartBlingMesInst){chartBlingMesInst.destroy();chartBlingMesInst=null;}
+  const dados=[...blingVendasMes].sort((a,b)=>(a.mes||'').localeCompare(b.mes||''));
+  const labels=dados.map(d=>{const[y,m]=d.mes.split('-');return BLING_MES_NOMES[parseInt(m)-1]+'/'+y.slice(2);});
+  chartBlingMesInst=new Chart(c,{
+    type:'bar',
+    data:{
+      labels,
+      datasets:[{
+        label:'Faturamento',
+        data:dados.map(d=>+d.faturamento_produtos||0),
+        backgroundColor:'#3b82f699',borderColor:'#3b82f6',borderWidth:1,borderRadius:4
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:true,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'R$ '+Number(ctx.raw).toLocaleString('pt-BR',{minimumFractionDigits:2})}}},
+      scales:{y:{ticks:{color:'#71717a',callback:v=>'R$ '+(v/1000).toFixed(0)+'k'},grid:{color:'#27272a'}},x:{ticks:{color:'#71717a'},grid:{display:false}}}
+    }
+  });
+}
+
+function renderBlingChartDow(){
+  const c=$('chartBlingDow');if(!c||!window.Chart)return;
+  if(chartBlingDowInst){chartBlingDowInst.destroy();chartBlingDowInst=null;}
+  const dados=[...blingDiaSemana].sort((a,b)=>a.dia_semana-b.dia_semana);
+  chartBlingDowInst=new Chart(c,{
+    type:'bar',
+    data:{
+      labels:dados.map(d=>d.nome_dia||('D'+d.dia_semana)),
+      datasets:[{label:'Pedidos',data:dados.map(d=>d.qtd_pedidos||0),backgroundColor:'#10b98199',borderColor:'#10b981',borderWidth:1,borderRadius:4}]
+    },
+    options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},
+      scales:{y:{ticks:{color:'#71717a'},grid:{color:'#27272a'}},x:{ticks:{color:'#71717a'},grid:{display:false}}}}
+  });
+}
+
+function switchBlingTab(name,btn){
+  document.querySelectorAll('.bling-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  $('blingTabTop').style.display=name==='top'?'':'none';
+  $('blingTabVel').style.display=name==='vel'?'':'none';
+  $('blingTabCat').style.display=name==='cat'?'':'none';
+  if(name==='cat')renderBlingCatalogo();
+}
+
+async function refreshBlingFromDMS(){
+  // Stub: precisa da DMS anon key em TOKENS SUPABASE.txt (atualmente so tem do Estoque)
+  if(!canAccess('fornecedores_editar')&&profile.role!=='admin'){toast('Sem permissao pra sincronizar.');return;}
+  toast('⚠️ Sync ao vivo ainda nao configurado. Precisa do anon key do DMS (wltmiqbhziefusnzmmkt).');
+  alert(`Para ativar a atualização ao vivo do Bling, preciso do anon key público do Supabase do DMS (wltmiqbhziefusnzmmkt).\n\nEnquanto isso, os dados são do snapshot em bling-matriz/ (${blingSyncMeta?.last_sync_at?new Date(blingSyncMeta.last_sync_at).toLocaleString('pt-BR'):'—'}).\n\nPra atualizar o snapshot rode:\npython .claude/scripts/exportar-bling-matriz.py`);
+}
+
 // ═══ ENTRY ═══
+function onEntryFornecedorChange(){
+  const id=$('entryFornecedorId').value;
+  const f=fornecedores.find(x=>x.id===id);
+  $('entrySup').value=f?f.nome:'';
+}
 async function saveEntry(e){
   e.preventDefault();
   const fid=$('entryFab').value,qty=parseFloat($('entryQty').value);
   if(!fid||!qty)return;
   const fab=fabrics.find(f=>f.id===fid);
+  const fornId=$('entryFornecedorId').value||null;
+  const forn=fornecedores.find(x=>x.id===fornId);
+  const supName=forn?forn.nome:'';
   await Promise.all([
-    sb.from('movements').insert({user_id:user.id,fabric_id:fid,type:'entrada',qty,date:$('entryDate').value,detail:[$('entrySup').value,$('entryNotes').value].filter(Boolean).join(' — '),who:profile.display_name}),
+    sb.from('movements').insert({user_id:user.id,fabric_id:fid,type:'entrada',qty,date:$('entryDate').value,detail:[supName,$('entryNotes').value].filter(Boolean).join(' — '),who:profile.display_name}),
     sb.from('fabrics').update({stock:(fab.stock||0)+qty}).eq('id',fid)
   ]);
   toast(`+${qty} ${fab.unit} de ${fab.name} registrados!`);
-  e.target.reset();$('entryDate').value=today();await loadAll();popSel('entryFab');
+  e.target.reset();$('entryDate').value=today();popSupSelect('entryFornecedorId');await loadAll();popSel('entryFab');
 }
 
 // ═══ EXIT ═══
@@ -1636,7 +2525,33 @@ function getWho(m){return m.who||profName(m.user_id)||'—';}
 function profName(uid){const p=profiles.find(x=>x.id===uid);return p?p.display_name:'';}
 
 // ═══ DASHBOARD ═══
+function renderDashBlingStrip(){
+  const el=$('dashBlingStrip');if(!el)return;
+  if(!canAccess('bling')||!blingTrendPeriodo.length){el.style.display='none';return;}
+  const map={};for(const t of blingTrendPeriodo)map[t.periodo]=t;
+  const t30=map['30d']||{},t90=map['90d']||{};
+  const fmtR=n=>'R$ '+Number(n||0).toLocaleString('pt-BR',{maximumFractionDigits:0});
+  const fmtN=n=>Number(n||0).toLocaleString('pt-BR');
+  // Top 3 produtos em velocidade
+  const top3=blingVelocidade.slice(0,3).map(v=>`${esc(v.produto)} (${Number(v.projecao_mensal||0).toFixed(0)}/mês)`).join(' · ');
+  el.style.display='';
+  el.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
+      <div>
+        <div style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:.3rem;">📊 Vendas (Bling) — Matriz</div>
+        <div style="font-size:.82rem;display:flex;gap:1.2rem;flex-wrap:wrap;">
+          <div><strong style="font-size:1.1rem;">${fmtN(t30.pedidos)}</strong> pedidos <span style="color:var(--text-muted);">(30d)</span></div>
+          <div><strong style="font-size:1.1rem;">${fmtR(t30.faturamento)}</strong> <span style="color:var(--text-muted);">(30d)</span></div>
+          <div><span style="color:var(--text-muted);">${Number(t30.pedidos_por_dia||0).toFixed(1)} pedidos/dia</span></div>
+        </div>
+        ${top3?`<div style="font-size:.72rem;color:var(--text-muted);margin-top:.4rem;">Top vendas: ${top3}</div>`:''}
+      </div>
+      <button class="btn btn-sm" onclick="showPage('bling',navBtn('bling'))">Ver detalhes →</button>
+    </div>`;
+}
+
 function renderDash(){
+  renderDashBlingStrip();
   updateAlertBadge();
   const total=fabrics.reduce((s,f)=>s+(f.stock||0),0);
   const low=fabrics.filter(f=>f.stock>0&&f.stock<=f.min_stock).length;
@@ -2054,14 +2969,63 @@ function renderPurchases(){
   const totalItems=list.length;
   const avgPrice=totalItems?totalSpent/list.reduce((s,p)=>s+p.qty,0):0;
   const priceIncreases=list.filter(p=>{const lp=getLastPrice(p.fabric_id,p.id);return lp!==null&&p.unit_price>lp;}).length;
-
   const priceDecreases=list.filter(p=>{const lp=getLastPrice(p.fabric_id,p.id);return lp!==null&&p.unit_price<lp;}).length;
 
+  // Comparação mês atual vs mês anterior (baseado em purchases.date)
+  const hoje=new Date();
+  const mesAtualKey=hoje.getFullYear()+'-'+String(hoje.getMonth()+1).padStart(2,'0');
+  const mesAntDate=new Date(hoje.getFullYear(),hoje.getMonth()-1,1);
+  const mesAntKey=mesAntDate.getFullYear()+'-'+String(mesAntDate.getMonth()+1).padStart(2,'0');
+  const mesesNomes=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const nomeMesAtual=mesesNomes[hoje.getMonth()]+'/'+hoje.getFullYear();
+  const nomeMesAnt=mesesNomes[mesAntDate.getMonth()]+'/'+mesAntDate.getFullYear();
+
+  const byMes={};
+  purchases.forEach(p=>{
+    if(!p.date)return;
+    const k=p.date.substring(0,7);
+    if(!byMes[k])byMes[k]={total:0,qtd:0,nfes:new Set()};
+    byMes[k].total+=parseFloat(p.total_price)||0;
+    byMes[k].qtd+=1;
+    if(p.nf_number)byMes[k].nfes.add(p.nf_number);
+  });
+  const gastoAtual=byMes[mesAtualKey]?.total||0;
+  const gastoAnt=byMes[mesAntKey]?.total||0;
+  const diff=gastoAtual-gastoAnt;
+  const pct=gastoAnt>0?(diff/gastoAnt*100):0;
+  const setaCor=diff>0?'var(--red)':diff<0?'var(--green)':'var(--text-muted)';
+  const setaIco=diff>0?'▲':diff<0?'▼':'=';
+  const compareCard=gastoAnt>0?`
+    <div class="stat-card" style="border-left:3px solid ${setaCor};">
+      <div class="stat-label">${nomeMesAtual} vs ${nomeMesAnt}</div>
+      <div class="stat-value" style="font-size:1.15rem;color:${setaCor};">${setaIco} ${Math.abs(pct).toFixed(1)}%</div>
+      <div style="font-size:.72rem;color:var(--text-muted);margin-top:.2rem;">
+        ${diff>=0?'+':'-'}R$ ${fmtMoney(Math.abs(diff))} que mês anterior
+      </div>
+    </div>`:`
+    <div class="stat-card">
+      <div class="stat-label">${nomeMesAtual} vs ${nomeMesAnt}</div>
+      <div class="stat-value" style="font-size:.9rem;color:var(--text-muted);">—</div>
+      <div style="font-size:.72rem;color:var(--text-muted);margin-top:.2rem;">Sem dados do mês anterior</div>
+    </div>`;
+
   $('purchaseStats').innerHTML=`
-    <div class="stat-card"><div class="stat-label">Total de Compras</div><div class="stat-value">${totalItems}</div></div>
-    <div class="stat-card"><div class="stat-label">Total Gasto</div><div class="stat-value" style="font-size:1.4rem;">R$ ${fmtMoney(totalSpent)}</div></div>
-    <div class="stat-card"><div class="stat-label">Aumentos ↑</div><div class="stat-value" style="color:${priceIncreases?'var(--red)':'var(--green)'}">${priceIncreases}</div></div>
-    <div class="stat-card"><div class="stat-label">Reduções ↓</div><div class="stat-value" style="color:${priceDecreases?'var(--green)':'var(--text-muted)'}">${priceDecreases}</div></div>
+    <div class="stat-card">
+      <div class="stat-label">Gasto ${nomeMesAtual}</div>
+      <div class="stat-value" style="font-size:1.3rem;color:var(--green);">R$ ${fmtMoney(gastoAtual)}</div>
+      <div style="font-size:.72rem;color:var(--text-muted);margin-top:.2rem;">${byMes[mesAtualKey]?.qtd||0} compras</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Gasto ${nomeMesAnt}</div>
+      <div class="stat-value" style="font-size:1.3rem;">R$ ${fmtMoney(gastoAnt)}</div>
+      <div style="font-size:.72rem;color:var(--text-muted);margin-top:.2rem;">${byMes[mesAntKey]?.qtd||0} compras</div>
+    </div>
+    ${compareCard}
+    <div class="stat-card">
+      <div class="stat-label">Total Geral</div>
+      <div class="stat-value" style="font-size:1.3rem;">R$ ${fmtMoney(totalSpent)}</div>
+      <div style="font-size:.72rem;color:var(--text-muted);margin-top:.2rem;">${totalItems} compras · ${priceIncreases}↑ ${priceDecreases}↓</div>
+    </div>
   `;
 
   renderPurchaseCharts(list);

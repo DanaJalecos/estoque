@@ -1,0 +1,20 @@
+[
+  {
+    "periodo": "30d",
+    "pedidos": 633,
+    "faturamento": "599694.23",
+    "pedidos_por_dia": "21.10"
+  },
+  {
+    "periodo": "90d",
+    "pedidos": 2082,
+    "faturamento": "1398825.51",
+    "pedidos_por_dia": "23.13"
+  },
+  {
+    "periodo": "180d",
+    "pedidos": 3436,
+    "faturamento": "2530227.84",
+    "pedidos_por_dia": "19.09"
+  }
+]

@@ -1,0 +1,584 @@
+{
+  "gerado_em": "2026-04-24T17:51:45.454047",
+  "periodo": "2026-03-01 a 2026-04-24",
+  "total_nfes": 75,
+  "fornecedores_unicos": 31,
+  "fornecedores": [
+    {
+      "nome": "ARCHNEER IMPRESSAO 3D EIRELI",
+      "cnpjs": [
+        "27276050000152"
+      ],
+      "naturezas": [
+        "Compra p/ Industrialização"
+      ],
+      "total_nfes": 1,
+      "total_valor": 6225.0,
+      "ultima_compra": "2026-03-31",
+      "cidade": "Balneário Piçarras",
+      "uf": "SC",
+      "itens": [
+        "Broche Magnetico Personalizado Cor: Dourado",
+        "Broche Magnetico Personalizado Cor: Prata",
+        "Broche Magnetico Personalizado Cor:Preto"
+      ]
+    },
+    {
+      "nome": "L3000 COMERCIAL LTDA",
+      "cnpjs": [
+        "65036043000172"
+      ],
+      "naturezas": [
+        "Compra p/ Uso e Consumo"
+      ],
+      "total_nfes": 1,
+      "total_valor": 43.2,
+      "ultima_compra": "2026-03-31",
+      "cidade": "São Paulo",
+      "uf": "SP",
+      "itens": [
+        "1 Litro Alcool Isopropylico Puro 99,8% Limpador De Uso Geral"
+      ]
+    },
+    {
+      "nome": "MTAG ETIQUETAS ACESSORIOS EM GERAL LTDA",
+      "cnpjs": [
+        "51075876000138"
+      ],
+      "naturezas": [
+        "Compra p/ Uso e Consumo"
+      ],
+      "total_nfes": 2,
+      "total_valor": 373.87,
+      "ultima_compra": "2026-03-30",
+      "cidade": "Santa Bárbara D'Oeste",
+      "uf": "SP",
+      "itens": [
+        "1 Rolo Etiqueta Para Impressao Termica 10x15 Cm Zebra Elgin Cor Branco Mtag Etiq"
+      ]
+    },
+    {
+      "nome": "SOUL INDUSTRIA DE TECIDOS LTDA",
+      "cnpjs": [
+        "35588873000222"
+      ],
+      "naturezas": [
+        "Compra p/ Industrialização"
+      ],
+      "total_nfes": 4,
+      "total_valor": 66177.25,
+      "ultima_compra": "2026-03-27",
+      "cidade": "Gaspar",
+      "uf": "SC",
+      "itens": [
+        "Soul Light # 1014-Chumbo  Lote(s) : 14186",
+        "Soul Light # 1014-Chumbo  Lote(s) : 14354",
+        "Soul Light # 1020-ELEGANCE Lote(s) : 12957",
+        "Soul Light # 1065-Verde Musgo Lote(s) : 14186",
+        "Soul Light # 122-Mousse Lote(s) : 14186",
+        "Soul Light # 129-Coffee Lote(s) : 14186"
+      ]
+    },
+    {
+      "nome": "LC COMPONENTES E ACESSORIOS PARA CALCADOS LTDA",
+      "cnpjs": [
+        "11029034000125"
+      ],
+      "naturezas": [
+        "Compra p/ Industrialização"
+      ],
+      "total_nfes": 2,
+      "total_valor": 1329.7,
+      "ultima_compra": "2026-03-27",
+      "cidade": "São João Batista",
+      "uf": "SC",
+      "itens": [
+        "FILME SMELLTEX HM 50 LARGURA 1,45 POLLIBOX",
+        "FORRO CLASSIC 2026 NUDE",
+        "NAPA SANTORINE 2026 CARAMELO CL",
+        "NAPA SANTORINE 2026 MINT",
+        "NAPA SANTORINE 2026 NUDE",
+        "NAPA SANTORINE 2026 OFF WHITE CL",
+        "NAPA SANTORINE 2026 PINK"
+      ]
+    },
+    {
+      "nome": "Peak Importadora Ltda",
+      "cnpjs": [
+        "61048664000115"
+      ],
+      "naturezas": [
+        "Compra p/ Industrialização"
+      ],
+      "total_nfes": 2,
+      "total_valor": 47115.49,
+      "ultima_compra": "2026-03-26",
+      "cidade": "Serra",
+      "uf": "ES",
+      "itens": [
+        "GABARDINE BISTRETCH - AZUL MARINHO",
+        "GABARDINE BISTRETCH - BEGE ROCHA",
+        "GABARDINE BISTRETCH - BRANCO",
+        "GABARDINE BISTRETCH - CINZA ULTIMATO",
+        "GABARDINE BISTRETCH - PRETO"
+      ]
+    },
+    {
+      "nome": "BENVETEXTIL LTDA",
+      "cnpjs": [
+        "32217072000181"
+      ],
+      "naturezas": [
+        "Compra p/ Industrialização"
+      ],
+      "total_nfes": 1,
+      "total_valor": 1396.5,
+      "ultima_compra": "2026-03-26",
+      "cidade": "Apiúna",
+      "uf": "SC",
+      "itens": [
+        "RIBANA RETILINEA 100% PES FIADO COR CINZA 554",
+        "RIBANA RETILINEA 100% PES FIADO COR VERDE 752"
+      ]
+    },
+    {
+      "nome": "EXCIM Importacao e Exportacao Ltda.",
+      "cnpjs": [
+        "02384871000181",
+        "02384871000858"
+      ],
+      "naturezas": [
+        "Compra p/ Industrialização"
+      ],
+      "total_nfes": 5,
+      "total_valor": 125047.44,
+      "ultima_compra": "2026-03-25",
+      "cidade": "Aracruz",
+      "uf": "ES",
+      "itens": [
+        "BI STRET ACQUA UNI",
+        "BI STRET BRANCO OPTICO",
+        "BI STRET BURGUNDY",
+        "BI STRET GLACE FT",
+        "BI STRET PRETO FT",
+        "BI STRET ROSA GIZ FT",
+        "MLH SCUBA CREPE NEW CARAMELO",
+        "PREM EL PLUS BRANCO OPTICO",
+        "PREM ELAST BLUE SPACE",
+        "PREM ELAST CASHMERE NEW",
+        "PREM ELAST PRETO"
+      ]
+    },
+    {
+      "nome": "EPM IMPORTS ECOMMERCE LTDA",
+      "cnpjs": [
+        "54015106000198"
+      ],
+      "naturezas": [
+        "Compra p/ Uso e Consumo"
+      ],
+      "total_nfes": 1,
+      "total_valor": 23.9,
+      "ultima_compra": "2026-03-25",
+      "cidade": "São Paulo",
+      "uf": "SP",
+      "itens": [
+        "CARTUCHO DE TONER COMPATIVEL BROTHER TN660 PRETO"
+      ]
+    },
+    {
+      "nome": "MONLINE ECOMMERCE VAREJISTA LTDA",
+      "cnpjs": [
+        "62105533000195"
+      ],
+      "naturezas": [
+        "Compra p/ Uso e Consumo"
+      ],
+      "total_nfes": 3,
+      "total_valor": 1014.65,
+      "ultima_compra": "2026-03-23",
+      "cidade": "Rio de Janeiro",
+      "uf": "RJ",
+      "itens": [
+        "Garrafa termica 800ml Sport Bottle"
+      ]
+    },
+    {
+      "nome": "ALZ COMERCIO DE EQUIPAMENTOS ELETRONICOS E INFORMATICA LTDA",
+      "cnpjs": [
+        "57306449000108"
+      ],
+      "naturezas": [
+        "Compra p/ Uso e Consumo"
+      ],
+      "total_nfes": 1,
+      "total_valor": 97.99,
+      "ultima_compra": "2026-03-19",
+      "cidade": "São Paulo",
+      "uf": "SP",
+      "itens": [
+        "Lampada Led Bivolt Bulbo Bicolor 85w Com Controle"
+      ]
+    },
+    {
+      "nome": "SANTISTA TEXTIL S.A.",
+      "cnpjs": [
+        "61520607001835"
+      ],
+      "naturezas": [
+        "Compra p/ Industrialização"
+      ],
+      "total_nfes": 1,
+      "total_valor": 2187.6,
+      "ultima_compra": "2026-03-19",
+      "cidade": "Tatuí",
+      "uf": "SP",
+      "itens": [
+        "001-TECIDO-TAPE MAIS - ALVEJADO - Peso 186.0 G/M2"
+      ]
+    },
+    {
+      "nome": "MOVEIS CARRARO LTDA",
+      "cnpjs": [
+        "87548814000143"
+      ],
+      "naturezas": [
+        "Compra p/ Uso e Consumo"
+      ],
+      "total_nfes": 1,
+      "total_valor": 502.86,
+      "ultima_compra": "2026-03-18",
+      "cidade": "Bento Gonçalves",
+      "uf": "RS",
+      "itens": [
+        "BANQUETA DUO (2) TEC ARE COU CCA ROS"
+      ]
+    },
+    {
+      "nome": "EBAZAR.COM.BR. LTDA",
+      "cnpjs": [
+        "03007331001032"
+      ],
+      "naturezas": [
+        "Compra p/ Uso e Consumo"
+      ],
+      "total_nfes": 1,
+      "total_valor": 86.97,
+      "ultima_compra": "2026-03-18",
+      "cidade": "Extrema",
+      "uf": "MG",
+      "itens": [
+        "Mouse com fio Logitech M90 Preto Preto"
+      ]
+    },
+    {
+      "nome": "EHF SUPRIMENTOS CORPORATIVOS E DOMESTICOS LTDA",
+      "cnpjs": [
+        "41728587000137"
+      ],
+      "naturezas": [
+        "Compra p/ Uso e Consumo"
+      ],
+      "total_nfes": 1,
+      "total_valor": 116.97,
+      "ultima_compra": "2026-03-16",
+      "cidade": "São Paulo",
+      "uf": "SP",
+      "itens": [
+        "Saco Plastico Transparente Pp 35x45 1kg - Para Embalagens 0.08 mm"
+      ]
+    },
+    {
+      "nome": "Brasil Botoes Ltda",
+      "cnpjs": [
+        "05480257000101"
+      ],
+      "naturezas": [
+        "Compra p/ Industrialização"
+      ],
+      "total_nfes": 1,
+      "total_valor": 671.64,
+      "ultima_compra": "2026-03-13",
+      "cidade": "Jaraguá do Sul",
+      "uf": "SC",
+      "itens": [
+        "BOTAO POL 90001 4F TAM 32 COR C100 BRI PERS TING TING. COR BEGE/CONFORME AMOSTRA"
+      ]
+    },
+    {
+      "nome": "SANCRIS LINHAS E FIOS",
+      "cnpjs": [
+        "80446990000125",
+        "80446990000478"
+      ],
+      "naturezas": [
+        "Compra p/ Industrialização"
+      ],
+      "total_nfes": 2,
+      "total_valor": 1374.1,
+      "ultima_compra": "2026-03-13",
+      "cidade": "Brusque",
+      "uf": "SC",
+      "itens": [
+        "FIO TEXTURIZADO 500 G - T: 167 - TINTO",
+        "LINHA DE POLIESTER FIADO 5.000 M - T: 120 - TINTO",
+        "ZIPER SINT. #5 SEPAR. 80 CM - T: 4 - TINTO"
+      ]
+    },
+    {
+      "nome": "DISTRIBUIDORA DE ALIMENTOS DEQUECH LTDA.",
+      "cnpjs": [
+        "79941894000174"
+      ],
+      "naturezas": [
+        "Compra p/ Uso e Consumo"
+      ],
+      "total_nfes": 1,
+      "total_valor": 400.99,
+      "ultima_compra": "2026-03-13",
+      "cidade": "Guaramirim",
+      "uf": "SC",
+      "itens": [
+        "CAFE MELITTA 500G TRADICIONAL 500G",
+        "FILTRO PAPEL MELITTA 103 1",
+        "ISQUEIRO BIC MAXI COLOR C/12 12UN"
+      ]
+    },
+    {
+      "nome": "Coretex Indústria Têxtil Ltda",
+      "cnpjs": [
+        "83445288000135"
+      ],
+      "naturezas": [
+        "Compra p/ Industrialização"
+      ],
+      "total_nfes": 2,
+      "total_valor": 16485.4,
+      "ultima_compra": "2026-03-11",
+      "cidade": "Brusque",
+      "uf": "SC",
+      "itens": [
+        "Versatily Fdy (Modelador/Sustentação) 122385-Castanho ( Louise )",
+        "Versatily Fdy (Modelador/Sustentação) 123002-Aço"
+      ]
+    },
+    {
+      "nome": "VIVER METAIS EIRELI",
+      "cnpjs": [
+        "12837722000184"
+      ],
+      "naturezas": [
+        "Compra p/ Industrialização"
+      ],
+      "total_nfes": 2,
+      "total_valor": 619.04,
+      "ultima_compra": "2026-03-11",
+      "cidade": "Nova Trento",
+      "uf": "SC",
+      "itens": [
+        "PLACA COM COROA VAZADA OURO LIGHT COM VERNIZ 13054 13054",
+        "PLACA COM COROA VAZADA VERNIZ CATAFORETICO COR OURO 13054 13054",
+        "PONTEIRA SEXTAVADA 11X15MM AB 5 E 8MM OURO LIGHT 21966 21966"
+      ]
+    },
+    {
+      "nome": "ABSHOP COMERCIO LTDA",
+      "cnpjs": [
+        "50018862000110"
+      ],
+      "naturezas": [
+        "Compra p/ Uso e Consumo"
+      ],
+      "total_nfes": 1,
+      "total_valor": 33.0,
+      "ultima_compra": "2026-03-10",
+      "cidade": "São Paulo",
+      "uf": "SP",
+      "itens": [
+        "Kit 100 Un Saco Organza Saquinho 10x15 Branco Atacado"
+      ]
+    },
+    {
+      "nome": "57.528.571 LIGIA FERREIRA DE ANDRADE",
+      "cnpjs": [
+        "57528571000110"
+      ],
+      "naturezas": [
+        "Compra p/ Uso e Consumo"
+      ],
+      "total_nfes": 2,
+      "total_valor": 247.99,
+      "ultima_compra": "2026-03-10",
+      "cidade": "São Paulo",
+      "uf": "SP",
+      "itens": [
+        "Fecho Mosquetao Lagosta Com Argola Italiana Chaveiro"
+      ]
+    },
+    {
+      "nome": "PJPB ELASTICOS LTDA",
+      "cnpjs": [
+        "53578458000199"
+      ],
+      "naturezas": [
+        "Compra p/ Industrialização"
+      ],
+      "total_nfes": 1,
+      "total_valor": 317.75,
+      "ultima_compra": "2026-03-09",
+      "cidade": "Penha",
+      "uf": "SC",
+      "itens": [
+        "CR:40",
+        "CR:60"
+      ]
+    },
+    {
+      "nome": "COMANDOLLI COMERCIO DE EMBALAGENS LTDA",
+      "cnpjs": [
+        "22458084000144"
+      ],
+      "naturezas": [
+        "Compra p/ Uso e Consumo"
+      ],
+      "total_nfes": 1,
+      "total_valor": 167.01,
+      "ultima_compra": "2026-03-05",
+      "cidade": "Brusque",
+      "uf": "SC",
+      "itens": [
+        "CANETA ESFEROGRAFICA BIC CRISTAL*",
+        "CANETA MARCA TEXTO CORES DIVERSAS BRW CA2001/CA2002",
+        "CORRETIVO FITA 5MM X 6 MTRS BRW CFT1002*",
+        "ENVELOPE PAPEL 1623 (162X229)BRANCO/AMARELO/PARDO *",
+        "FITA ADESIVA 48MM X 100M KOVER"
+      ]
+    },
+    {
+      "nome": "AVIAMENTOS BRUSQUE LTDA",
+      "cnpjs": [
+        "74183500000142"
+      ],
+      "naturezas": [
+        "Compra p/ Industrialização"
+      ],
+      "total_nfes": 1,
+      "total_valor": 232.84,
+      "ultima_compra": "2026-03-05",
+      "cidade": "Brusque",
+      "uf": "SC",
+      "itens": [
+        "AGULHA COSTURA DBX1 1738(GB80)",
+        "AGULHA COSTURA DBX1 K5(GB65)",
+        "PASSADOR ELASTICO FF(001)",
+        "TESOURA 690/10(001)",
+        "TESOURA ARREMATE METALICA FF(001)"
+      ]
+    },
+    {
+      "nome": "GCE COMERCIO INTERNACIONAL DE PAPEIS LTDA",
+      "cnpjs": [
+        "08048153000110"
+      ],
+      "naturezas": [
+        "Compra p/ Uso e Consumo"
+      ],
+      "total_nfes": 1,
+      "total_valor": 256.56,
+      "ultima_compra": "2026-03-05",
+      "cidade": "Itajaí",
+      "uf": "SC",
+      "itens": [
+        "PAPEL ECOQUALITY A4 75G EXTRA BRANCO - ALT"
+      ]
+    },
+    {
+      "nome": "PARFF INDUSTRIA DE COSMETICOS LTDA",
+      "cnpjs": [
+        "30225681000157"
+      ],
+      "naturezas": [
+        "Compra p/ Uso e Consumo"
+      ],
+      "total_nfes": 1,
+      "total_valor": 515.0,
+      "ultima_compra": "2026-03-05",
+      "cidade": "Balneário Camboriú",
+      "uf": "SC",
+      "itens": [
+        "Refil Perfume de Ambiente (Home Spray) 1 litro",
+        "Taxa de entrega moto boy"
+      ]
+    },
+    {
+      "nome": "TEXMIL COMERCIO E SUBLIMACAO TEXTIL LTDA",
+      "cnpjs": [
+        "14934551000137"
+      ],
+      "naturezas": [
+        "Compra p/ Industrialização"
+      ],
+      "total_nfes": 1,
+      "total_valor": 47.2,
+      "ultima_compra": "2026-03-05",
+      "cidade": "Gaspar",
+      "uf": "SC",
+      "itens": [
+        "SUBLIMATICO ROTATIVO + APLICACAO - REF. 009-25 / CR"
+      ]
+    },
+    {
+      "nome": "ADAR IND. COM. IMPORT. E EXPORT. LTDA.",
+      "cnpjs": [
+        "03442526000110"
+      ],
+      "naturezas": [
+        "Compra p/ Industrialização"
+      ],
+      "total_nfes": 1,
+      "total_valor": 5328.6,
+      "ultima_compra": "2026-03-04",
+      "cidade": "Três Lagoas",
+      "uf": "MS",
+      "itens": [
+        "NEWSPAN FUSIL"
+      ]
+    },
+    {
+      "nome": "BECKHAUSER IND COM MALHAS LTDA",
+      "cnpjs": [
+        "03080418000144"
+      ],
+      "naturezas": [
+        "Compra p/ Industrialização"
+      ],
+      "total_nfes": 1,
+      "total_valor": 260.01,
+      "ultima_compra": "2026-03-03",
+      "cidade": "Tubarão",
+      "uf": "SC",
+      "itens": [
+        "COMFY ELASTIC AZUL ROYAL 90% POLIESTER 10% ELASTANO 1G 3C 4A 6C 2F Largura: 1,50",
+        "TECIDO MALHA ESSENCIAL LIGHT NATURE 94% ALGODAO 6% ELASTANO 1G 3C 4C (5B) 6B 2F ",
+        "TECIDO MALHA LEMON FIT MULBERRY 82% POLIAMIDA 18% ELASTANO 1J 3C 4C (5B) 6D 2F L"
+      ]
+    },
+    {
+      "nome": "PUBLI HOUSE BRASIL LTDA",
+      "cnpjs": [
+        "05239431000129"
+      ],
+      "naturezas": [
+        "Compra p/ Industrialização"
+      ],
+      "total_nfes": 1,
+      "total_valor": 62.89,
+      "ultima_compra": "2026-03-03",
+      "cidade": "Suzano",
+      "uf": "SP",
+      "itens": [
+        "ETIQUETA 100X150 10X15 31M 200"
+      ]
+    }
+  ]
+}

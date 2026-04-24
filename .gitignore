@@ -1,4 +1,21 @@
 .env
+.env.*
 .claude/
 *.ogg
 setup-supabase.sql
+
+# Tokens e credenciais — NUNCA commitar
+*TOKEN*.txt
+*TOKEN*.md
+*token*.txt
+*token*.json
+
+# Backups locais
+*.backup-*
+index.html.backup-*
+
+# Temporários
+.DS_Store
+Thumbs.db
+*.swp
+*~

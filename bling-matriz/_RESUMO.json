@@ -1,0 +1,29 @@
+{
+  "gerado_em": "2026-04-24T13:50:06.636664",
+  "empresa": "matriz",
+  "escopo": "APENAS dados relevantes pra sistema de estoque/producao",
+  "fonte": "Supabase DMS (wltmiqbhziefusnzmmkt)",
+  "o_que_foi_exportado": {
+    "_schema_tabelas_relevantes.json": "Colunas de cada tabela do Bling relacionada a produto/item/estoque",
+    "01_produtos_matriz.json/.csv": "Catalogo de 2205 produtos cadastrados no Bling (Matriz)",
+    "02_vendas_por_mes.json/.csv": "Volume e faturamento mensal dos ultimos 12 meses",
+    "03_vendas_por_dia_da_semana.json/.csv": "Distribuicao de vendas por dia da semana",
+    "04_trend_30_90_180_dias.json": "Pedidos e faturamento nos ultimos 30/90/180 dias",
+    "05_top100_produtos_mais_vendidos_12m.json/.csv": "Top 100 SKUs vendidos (SE existir tabela de itens)",
+    "06_vendas_por_produto_por_mes.json/.csv": "Vendas por SKU agregadas por mes (SE existir tabela de itens)"
+  },
+  "como_usar_no_sistema_de_estoque": {
+    "produtos_bling": "Usar como SEED da tabela ficha_tecnica — mapear cada SKU -> materia-prima consumida",
+    "vendas_por_produto_por_mes": "Input da view consumo_projetado — cruzando com ficha_tecnica da o consumo esperado de cada fabric",
+    "vendas_por_mes": "Dashboard do estoque mostra trend de producao e permite antecipar necessidade de compra"
+  },
+  "o_que_NAO_foi_exportado_e_porque": {
+    "lista_pedidos_com_nome_cliente": "Irrelevante pro estoque — sistema de estoque nao precisa saber QUEM comprou",
+    "vendedores": "Irrelevante — nao afeta consumo de materia-prima",
+    "contatos/clientes": "Irrelevante — dados de CRM ficam no DMS"
+  },
+  "estatisticas": {
+    "total_produtos_catalogo": 2205,
+    "periodo_vendas_analisado": "12 meses"
+  }
+}

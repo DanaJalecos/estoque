@@ -1,0 +1,166 @@
+========================================================================
+INSTRUCOES PARA CONTINUAR O PROJETO DE ESTOQUE DA DANA JALECOS
+========================================================================
+
+Ola Claude. Esta sessao e' dedicada EXCLUSIVAMENTE ao sistema de estoque
+da Dana Jalecos. Nao confunda com o DMS (Dana Marketing System) — o DMS
+e' outro projeto na pasta-mae.
+
+========================================================================
+1) LEIA PRIMEIRO OS ARQUIVOS DESTE DIRETORIO
+========================================================================
+
+Voce esta (ou deveria estar) em:
+  C:\Users\Juan - Dana Jalecos\Documents\Sistema Marketing\. ANALISE E PESQUISA\Tecidos Projeto\
+
+Arquivos obrigatorios de leitura ANTES de qualquer acao:
+
+  1. ROADMAP-ESTOQUE-DANA.md
+     -> Contem TODO o plano: as 4 fases, SQLs, codigo de exemplo,
+        checklist de execucao, estrutura de pastas, decisoes de
+        arquitetura. E' o documento mestre.
+
+  2. TOKENS SUPABASE.txt
+     -> Credenciais do Supabase do Estoque (lvhvcxfhdabcpvbfrooj)
+        e do DMS (wltmiqbhziefusnzmmkt).
+     -> NAO COMMITE esse arquivo (ja esta no .gitignore).
+
+  3. bling-matriz/_RESUMO.json
+     -> Indice dos dados ja exportados do Bling da Matriz.
+        Voce tem 2.205 produtos, 200 top SKUs, serie temporal
+        por produto/mes (4.938 linhas), velocidade 90d, etc.
+
+Depois dessas 3 leituras voce tem contexto completo.
+
+========================================================================
+2) ESCOPO EXPLICITO
+========================================================================
+
+- Empresa: APENAS MATRIZ (BC fica fora deste roadmap)
+- Fonte Bling: views agregadas do DMS (top_produtos, top_produtos_mes)
+  filtradas por empresa='matriz'
+- Dados que NAO entram no Estoque: clientes, vendedores, contatos,
+  CRM. So' o que tem a ver com producao/compra/estoque.
+
+========================================================================
+3) ORDEM DE EXECUCAO (consenso Juan + Claude anterior)
+========================================================================
+
+Comece pela FASE 1 do roadmap. Nao pule passos.
+
+  FASE 0 — Preparacao
+     * Fazer backup do index.html: copy index.html index.html.backup-YYYYMMDD
+     * Ler o TOKENS SUPABASE.txt e guardar as credenciais em memoria
+       (nao exibir pro usuario, nao escrever em outro arquivo)
+
+  FASE 1 — Fornecedores com categoria  (3-4h, prioridade MAXIMA)
+     SQL em setup-v6-fornecedores.sql  (VOCE CRIA — ver roadmap)
+     * Tabela fornecedores com categorias[]: tecido | aviamento |
+       embalagem | etiqueta | linha | botao | zipper | papelaria | outro
+     * Migracao: campo "supplier" TEXT das tabelas fabrics/purchases
+       vira FK pra fornecedores.id
+     * Aba "Fornecedores" na sidebar, depois de "Compras"
+     * Drawer com 3 abas: Dados, Produtos que fornece, Historico de compras
+     * Trocar inputs livres de supplier por dropdown de fornecedores
+       cadastrados nas telas Cadastrar/Entrada/Compras
+     * Import NF-e auto-vincula fornecedor pelo CNPJ do emitente
+
+  FASE 2 — Bling Matriz (sync do DMS)
+     Adotar a ESTRATEGIA COMBINADA recomendada:
+
+     A) Scheduled export (comeca AQUI):
+        * Agendar Task no Windows Task Scheduler pra rodar
+          .claude\scripts\exportar-bling-matriz.py a cada 4-6 horas
+        * Estoque le os JSON/CSV da pasta bling-matriz/ direto
+          via fetch('./bling-matriz/XX.json')
+        * Exemplo de comando do Task Scheduler:
+          schtasks /create /tn "Dana_BlingExport_Matriz" /tr "python
+             \"C:\...\exportar-bling-matriz.py\"" /sc hourly /mo 4
+
+     B) Edge function publica (implementar DEPOIS):
+        * Criar funcao "vendas-matriz-publica" no DMS
+          (wltmiqbhziefusnzmmkt) com verify_jwt=false
+        * Retorna APENAS agregados de Matriz (nao expoe cliente/pedido)
+        * URL publica:
+          https://wltmiqbhziefusnzmmkt.supabase.co/functions/v1/vendas-matriz-publica
+        * Botao "Atualizar Bling" no Dashboard do Estoque consulta
+          on-demand
+        * Resposta: { produtos: [...], vendas_mes: [...], top_produtos: [...] }
+        * SEM: pedido individual, nome de cliente, vendedor, CNPJ,
+               CPF, dado de faturamento do dia a dia
+        * COM: descricao/SKU, quantidade vendida agregada 30d/90d,
+               preco medio, ranking
+
+     NAO USE anon key direto no cliente (o Juan prefere nao expor,
+     mesmo sabendo que anon e' publico por design).
+
+     SQL em setup-v7-bling-cache.sql (VOCE CRIA):
+     * CREATE TABLE vendas_bling_cache (produto_nome PK, sku, vendido_30d,
+       vendido_90d, vendido_180d, receita_180d, preco_medio, atualizado_em)
+
+  FASE 3 — Ficha Tecnica (BOM)
+     SQL em setup-v8-ficha-tecnica.sql (VOCE CRIA)
+     * Tabela ficha_tecnica (produto_sku, fabric_id, quantidade, unidade)
+     * View consumo_projetado = vendas_bling_cache JOIN ficha_tecnica
+     * UI: aba "Ficha Tecnica" pra configurar materia-prima por SKU
+     * Dashboard: coluna "Dias de cobertura" em cada fabric
+     * Alerta: dispara quando cobertura < 14 dias
+
+  FASE 4 — Melhorias opcionais (ver roadmap)
+     * Desconto automatico do estoque quando pedido bate no Bling
+     * Pedido de Compra PDF + WhatsApp
+     * Grafico de preco historico por fornecedor
+     * QR code + leitor mobile
+     * Foto do produto
+     * Timeline unificada
+
+========================================================================
+4) REGRAS DE OURO
+========================================================================
+
+  * NUNCA mexa no DMS (projeto vibrant-davinci / dana-marketing).
+    O DMS e' outro projeto. Se precisar ler algo do DMS, use as
+    credenciais do TOKENS SUPABASE.txt em modo READ-ONLY.
+
+  * NUNCA commite o arquivo TOKENS SUPABASE.txt ou qualquer
+    *TOKEN*.txt. O .gitignore ja protege mas confirme.
+
+  * SEMPRE faca backup do index.html antes de mexer:
+    cp index.html index.html.backup-YYYYMMDD-HHMMSS
+
+  * SEMPRE rode SQL em migrations nomeadas (setup-vN-descricao.sql).
+    Nunca rode SQL "solto" direto no dashboard — deixa registrado
+    no arquivo.
+
+  * SEMPRE use IF NOT EXISTS / IF EXISTS nas migrations
+    pra serem idempotentes (seguras de rodar duas vezes).
+
+  * Teste cada fase com 3 cargos: admin, estoquista, costureira.
+    Nao avance pra proxima fase enquanto a atual nao tiver validada
+    nesses 3 cargos.
+
+  * Nao crie novos usuarios no Supabase sem o Juan pedir
+    explicitamente.
+
+========================================================================
+5) CHECKLIST INICIAL PRA RESPONDER AO JUAN
+========================================================================
+
+Quando essa sessao abrir, sua primeira resposta deve:
+
+  1. Confirmar que leu o roadmap + tokens + resumo do Bling
+  2. Dizer em 3 linhas o estado atual do sistema
+  3. Perguntar: "Quer comecar pela Fase 1 (Fornecedores com categoria)?"
+  4. NAO comecar a codar nada ate' o Juan dizer "pode comecar"
+
+========================================================================
+6) CONTATO
+========================================================================
+
+O Juan e' o dev/owner. Dana (chefa dele) e' a usuaria final.
+Manuela ("Manu") e' colaboradora do time de marketing da Dana.
+
+O sistema esta rodando. Use o index.html atual como base. Nao crie
+um projeto do zero — EVOLUA o que ja existe.
+
+========================================================================

@@ -28,8 +28,8 @@
 
     <emit>
       <CNPJ>11222333000181</CNPJ>
-      <xNome>Textil Catarinense Industria e Comercio Ltda</xNome>
-      <xFant>Textil Catarinense</xFant>
+      <xNome>Fabrica de Tecidos Aurora Ltda</xNome>
+      <xFant>Aurora Tecidos</xFant>
       <enderEmit>
         <xLgr>Rod BR 101 Km 112</xLgr>
         <nro>4500</nro>
@@ -70,7 +70,7 @@
       <prod>
         <cProd>GOR-001-AZ</cProd>
         <cEAN>7891234567890</cEAN>
-        <xProd>GORRO CIRURGICO VERMELHO TAM G</xProd>
+        <xProd>GORRO CIRURGICO VERMELHO</xProd>
         <NCM>65050090</NCM>
         <CEST>2800100</CEST>
         <CFOP>5102</CFOP>

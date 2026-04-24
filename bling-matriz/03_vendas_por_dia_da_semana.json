@@ -1,0 +1,37 @@
+[
+  {
+    "dia_semana": 0,
+    "qtd_pedidos": 53,
+    "faturamento": "18283.25"
+  },
+  {
+    "dia_semana": 1,
+    "qtd_pedidos": 692,
+    "faturamento": "477443.05"
+  },
+  {
+    "dia_semana": 2,
+    "qtd_pedidos": 602,
+    "faturamento": "373083.59"
+  },
+  {
+    "dia_semana": 3,
+    "qtd_pedidos": 621,
+    "faturamento": "624449.97"
+  },
+  {
+    "dia_semana": 4,
+    "qtd_pedidos": 562,
+    "faturamento": "552762.81"
+  },
+  {
+    "dia_semana": 5,
+    "qtd_pedidos": 615,
+    "faturamento": "360563.32"
+  },
+  {
+    "dia_semana": 6,
+    "qtd_pedidos": 322,
+    "faturamento": "138471.55"
+  }
+]

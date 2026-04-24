@@ -1,0 +1,80 @@
+[
+  {
+    "mes": "2025-04-01",
+    "qtd_pedidos": 80,
+    "faturamento_produtos": "124584.00",
+    "ticket_medio": "1557.3000000000000000"
+  },
+  {
+    "mes": "2025-05-01",
+    "qtd_pedidos": 397,
+    "faturamento_produtos": "434642.51",
+    "ticket_medio": "1094.8174055415617128"
+  },
+  {
+    "mes": "2025-06-01",
+    "qtd_pedidos": 322,
+    "faturamento_produtos": "325558.14",
+    "ticket_medio": "1011.0501242236024845"
+  },
+  {
+    "mes": "2025-07-01",
+    "qtd_pedidos": 537,
+    "faturamento_produtos": "463198.98",
+    "ticket_medio": "862.5679329608938547"
+  },
+  {
+    "mes": "2025-08-01",
+    "qtd_pedidos": 525,
+    "faturamento_produtos": "538525.48",
+    "ticket_medio": "1025.7628190476190476"
+  },
+  {
+    "mes": "2025-09-01",
+    "qtd_pedidos": 456,
+    "faturamento_produtos": "353588.12",
+    "ticket_medio": "775.4125438596491228"
+  },
+  {
+    "mes": "2025-10-01",
+    "qtd_pedidos": 540,
+    "faturamento_produtos": "523816.35",
+    "ticket_medio": "970.0302777777777778"
+  },
+  {
+    "mes": "2025-11-01",
+    "qtd_pedidos": 657,
+    "faturamento_produtos": "437279.46",
+    "ticket_medio": "665.5699543378995434"
+  },
+  {
+    "mes": "2025-12-01",
+    "qtd_pedidos": 298,
+    "faturamento_produtos": "301817.69",
+    "ticket_medio": "1012.8110402684563758"
+  },
+  {
+    "mes": "2026-01-01",
+    "qtd_pedidos": 379,
+    "faturamento_produtos": "329942.79",
+    "ticket_medio": "870.5614511873350923"
+  },
+  {
+    "mes": "2026-02-01",
+    "qtd_pedidos": 552,
+    "faturamento_produtos": "356137.70",
+    "ticket_medio": "645.1769927536231884"
+  },
+  {
+    "mes": "2026-03-01",
+    "qtd_pedidos": 920,
+    "faturamento_produtos": "453317.42",
+    "ticket_medio": "492.7363260869565217"
+  },
+  {
+    "mes": "2026-04-01",
+    "qtd_pedidos": 477,
+    "faturamento_produtos": "510858.63",
+    "ticket_medio": "1070.9824528301886792"
+  }
+]

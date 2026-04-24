@@ -1,0 +1,52 @@
+{
+  "produtos": [
+    {
+      "column_name": "id",
+      "data_type": "bigint"
+    },
+    {
+      "column_name": "nome",
+      "data_type": "text"
+    },
+    {
+      "column_name": "codigo",
+      "data_type": "text"
+    },
+    {
+      "column_name": "preco",
+      "data_type": "numeric"
+    },
+    {
+      "column_name": "preco_custo",
+      "data_type": "numeric"
+    },
+    {
+      "column_name": "estoque_virtual",
+      "data_type": "numeric"
+    },
+    {
+      "column_name": "tipo",
+      "data_type": "text"
+    },
+    {
+      "column_name": "situacao",
+      "data_type": "text"
+    },
+    {
+      "column_name": "formato",
+      "data_type": "text"
+    },
+    {
+      "column_name": "imagem_url",
+      "data_type": "text"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "column_name": "empresa",
+      "data_type": "text"
+    }
+  ]
+}

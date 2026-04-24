@@ -1,0 +1,602 @@
+[
+  {
+    "produto": "Jaleco Manuela Branco",
+    "qtd_90d": "494.00",
+    "media_diaria_90d": "5.49",
+    "projecao_mensal": "164.7"
+  },
+  {
+    "produto": "Scrub Feminino Preto",
+    "qtd_90d": "188.00",
+    "media_diaria_90d": "2.09",
+    "projecao_mensal": "62.7"
+  },
+  {
+    "produto": "Gorro Unissex D. Preto",
+    "qtd_90d": "178.00",
+    "media_diaria_90d": "1.98",
+    "projecao_mensal": "59.3"
+  },
+  {
+    "produto": "Jaleco Marta Branco Manga Longa",
+    "qtd_90d": "157.00",
+    "media_diaria_90d": "1.74",
+    "projecao_mensal": "52.3"
+  },
+  {
+    "produto": "Serviço de Bordado",
+    "qtd_90d": "148.00",
+    "media_diaria_90d": "1.64",
+    "projecao_mensal": "49.3"
+  },
+  {
+    "produto": "Gorro  Unissex D.  Verde Escuro",
+    "qtd_90d": "134.00",
+    "media_diaria_90d": "1.49",
+    "projecao_mensal": "44.7"
+  },
+  {
+    "produto": "Jaleco Manoel Branco",
+    "qtd_90d": "132.00",
+    "media_diaria_90d": "1.47",
+    "projecao_mensal": "44.0"
+  },
+  {
+    "produto": "Scrub Feminino Azul Marinho",
+    "qtd_90d": "124.00",
+    "media_diaria_90d": "1.38",
+    "projecao_mensal": "41.3"
+  },
+  {
+    "produto": "Scrub Feminino Lilas",
+    "qtd_90d": "122.00",
+    "media_diaria_90d": "1.36",
+    "projecao_mensal": "40.7"
+  },
+  {
+    "produto": "Gorro Unissex D. Lilás",
+    "qtd_90d": "122.00",
+    "media_diaria_90d": "1.36",
+    "projecao_mensal": "40.7"
+  },
+  {
+    "produto": "Turbante Preto",
+    "qtd_90d": "110.00",
+    "media_diaria_90d": "1.22",
+    "projecao_mensal": "36.7"
+  },
+  {
+    "produto": "Turbante Azul Marinho",
+    "qtd_90d": "110.00",
+    "media_diaria_90d": "1.22",
+    "projecao_mensal": "36.7"
+  },
+  {
+    "produto": "Crachá Magnético Dourado",
+    "qtd_90d": "95.00",
+    "media_diaria_90d": "1.06",
+    "projecao_mensal": "31.7"
+  },
+  {
+    "produto": "Turbante Branco",
+    "qtd_90d": "95.00",
+    "media_diaria_90d": "1.06",
+    "projecao_mensal": "31.7"
+  },
+  {
+    "produto": "Gorro Unissex D.  Azul Marinho",
+    "qtd_90d": "77.00",
+    "media_diaria_90d": "0.86",
+    "projecao_mensal": "25.7"
+  },
+  {
+    "produto": "Jaleco Bernardo Branco",
+    "qtd_90d": "77.00",
+    "media_diaria_90d": "0.86",
+    "projecao_mensal": "25.7"
+  },
+  {
+    "produto": "Mouse Pad Dupla Face",
+    "qtd_90d": "75.00",
+    "media_diaria_90d": "0.83",
+    "projecao_mensal": "25.0"
+  },
+  {
+    "produto": "Scrub Masculino Preto",
+    "qtd_90d": "70.00",
+    "media_diaria_90d": "0.78",
+    "projecao_mensal": "23.3"
+  },
+  {
+    "produto": "Gorro Unissex A. Preto",
+    "qtd_90d": "69.00",
+    "media_diaria_90d": "0.77",
+    "projecao_mensal": "23.0"
+  },
+  {
+    "produto": "Jaleco Clinic Branco Feminino",
+    "qtd_90d": "69.00",
+    "media_diaria_90d": "0.77",
+    "projecao_mensal": "23.0"
+  },
+  {
+    "produto": "Porta Canetas Dupla Face",
+    "qtd_90d": "67.00",
+    "media_diaria_90d": "0.74",
+    "projecao_mensal": "22.3"
+  },
+  {
+    "produto": "Desk Pad Dupla Face",
+    "qtd_90d": "67.00",
+    "media_diaria_90d": "0.74",
+    "projecao_mensal": "22.3"
+  },
+  {
+    "produto": "Jaleco Manuela Azul Marinho",
+    "qtd_90d": "65.00",
+    "media_diaria_90d": "0.72",
+    "projecao_mensal": "21.7"
+  },
+  {
+    "produto": "Porta Copo Dupla Face",
+    "qtd_90d": "65.00",
+    "media_diaria_90d": "0.72",
+    "projecao_mensal": "21.7"
+  },
+  {
+    "produto": "Bandeja Office Dupla Face",
+    "qtd_90d": "65.00",
+    "media_diaria_90d": "0.72",
+    "projecao_mensal": "21.7"
+  },
+  {
+    "produto": "Porta Objetos Dupla Face",
+    "qtd_90d": "65.00",
+    "media_diaria_90d": "0.72",
+    "projecao_mensal": "21.7"
+  },
+  {
+    "produto": "Scrub Feminino Chumbo",
+    "qtd_90d": "64.00",
+    "media_diaria_90d": "0.71",
+    "projecao_mensal": "21.3"
+  },
+  {
+    "produto": "Scrub Feminino Bege",
+    "qtd_90d": "61.00",
+    "media_diaria_90d": "0.68",
+    "projecao_mensal": "20.3"
+  },
+  {
+    "produto": "Scrub Feminino Azul Bebê",
+    "qtd_90d": "59.00",
+    "media_diaria_90d": "0.66",
+    "projecao_mensal": "19.7"
+  },
+  {
+    "produto": "Jaleco Manuela Chumbo",
+    "qtd_90d": "56.00",
+    "media_diaria_90d": "0.62",
+    "projecao_mensal": "18.7"
+  },
+  {
+    "produto": "Gorro  Unissex D. Azul Bebe",
+    "qtd_90d": "55.00",
+    "media_diaria_90d": "0.61",
+    "projecao_mensal": "18.3"
+  },
+  {
+    "produto": "Jaleco Manuela Es",
+    "qtd_90d": "52.00",
+    "media_diaria_90d": "0.58",
+    "projecao_mensal": "17.3"
+  },
+  {
+    "produto": "Gorro Unissex D.  Cinza",
+    "qtd_90d": "49.00",
+    "media_diaria_90d": "0.54",
+    "projecao_mensal": "16.3"
+  },
+  {
+    "produto": "Jaleco Manoel Bege",
+    "qtd_90d": "47.00",
+    "media_diaria_90d": "0.52",
+    "projecao_mensal": "15.7"
+  },
+  {
+    "produto": "Jaleco Manoel Azul Marinho",
+    "qtd_90d": "42.00",
+    "media_diaria_90d": "0.47",
+    "projecao_mensal": "14.0"
+  },
+  {
+    "produto": "Scrub Feminino Verde Escuro",
+    "qtd_90d": "42.00",
+    "media_diaria_90d": "0.47",
+    "projecao_mensal": "14.0"
+  },
+  {
+    "produto": "Jaleco Manuela Verde Escuro",
+    "qtd_90d": "40.00",
+    "media_diaria_90d": "0.44",
+    "projecao_mensal": "13.3"
+  },
+  {
+    "produto": "Gorro Unissex D. Branco",
+    "qtd_90d": "40.00",
+    "media_diaria_90d": "0.44",
+    "projecao_mensal": "13.3"
+  },
+  {
+    "produto": "Jaleco Manuela Algodao Branco",
+    "qtd_90d": "38.00",
+    "media_diaria_90d": "0.42",
+    "projecao_mensal": "12.7"
+  },
+  {
+    "produto": "Scrub Masculino Azul Marinho",
+    "qtd_90d": "38.00",
+    "media_diaria_90d": "0.42",
+    "projecao_mensal": "12.7"
+  },
+  {
+    "produto": "Gorro Unissex D. Bordô",
+    "qtd_90d": "36.00",
+    "media_diaria_90d": "0.40",
+    "projecao_mensal": "12.0"
+  },
+  {
+    "produto": "Jaleco Heloisa Branco",
+    "qtd_90d": "34.00",
+    "media_diaria_90d": "0.38",
+    "projecao_mensal": "11.3"
+  },
+  {
+    "produto": "Jaleco Isabel Rosa Nude",
+    "qtd_90d": "34.00",
+    "media_diaria_90d": "0.38",
+    "projecao_mensal": "11.3"
+  },
+  {
+    "produto": "Scrub Feminino Glamour Off White",
+    "qtd_90d": "33.00",
+    "media_diaria_90d": "0.37",
+    "projecao_mensal": "11.0"
+  },
+  {
+    "produto": "Jaleco Clinic Bege Feminino",
+    "qtd_90d": "33.00",
+    "media_diaria_90d": "0.37",
+    "projecao_mensal": "11.0"
+  },
+  {
+    "produto": "Jaleco Manuela Preto",
+    "qtd_90d": "32.00",
+    "media_diaria_90d": "0.36",
+    "projecao_mensal": "10.7"
+  },
+  {
+    "produto": "Scrub Feminino Rosa Nude",
+    "qtd_90d": "32.00",
+    "media_diaria_90d": "0.36",
+    "projecao_mensal": "10.7"
+  },
+  {
+    "produto": "Scrub Feminino Glamour Azul Marinho",
+    "qtd_90d": "31.00",
+    "media_diaria_90d": "0.34",
+    "projecao_mensal": "10.3"
+  },
+  {
+    "produto": "Scrub Feminino Bordo",
+    "qtd_90d": "31.00",
+    "media_diaria_90d": "0.34",
+    "projecao_mensal": "10.3"
+  },
+  {
+    "produto": "Jaleco Manuela Chumbo Botão Dourado",
+    "qtd_90d": "31.00",
+    "media_diaria_90d": "0.34",
+    "projecao_mensal": "10.3"
+  },
+  {
+    "produto": "Jaleco Manuela Azul Marinho Detalhes Dourado",
+    "qtd_90d": "30.00",
+    "media_diaria_90d": "0.33",
+    "projecao_mensal": "10.0"
+  },
+  {
+    "produto": "Jaleco Manoel Chumbo",
+    "qtd_90d": "30.00",
+    "media_diaria_90d": "0.33",
+    "projecao_mensal": "10.0"
+  },
+  {
+    "produto": "Jaleco Tec Easy Clara Azul Marinho",
+    "qtd_90d": "29.00",
+    "media_diaria_90d": "0.32",
+    "projecao_mensal": "9.7"
+  },
+  {
+    "produto": "Camiseta Scrub Masculino AVULSA",
+    "qtd_90d": "28.00",
+    "media_diaria_90d": "0.31",
+    "projecao_mensal": "9.3"
+  },
+  {
+    "produto": "Turbante Marrom",
+    "qtd_90d": "28.00",
+    "media_diaria_90d": "0.31",
+    "projecao_mensal": "9.3"
+  },
+  {
+    "produto": "Jaleco Clinic Es",
+    "qtd_90d": "27.00",
+    "media_diaria_90d": "0.30",
+    "projecao_mensal": "9.0"
+  },
+  {
+    "produto": "Gorro Unissex D. Chumbo",
+    "qtd_90d": "26.00",
+    "media_diaria_90d": "0.29",
+    "projecao_mensal": "8.7"
+  },
+  {
+    "produto": "Scrub Comfy Feminino Azul Marinho",
+    "qtd_90d": "26.00",
+    "media_diaria_90d": "0.29",
+    "projecao_mensal": "8.7"
+  },
+  {
+    "produto": "Jaleco Manuela Bege",
+    "qtd_90d": "26.00",
+    "media_diaria_90d": "0.29",
+    "projecao_mensal": "8.7"
+  },
+  {
+    "produto": "Scrub Masculino Chumbo",
+    "qtd_90d": "25.00",
+    "media_diaria_90d": "0.28",
+    "projecao_mensal": "8.3"
+  },
+  {
+    "produto": "Camiseta Scrub Feminina AVULSA",
+    "qtd_90d": "25.00",
+    "media_diaria_90d": "0.28",
+    "projecao_mensal": "8.3"
+  },
+  {
+    "produto": "Jaleco Manuela Cinza",
+    "qtd_90d": "24.00",
+    "media_diaria_90d": "0.27",
+    "projecao_mensal": "8.0"
+  },
+  {
+    "produto": "Jaleco Heloisa Bege Aveia",
+    "qtd_90d": "23.00",
+    "media_diaria_90d": "0.26",
+    "projecao_mensal": "7.7"
+  },
+  {
+    "produto": "Turbante Bordô",
+    "qtd_90d": "23.00",
+    "media_diaria_90d": "0.26",
+    "projecao_mensal": "7.7"
+  },
+  {
+    "produto": "Scrub Feminino Comfy  Preto",
+    "qtd_90d": "23.00",
+    "media_diaria_90d": "0.26",
+    "projecao_mensal": "7.7"
+  },
+  {
+    "produto": "Gorro  Unissex A. Azul Marinho",
+    "qtd_90d": "23.00",
+    "media_diaria_90d": "0.26",
+    "projecao_mensal": "7.7"
+  },
+  {
+    "produto": "Jaleco Chloe Cinza",
+    "qtd_90d": "23.00",
+    "media_diaria_90d": "0.26",
+    "projecao_mensal": "7.7"
+  },
+  {
+    "produto": "Gorro Unissex A. Bordô",
+    "qtd_90d": "22.00",
+    "media_diaria_90d": "0.24",
+    "projecao_mensal": "7.3"
+  },
+  {
+    "produto": "Jaleco Manuela Rosa Nude",
+    "qtd_90d": "22.00",
+    "media_diaria_90d": "0.24",
+    "projecao_mensal": "7.3"
+  },
+  {
+    "produto": "Jaleco Chloe Branco",
+    "qtd_90d": "21.00",
+    "media_diaria_90d": "0.23",
+    "projecao_mensal": "7.0"
+  },
+  {
+    "produto": "Jaleco Chloe Chumbo",
+    "qtd_90d": "21.00",
+    "media_diaria_90d": "0.23",
+    "projecao_mensal": "7.0"
+  },
+  {
+    "produto": "Jaleco Manuela Lilás",
+    "qtd_90d": "19.00",
+    "media_diaria_90d": "0.21",
+    "projecao_mensal": "6.3"
+  },
+  {
+    "produto": "Scrub Feminino Tec Easy Loren  Azul Marinho",
+    "qtd_90d": "19.00",
+    "media_diaria_90d": "0.21",
+    "projecao_mensal": "6.3"
+  },
+  {
+    "produto": "Jaleco Chloe Preto",
+    "qtd_90d": "19.00",
+    "media_diaria_90d": "0.21",
+    "projecao_mensal": "6.3"
+  },
+  {
+    "produto": "Jaleco Bernardo Azul Marinho",
+    "qtd_90d": "18.00",
+    "media_diaria_90d": "0.20",
+    "projecao_mensal": "6.0"
+  },
+  {
+    "produto": "Jaleco Heloisa Azul Marinho",
+    "qtd_90d": "18.00",
+    "media_diaria_90d": "0.20",
+    "projecao_mensal": "6.0"
+  },
+  {
+    "produto": "Jaleco Maitê Branco",
+    "qtd_90d": "17.00",
+    "media_diaria_90d": "0.19",
+    "projecao_mensal": "5.7"
+  },
+  {
+    "produto": "Calça Scrub Masculino AVULSA",
+    "qtd_90d": "17.00",
+    "media_diaria_90d": "0.19",
+    "projecao_mensal": "5.7"
+  },
+  {
+    "produto": "Jaleco Isabel Off White",
+    "qtd_90d": "17.00",
+    "media_diaria_90d": "0.19",
+    "projecao_mensal": "5.7"
+  },
+  {
+    "produto": "Jaleco Manuela Azul Médio",
+    "qtd_90d": "16.00",
+    "media_diaria_90d": "0.18",
+    "projecao_mensal": "5.3"
+  },
+  {
+    "produto": "Turbante Chumbo",
+    "qtd_90d": "16.00",
+    "media_diaria_90d": "0.18",
+    "projecao_mensal": "5.3"
+  },
+  {
+    "produto": "Jaleco Manoel Es",
+    "qtd_90d": "16.00",
+    "media_diaria_90d": "0.18",
+    "projecao_mensal": "5.3"
+  },
+  {
+    "produto": "Jaleco Tec Easy Clara Branco",
+    "qtd_90d": "16.00",
+    "media_diaria_90d": "0.18",
+    "projecao_mensal": "5.3"
+  },
+  {
+    "produto": "Scrub MasculinoTec Easy Lorenzo Verde Militar",
+    "qtd_90d": "16.00",
+    "media_diaria_90d": "0.18",
+    "projecao_mensal": "5.3"
+  },
+  {
+    "produto": "Crachá Magnético Prata",
+    "qtd_90d": "15.00",
+    "media_diaria_90d": "0.17",
+    "projecao_mensal": "5.0"
+  },
+  {
+    "produto": "Jaleco Clinic Preto Feminino",
+    "qtd_90d": "15.00",
+    "media_diaria_90d": "0.17",
+    "projecao_mensal": "5.0"
+  },
+  {
+    "produto": "Scrub Feminino Azul Médio",
+    "qtd_90d": "15.00",
+    "media_diaria_90d": "0.17",
+    "projecao_mensal": "5.0"
+  },
+  {
+    "produto": "Jaleco Manoel Preto",
+    "qtd_90d": "15.00",
+    "media_diaria_90d": "0.17",
+    "projecao_mensal": "5.0"
+  },
+  {
+    "produto": "Jaleco Tec Easy Clara Cacau",
+    "qtd_90d": "15.00",
+    "media_diaria_90d": "0.17",
+    "projecao_mensal": "5.0"
+  },
+  {
+    "produto": "Turbante Brasil",
+    "qtd_90d": "15.00",
+    "media_diaria_90d": "0.17",
+    "projecao_mensal": "5.0"
+  },
+  {
+    "produto": "Jaleco Manoel Azul Marinho Detalhes Dourado",
+    "qtd_90d": "15.00",
+    "media_diaria_90d": "0.17",
+    "projecao_mensal": "5.0"
+  },
+  {
+    "produto": "Scrub FemininoTec Easy Loren Verde Militar",
+    "qtd_90d": "14.00",
+    "media_diaria_90d": "0.16",
+    "projecao_mensal": "4.7"
+  },
+  {
+    "produto": "Jaleco Isac Branco",
+    "qtd_90d": "14.00",
+    "media_diaria_90d": "0.16",
+    "projecao_mensal": "4.7"
+  },
+  {
+    "produto": "Jaleco Manoel Cinza",
+    "qtd_90d": "14.00",
+    "media_diaria_90d": "0.16",
+    "projecao_mensal": "4.7"
+  },
+  {
+    "produto": "Camiseta Scrub Feminino CONFY AVULSA",
+    "qtd_90d": "14.00",
+    "media_diaria_90d": "0.16",
+    "projecao_mensal": "4.7"
+  },
+  {
+    "produto": "Jaleco Manu Branco detalhes Vies Rosa Nude rec Princesa",
+    "qtd_90d": "13.00",
+    "media_diaria_90d": "0.14",
+    "projecao_mensal": "4.3"
+  },
+  {
+    "produto": "Jaleco Samuel Branco",
+    "qtd_90d": "13.00",
+    "media_diaria_90d": "0.14",
+    "projecao_mensal": "4.3"
+  },
+  {
+    "produto": "Jaleco Heloisa Bordô",
+    "qtd_90d": "13.00",
+    "media_diaria_90d": "0.14",
+    "projecao_mensal": "4.3"
+  },
+  {
+    "produto": "Jaleco Manuela Verde Claro",
+    "qtd_90d": "13.00",
+    "media_diaria_90d": "0.14",
+    "projecao_mensal": "4.3"
+  },
+  {
+    "produto": "Calça Scrub Feminino CONFY AVULSA",
+    "qtd_90d": "13.00",
+    "media_diaria_90d": "0.14",
+    "projecao_mensal": "4.3"
+  }
+]

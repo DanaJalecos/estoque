@@ -1,0 +1,902 @@
+[
+  {
+    "descricao": "Aplicação Bordado",
+    "codigo": "1005",
+    "total_pedidos": 426,
+    "total_quantidade": "1334.00",
+    "total_receita": "31296.38",
+    "preco_medio": "26.98",
+    "ultima_venda": "2026-04-23"
+  },
+  {
+    "descricao": "Crachá Magnético Dourado",
+    "codigo": "010-CR-001-001",
+    "total_pedidos": 122,
+    "total_quantidade": "179.00",
+    "total_receita": "11522.40",
+    "preco_medio": "65.40",
+    "ultima_venda": "2026-04-23"
+  },
+  {
+    "descricao": "Jaleco Marta Branco Manga Longa Tamanho:P",
+    "codigo": "372-SD-008-000-F-P00",
+    "total_pedidos": 100,
+    "total_quantidade": "146.00",
+    "total_receita": "26127.53",
+    "preco_medio": "175.43",
+    "ultima_venda": "2026-04-10"
+  },
+  {
+    "descricao": "Jaleco Manuela Branco Tamanho:M",
+    "codigo": "373-SD-008-000-F-M00",
+    "total_pedidos": 129,
+    "total_quantidade": "141.00",
+    "total_receita": "24806.20",
+    "preco_medio": "176.66",
+    "ultima_venda": "2026-03-31"
+  },
+  {
+    "descricao": "Jaleco Manuela Branco Tamanho:P",
+    "codigo": "373-SD-008-000-F-P00",
+    "total_pedidos": 121,
+    "total_quantidade": "140.00",
+    "total_receita": "24264.90",
+    "preco_medio": "172.97",
+    "ultima_venda": "2026-04-16"
+  },
+  {
+    "descricao": "CONSERTO",
+    "codigo": "222222",
+    "total_pedidos": 92,
+    "total_quantidade": "106.00",
+    "total_receita": "110.00",
+    "preco_medio": "1.03",
+    "ultima_venda": "2026-04-15"
+  },
+  {
+    "descricao": "Jaleco Marta Branco Manga Longa Tamanho:M",
+    "codigo": "372-SD-008-000-F-M00",
+    "total_pedidos": 72,
+    "total_quantidade": "104.00",
+    "total_receita": "17889.68",
+    "preco_medio": "170.18",
+    "ultima_venda": "2026-04-16"
+  },
+  {
+    "descricao": "Matriz Bordado",
+    "codigo": "2077",
+    "total_pedidos": 92,
+    "total_quantidade": "97.00",
+    "total_receita": "6125.10",
+    "preco_medio": "63.28",
+    "ultima_venda": "2026-04-16"
+  },
+  {
+    "descricao": "Turbante Preto",
+    "codigo": "004-SD-012",
+    "total_pedidos": 70,
+    "total_quantidade": "95.00",
+    "total_receita": "5763.63",
+    "preco_medio": "60.65",
+    "ultima_venda": "2026-04-23"
+  },
+  {
+    "descricao": "Jaleco Marta Branco Manga Longa Tamanho:PP",
+    "codigo": "372-SD-008-000-F-PP0",
+    "total_pedidos": 81,
+    "total_quantidade": "95.00",
+    "total_receita": "16970.93",
+    "preco_medio": "176.84",
+    "ultima_venda": "2026-04-09"
+  },
+  {
+    "descricao": "Jaleco Manuela Branco Tamanho:PP",
+    "codigo": "373-SD-008-000-F-PP0",
+    "total_pedidos": 77,
+    "total_quantidade": "93.00",
+    "total_receita": "16592.90",
+    "preco_medio": "178.27",
+    "ultima_venda": "2026-04-18"
+  },
+  {
+    "descricao": "Crachá Magnético Prata",
+    "codigo": "010-CR-002-002",
+    "total_pedidos": 51,
+    "total_quantidade": "77.00",
+    "total_receita": "5253.50",
+    "preco_medio": "68.73",
+    "ultima_venda": "2026-04-17"
+  },
+  {
+    "descricao": "Jaleco Heloisa Branco Tamanho:M",
+    "codigo": "300-SD-052-000-F-M00",
+    "total_pedidos": 53,
+    "total_quantidade": "75.00",
+    "total_receita": "23406.75",
+    "preco_medio": "325.56",
+    "ultima_venda": "2026-04-01"
+  },
+  {
+    "descricao": "Jaleco Heloisa Branco Tamanho:P",
+    "codigo": "300-SD-052-000-F-P00",
+    "total_pedidos": 45,
+    "total_quantidade": "71.00",
+    "total_receita": "23479.00",
+    "preco_medio": "347.79",
+    "ultima_venda": "2026-03-31"
+  },
+  {
+    "descricao": "Gorro  Unissex D. Preto",
+    "codigo": "002-SD-012-000-F",
+    "total_pedidos": 37,
+    "total_quantidade": "68.00",
+    "total_receita": "3065.00",
+    "preco_medio": "45.14",
+    "ultima_venda": "2026-04-15"
+  },
+  {
+    "descricao": "Jaleco Manuela Branco Tamanho:G",
+    "codigo": "373-SD-008-000-F-G00",
+    "total_pedidos": 59,
+    "total_quantidade": "63.00",
+    "total_receita": "11072.40",
+    "preco_medio": "176.93",
+    "ultima_venda": "2026-04-23"
+  },
+  {
+    "descricao": "Turbante Azul Marinho",
+    "codigo": "004-SD-015",
+    "total_pedidos": 49,
+    "total_quantidade": "58.00",
+    "total_receita": "3423.41",
+    "preco_medio": "58.87",
+    "ultima_venda": "2026-04-12"
+  },
+  {
+    "descricao": "Gorro Unissex A. Preto",
+    "codigo": "002-SD-012-000-M",
+    "total_pedidos": 43,
+    "total_quantidade": "56.00",
+    "total_receita": "2504.29",
+    "preco_medio": "45.67",
+    "ultima_venda": "2026-04-13"
+  },
+  {
+    "descricao": "Gorro  Unissex D.  Azul Marinho",
+    "codigo": "002-SD-015-000-F",
+    "total_pedidos": 29,
+    "total_quantidade": "56.00",
+    "total_receita": "2455.50",
+    "preco_medio": "42.85",
+    "ultima_venda": "2026-04-15"
+  },
+  {
+    "descricao": "Jaleco Bernardo Branco Tamanho:P",
+    "codigo": "340-SD-008-000-M-P00",
+    "total_pedidos": 34,
+    "total_quantidade": "53.00",
+    "total_receita": "9540.35",
+    "preco_medio": "176.70",
+    "ultima_venda": "2026-03-27"
+  },
+  {
+    "descricao": "Jaleco Bernardo Branco Tamanho:M",
+    "codigo": "340-SD-008-000-M-M00",
+    "total_pedidos": 29,
+    "total_quantidade": "44.00",
+    "total_receita": "8118.35",
+    "preco_medio": "181.92",
+    "ultima_venda": "2026-04-07"
+  },
+  {
+    "descricao": "Jaleco Marta Branco Manga Longa Tamanho:G",
+    "codigo": "372-SD-008-000-F-G00",
+    "total_pedidos": 41,
+    "total_quantidade": "43.00",
+    "total_receita": "7707.17",
+    "preco_medio": "178.51",
+    "ultima_venda": "2026-04-22"
+  },
+  {
+    "descricao": "Jaleco Heloisa Branco Tamanho:G",
+    "codigo": "300-SD-052-000-F-G00",
+    "total_pedidos": 36,
+    "total_quantidade": "42.00",
+    "total_receita": "13810.50",
+    "preco_medio": "333.35",
+    "ultima_venda": "2026-04-13"
+  },
+  {
+    "descricao": "Turbante Branco",
+    "codigo": "004-SD-008",
+    "total_pedidos": 36,
+    "total_quantidade": "42.00",
+    "total_receita": "2510.50",
+    "preco_medio": "60.15",
+    "ultima_venda": "2026-04-21"
+  },
+  {
+    "descricao": "Calça Scrub Feminina AVULSA",
+    "codigo": "062-SD-000-000-F-000",
+    "total_pedidos": 18,
+    "total_quantidade": "41.00",
+    "total_receita": "3859.35",
+    "preco_medio": "101.57",
+    "ultima_venda": "2026-03-26"
+  },
+  {
+    "descricao": "Camiseta Scrub Feminina AVULSA",
+    "codigo": "061-SD-000-000-F-000",
+    "total_pedidos": 22,
+    "total_quantidade": "41.00",
+    "total_receita": "5127.40",
+    "preco_medio": "132.18",
+    "ultima_venda": "2026-03-26"
+  },
+  {
+    "descricao": "Gorro Unissex A. Azul Marinho",
+    "codigo": "002-SD-015-000-M",
+    "total_pedidos": 28,
+    "total_quantidade": "40.00",
+    "total_receita": "1796.00",
+    "preco_medio": "44.86",
+    "ultima_venda": "2026-04-04"
+  },
+  {
+    "descricao": "Jaleco Manuela Algodao Branco Tamanho:M",
+    "codigo": "373-AL-008-000-F-M00",
+    "total_pedidos": 35,
+    "total_quantidade": "39.00",
+    "total_receita": "7580.00",
+    "preco_medio": "194.21",
+    "ultima_venda": "2026-03-11"
+  },
+  {
+    "descricao": "Jaleco Manuela Algodao Branco Tamanho:P",
+    "codigo": "373-AL-008-000-F-P00",
+    "total_pedidos": 37,
+    "total_quantidade": "39.00",
+    "total_receita": "7820.00",
+    "preco_medio": "200.51",
+    "ultima_venda": "2026-04-10"
+  },
+  {
+    "descricao": "Scrub Feminino Azul Marinho Tamanho:M",
+    "codigo": "060-SD-015-015-F-M00",
+    "total_pedidos": 22,
+    "total_quantidade": "38.00",
+    "total_receita": "8522.10",
+    "preco_medio": "210.27",
+    "ultima_venda": "2026-03-12"
+  },
+  {
+    "descricao": "Jaleco Heloisa Branco Tamanho:PP",
+    "codigo": "300-SD-052-000-F-PP0",
+    "total_pedidos": 23,
+    "total_quantidade": "37.00",
+    "total_receita": "12573.00",
+    "preco_medio": "343.61",
+    "ultima_venda": "2026-04-23"
+  },
+  {
+    "descricao": "Gorro  Unissex D. Branco",
+    "codigo": "002-SD-008-000-F",
+    "total_pedidos": 31,
+    "total_quantidade": "37.00",
+    "total_receita": "1585.00",
+    "preco_medio": "42.42",
+    "ultima_venda": "2026-04-02"
+  },
+  {
+    "descricao": "Turbante Verde Militar",
+    "codigo": "004-SD-068",
+    "total_pedidos": 26,
+    "total_quantidade": "35.00",
+    "total_receita": "2089.58",
+    "preco_medio": "60.28",
+    "ultima_venda": "2026-04-12"
+  },
+  {
+    "descricao": "Jaleco Samuel Branco Tamanho:G",
+    "codigo": "991-SD-052-000-M-G00",
+    "total_pedidos": 26,
+    "total_quantidade": "34.00",
+    "total_receita": "11003.00",
+    "preco_medio": "323.58",
+    "ultima_venda": "2026-04-13"
+  },
+  {
+    "descricao": "Jaleco Manuela Branco Tamanho:GG",
+    "codigo": "373-SD-008-000-F-GG0",
+    "total_pedidos": 34,
+    "total_quantidade": "34.00",
+    "total_receita": "5940.00",
+    "preco_medio": "174.71",
+    "ultima_venda": "2026-03-21"
+  },
+  {
+    "descricao": "Jaleco Manoel Branco Tamanho:M",
+    "codigo": "371-SD-008-000-M-M00",
+    "total_pedidos": 32,
+    "total_quantidade": "34.00",
+    "total_receita": "5834.00",
+    "preco_medio": "171.06",
+    "ultima_venda": "2026-04-11"
+  },
+  {
+    "descricao": "Gorro  Unissex D.  Bege",
+    "codigo": "002-SD-006-000-F",
+    "total_pedidos": 18,
+    "total_quantidade": "32.00",
+    "total_receita": "1395.00",
+    "preco_medio": "42.50",
+    "ultima_venda": "2026-03-27"
+  },
+  {
+    "descricao": "Scrub Feminino Azul Marinho Tamanho:P",
+    "codigo": "060-SD-015-015-F-P00",
+    "total_pedidos": 24,
+    "total_quantidade": "32.00",
+    "total_receita": "7066.35",
+    "preco_medio": "217.46",
+    "ultima_venda": "2026-04-13"
+  },
+  {
+    "descricao": "Jaleco Chloe Branco Tamanho:P",
+    "codigo": "378-ZI-008-000-F-P00",
+    "total_pedidos": 27,
+    "total_quantidade": "32.00",
+    "total_receita": "7680.00",
+    "preco_medio": "238.15",
+    "ultima_venda": "2026-04-20"
+  },
+  {
+    "descricao": "Camiseta Scrub Masculino AVULSA",
+    "codigo": "071-SD-000-000-M-000",
+    "total_pedidos": 18,
+    "total_quantidade": "31.00",
+    "total_receita": "4386.00",
+    "preco_medio": "140.72",
+    "ultima_venda": "2026-04-08"
+  },
+  {
+    "descricao": "Jaleco Chloe Branco Tamanho:M",
+    "codigo": "378-ZI-008-000-F-M00",
+    "total_pedidos": 28,
+    "total_quantidade": "31.00",
+    "total_receita": "7500.00",
+    "preco_medio": "241.07",
+    "ultima_venda": "2026-04-20"
+  },
+  {
+    "descricao": "Jaleco Manoel Branco Tamanho:P",
+    "codigo": "371-SD-008-000-M-P00",
+    "total_pedidos": 28,
+    "total_quantidade": "31.00",
+    "total_receita": "5439.30",
+    "preco_medio": "174.98",
+    "ultima_venda": "2026-04-04"
+  },
+  {
+    "descricao": "Jaleco Bernardo Branco Tamanho:G",
+    "codigo": "340-SD-008-000-M-G00",
+    "total_pedidos": 25,
+    "total_quantidade": "29.00",
+    "total_receita": "5350.57",
+    "preco_medio": "185.22",
+    "ultima_venda": "2026-04-09"
+  },
+  {
+    "descricao": "Camiseta Scrub Feminino CONFY AVULSA",
+    "codigo": "066-MC-000-000-F-000",
+    "total_pedidos": 18,
+    "total_quantidade": "29.00",
+    "total_receita": "4770.00",
+    "preco_medio": "167.27",
+    "ultima_venda": "2026-03-20"
+  },
+  {
+    "descricao": "Jaleco Manoel Branco Tamanho:G",
+    "codigo": "371-SD-008-000-M-G00",
+    "total_pedidos": 24,
+    "total_quantidade": "27.00",
+    "total_receita": "4783.00",
+    "preco_medio": "176.79",
+    "ultima_venda": "2026-04-17"
+  },
+  {
+    "descricao": "Gorro  Unissex D.  Chumbo",
+    "codigo": "002-SD-014-000-F",
+    "total_pedidos": 19,
+    "total_quantidade": "26.00",
+    "total_receita": "1091.25",
+    "preco_medio": "43.22",
+    "ultima_venda": "2026-04-07"
+  },
+  {
+    "descricao": "Scrub Feminino Preto Tamanho:P",
+    "codigo": "060-SD-012-012-F-P00",
+    "total_pedidos": 16,
+    "total_quantidade": "25.00",
+    "total_receita": "5500.00",
+    "preco_medio": "220.00",
+    "ultima_venda": "2026-03-20"
+  },
+  {
+    "descricao": "Jaleco Samuel Branco Tamanho:M",
+    "codigo": "991-SD-052-000-M-M00",
+    "total_pedidos": 22,
+    "total_quantidade": "25.00",
+    "total_receita": "8820.00",
+    "preco_medio": "356.86",
+    "ultima_venda": "2026-04-17"
+  },
+  {
+    "descricao": "Jaleco Manuela Branco Tamanho:PPP",
+    "codigo": "373-SD-008-000-F-PPP",
+    "total_pedidos": 24,
+    "total_quantidade": "25.00",
+    "total_receita": "4464.10",
+    "preco_medio": "178.56",
+    "ultima_venda": "2026-03-13"
+  },
+  {
+    "descricao": "Jaleco Marta Branco Manga Longa Tamanho:PPP",
+    "codigo": "372-SD-008-000-F-PPP",
+    "total_pedidos": 19,
+    "total_quantidade": "24.00",
+    "total_receita": "4428.02",
+    "preco_medio": "177.61",
+    "ultima_venda": "2026-03-27"
+  },
+  {
+    "descricao": "Avental Linho Aveia Escura detalhes Rosa Chá 2 em 1 Tamanho:P",
+    "codigo": "492-DT-089-085-U-P00",
+    "total_pedidos": 5,
+    "total_quantidade": "24.00",
+    "total_receita": "3515.00",
+    "preco_medio": "133.00",
+    "ultima_venda": "2026-04-07"
+  },
+  {
+    "descricao": "Jaleco Manuela Branco Tamanho:G1",
+    "codigo": "373-SD-008-000-F-G10",
+    "total_pedidos": 20,
+    "total_quantidade": "23.00",
+    "total_receita": "4133.00",
+    "preco_medio": "179.65",
+    "ultima_venda": "2026-03-25"
+  },
+  {
+    "descricao": "Scrub Masculino Preto Tamanho:M",
+    "codigo": "070-SD-012-012-M-M00",
+    "total_pedidos": 14,
+    "total_quantidade": "23.00",
+    "total_receita": "5012.00",
+    "preco_medio": "222.07",
+    "ultima_venda": "2026-04-23"
+  },
+  {
+    "descricao": "Scrub Masculino Azul Marinho Tamanho:M",
+    "codigo": "070-SD-015-015-M-M00",
+    "total_pedidos": 15,
+    "total_quantidade": "22.00",
+    "total_receita": "4841.75",
+    "preco_medio": "209.48",
+    "ultima_venda": "2026-03-16"
+  },
+  {
+    "descricao": "Jaleco Bernardo Branco Tamanho:GG",
+    "codigo": "340-SD-008-000-M-GG0",
+    "total_pedidos": 20,
+    "total_quantidade": "22.00",
+    "total_receita": "3896.67",
+    "preco_medio": "177.28",
+    "ultima_venda": "2026-04-09"
+  },
+  {
+    "descricao": "Jaleco Manuela Cinza Tamanho:M",
+    "codigo": "373-SD-013-000-F-M00",
+    "total_pedidos": 8,
+    "total_quantidade": "22.00",
+    "total_receita": "5060.00",
+    "preco_medio": "220.63",
+    "ultima_venda": "2026-04-14"
+  },
+  {
+    "descricao": "Calça Scrub Feminino CONFY AVULSA",
+    "codigo": "067-MC-000-000-F-000",
+    "total_pedidos": 11,
+    "total_quantidade": "21.00",
+    "total_receita": "3910.00",
+    "preco_medio": "186.67",
+    "ultima_venda": "2026-03-20"
+  },
+  {
+    "descricao": "Turbante Chumbo",
+    "codigo": "004-SD-014",
+    "total_pedidos": 13,
+    "total_quantidade": "21.00",
+    "total_receita": "1303.93",
+    "preco_medio": "62.66",
+    "ultima_venda": "2026-04-09"
+  },
+  {
+    "descricao": "Jaleco Manuela Algodao Branco Tamanho:G",
+    "codigo": "373-AL-008-000-F-G00",
+    "total_pedidos": 20,
+    "total_quantidade": "21.00",
+    "total_receita": "4000.00",
+    "preco_medio": "190.48",
+    "ultima_venda": "2026-03-09"
+  },
+  {
+    "descricao": "Jaleco Manuela Algodao Branco Tamanho:PP",
+    "codigo": "373-AL-008-000-F-PP0",
+    "total_pedidos": 21,
+    "total_quantidade": "21.00",
+    "total_receita": "3980.00",
+    "preco_medio": "189.52",
+    "ultima_venda": "2026-03-07"
+  },
+  {
+    "descricao": "Turbante Rosa Pink",
+    "codigo": "004-SD-004",
+    "total_pedidos": 16,
+    "total_quantidade": "20.00",
+    "total_receita": "1194.57",
+    "preco_medio": "59.68",
+    "ultima_venda": "2026-04-09"
+  },
+  {
+    "descricao": "Jaleco Heloisa Bege Tamanho:M",
+    "codigo": "300-SD-054-000-F-M00",
+    "total_pedidos": 18,
+    "total_quantidade": "20.00",
+    "total_receita": "6660.00",
+    "preco_medio": "336.44",
+    "ultima_venda": "2026-03-27"
+  },
+  {
+    "descricao": "Jaleco Chloe Branco Tamanho:PP",
+    "codigo": "378-ZI-008-000-F-PP0",
+    "total_pedidos": 19,
+    "total_quantidade": "20.00",
+    "total_receita": "4868.00",
+    "preco_medio": "243.05",
+    "ultima_venda": "2026-03-14"
+  },
+  {
+    "descricao": "Jaleco Heloisa Bege Tamanho:P",
+    "codigo": "300-SD-054-000-F-P00",
+    "total_pedidos": 19,
+    "total_quantidade": "20.00",
+    "total_receita": "6544.00",
+    "preco_medio": "327.20",
+    "ultima_venda": "2026-03-07"
+  },
+  {
+    "descricao": "Jaleco Mariah Branco Tamanho:P",
+    "codigo": "376-SD-008-000-F-P00",
+    "total_pedidos": 20,
+    "total_quantidade": "20.00",
+    "total_receita": "4542.50",
+    "preco_medio": "227.13",
+    "ultima_venda": "2026-03-06"
+  },
+  {
+    "descricao": "Turbante Lurex Branco Dourado",
+    "codigo": "004-SD-020",
+    "total_pedidos": 19,
+    "total_quantidade": "20.00",
+    "total_receita": "1427.99",
+    "preco_medio": "71.47",
+    "ultima_venda": "2026-04-08"
+  },
+  {
+    "descricao": "Jaleco Heloisa Azul Marinho Tamanho:M",
+    "codigo": "300-SD-053-000-F-M00",
+    "total_pedidos": 17,
+    "total_quantidade": "20.00",
+    "total_receita": "6410.00",
+    "preco_medio": "334.71",
+    "ultima_venda": "2026-03-30"
+  },
+  {
+    "descricao": "Turbante Rosa Nude",
+    "codigo": "004-SD-007",
+    "total_pedidos": 18,
+    "total_quantidade": "19.00",
+    "total_receita": "1114.45",
+    "preco_medio": "58.66",
+    "ultima_venda": "2026-04-12"
+  },
+  {
+    "descricao": "Jaleco Mariah Branco Tamanho:M",
+    "codigo": "376-SD-008-000-F-M00",
+    "total_pedidos": 18,
+    "total_quantidade": "19.00",
+    "total_receita": "4377.00",
+    "preco_medio": "230.37",
+    "ultima_venda": "2026-03-25"
+  },
+  {
+    "descricao": "Jaleco Isabel Off White Tamanho:M",
+    "codigo": "400-ZI-108-000-F-M00",
+    "total_pedidos": 18,
+    "total_quantidade": "19.00",
+    "total_receita": "8119.00",
+    "preco_medio": "425.50",
+    "ultima_venda": "2026-03-30"
+  },
+  {
+    "descricao": "Gorro  Unissex D. Crepe Off White",
+    "codigo": "002-SD-108-108-F",
+    "total_pedidos": 15,
+    "total_quantidade": "19.00",
+    "total_receita": "932.50",
+    "preco_medio": "48.83",
+    "ultima_venda": "2026-03-31"
+  },
+  {
+    "descricao": "Turbante Bordo",
+    "codigo": "004-SD-002",
+    "total_pedidos": 18,
+    "total_quantidade": "18.00",
+    "total_receita": "1063.90",
+    "preco_medio": "59.11",
+    "ultima_venda": "2026-04-02"
+  },
+  {
+    "descricao": "Jaleco Isabel Off White Tamanho:PP",
+    "codigo": "400-ZI-108-000-F-PP0",
+    "total_pedidos": 18,
+    "total_quantidade": "18.00",
+    "total_receita": "8270.00",
+    "preco_medio": "459.44",
+    "ultima_venda": "2026-04-08"
+  },
+  {
+    "descricao": "Jaleco Heitor Branco Tamanho: M",
+    "codigo": "643-SD-008-000-M-M00",
+    "total_pedidos": 14,
+    "total_quantidade": "18.00",
+    "total_receita": "4620.00",
+    "preco_medio": "255.71",
+    "ultima_venda": "2026-03-28"
+  },
+  {
+    "descricao": "Jaleco Mariah Branco Tamanho:PP",
+    "codigo": "376-SD-008-000-F-PP0",
+    "total_pedidos": 17,
+    "total_quantidade": "18.00",
+    "total_receita": "3875.50",
+    "preco_medio": "214.44",
+    "ultima_venda": "2026-02-28"
+  },
+  {
+    "descricao": "Scrunchie Orelhinha",
+    "codigo": "004-SC-000",
+    "total_pedidos": 14,
+    "total_quantidade": "18.00",
+    "total_receita": "240.00",
+    "preco_medio": "13.93",
+    "ultima_venda": "2025-10-24"
+  },
+  {
+    "descricao": "Jaleco Manoel Branco Tamanho:GG",
+    "codigo": "371-SD-008-000-M-GG0",
+    "total_pedidos": 17,
+    "total_quantidade": "18.00",
+    "total_receita": "3210.00",
+    "preco_medio": "178.33",
+    "ultima_venda": "2026-04-22"
+  },
+  {
+    "descricao": "Jaleco Manuela Algodao Branco Tamanho:GG",
+    "codigo": "373-AL-008-000-F-GG0",
+    "total_pedidos": 17,
+    "total_quantidade": "18.00",
+    "total_receita": "3600.00",
+    "preco_medio": "200.00",
+    "ultima_venda": "2026-04-01"
+  },
+  {
+    "descricao": "Gorro  Unissex D. Azul Bebe",
+    "codigo": "002-SD-017-000-F",
+    "total_pedidos": 7,
+    "total_quantidade": "18.00",
+    "total_receita": "765.00",
+    "preco_medio": "38.57",
+    "ultima_venda": "2026-02-14"
+  },
+  {
+    "descricao": "Scrub Feminino Tec Easy Loren Preto Tamanho:M",
+    "codigo": "080-SD-075-000-F-M00",
+    "total_pedidos": 17,
+    "total_quantidade": "17.00",
+    "total_receita": "7051.50",
+    "preco_medio": "414.79",
+    "ultima_venda": "2026-02-27"
+  },
+  {
+    "descricao": "Scrub Feminino Tec Easy Loren  Azul Marinho Tamanho:P",
+    "codigo": "080-SD-072-000-F-P00",
+    "total_pedidos": 16,
+    "total_quantidade": "17.00",
+    "total_receita": "7670.00",
+    "preco_medio": "451.25",
+    "ultima_venda": "2026-04-13"
+  },
+  {
+    "descricao": "Jaleco Laila Branco Tamanho:P",
+    "codigo": "460-SD-052-000-F-P00",
+    "total_pedidos": 17,
+    "total_quantidade": "17.00",
+    "total_receita": "6051.53",
+    "preco_medio": "355.97",
+    "ultima_venda": "2026-04-23"
+  },
+  {
+    "descricao": "Gorro  Unissex D. Rosa Nude",
+    "codigo": "002-SD-007-000-F",
+    "total_pedidos": 16,
+    "total_quantidade": "17.00",
+    "total_receita": "765.00",
+    "preco_medio": "45.00",
+    "ultima_venda": "2026-03-19"
+  },
+  {
+    "descricao": "Jaleco Isabel Off White Tamanho:P",
+    "codigo": "400-ZI-108-000-F-P00",
+    "total_pedidos": 17,
+    "total_quantidade": "17.00",
+    "total_receita": "6424.99",
+    "preco_medio": "377.94",
+    "ultima_venda": "2026-03-25"
+  },
+  {
+    "descricao": "Scrub Feminino Chumbo Tamanho:P",
+    "codigo": "060-SD-014-014-F-P00",
+    "total_pedidos": 12,
+    "total_quantidade": "17.00",
+    "total_receita": "3740.00",
+    "preco_medio": "220.00",
+    "ultima_venda": "2026-01-30"
+  },
+  {
+    "descricao": "Scrub Masculino Azul Marinho Tamanho:G",
+    "codigo": "070-SD-015-015-M-G00",
+    "total_pedidos": 11,
+    "total_quantidade": "16.00",
+    "total_receita": "3628.95",
+    "preco_medio": "222.65",
+    "ultima_venda": "2026-03-16"
+  },
+  {
+    "descricao": "Laço Preto",
+    "codigo": "004-LC-000",
+    "total_pedidos": 6,
+    "total_quantidade": "16.00",
+    "total_receita": "190.00",
+    "preco_medio": "24.17",
+    "ultima_venda": "2026-01-26"
+  },
+  {
+    "descricao": "Gorro Unissex A. Chumbo",
+    "codigo": "002-SD-014-000-M",
+    "total_pedidos": 10,
+    "total_quantidade": "16.00",
+    "total_receita": "711.00",
+    "preco_medio": "44.10",
+    "ultima_venda": "2026-01-02"
+  },
+  {
+    "descricao": "Mouse Pad Dupla Face Cor:Caramelo/Palha",
+    "codigo": "101-MD-006",
+    "total_pedidos": 2,
+    "total_quantidade": "16.00",
+    "total_receita": "270.39999999999997",
+    "preco_medio": "16.90",
+    "ultima_venda": "2026-04-24"
+  },
+  {
+    "descricao": "Scrub Feminino Preto Tamanho:M",
+    "codigo": "060-SD-012-012-F-M00",
+    "total_pedidos": 9,
+    "total_quantidade": "16.00",
+    "total_receita": "3366.00",
+    "preco_medio": "211.44",
+    "ultima_venda": "2025-12-23"
+  },
+  {
+    "descricao": "Turbante Cinza",
+    "codigo": "004-SD-013",
+    "total_pedidos": 12,
+    "total_quantidade": "16.00",
+    "total_receita": "900.00",
+    "preco_medio": "57.50",
+    "ultima_venda": "2025-12-19"
+  },
+  {
+    "descricao": "Gorro Unissex D.  Azul Medio",
+    "codigo": "002-SD-016-000-F",
+    "total_pedidos": 12,
+    "total_quantidade": "16.00",
+    "total_receita": "413.75",
+    "preco_medio": "22.40",
+    "ultima_venda": "2026-03-14"
+  },
+  {
+    "descricao": "Scrub Feminino Tec Easy Loren  Azul Marinho Tamanho:M",
+    "codigo": "080-SD-072-000-F-M00",
+    "total_pedidos": 14,
+    "total_quantidade": "16.00",
+    "total_receita": "6320.00",
+    "preco_medio": "387.14",
+    "ultima_venda": "2026-04-13"
+  },
+  {
+    "descricao": "Jaleco Heloisa Branco Tamanho:GG",
+    "codigo": "300-SD-052-000-F-GG0",
+    "total_pedidos": 12,
+    "total_quantidade": "15.00",
+    "total_receita": "3835.50",
+    "preco_medio": "258.81",
+    "ultima_venda": "2026-03-21"
+  },
+  {
+    "descricao": "Jaleco Marta Branco Manga Longa Tamanho:GG",
+    "codigo": "372-SD-008-000-F-GG0",
+    "total_pedidos": 14,
+    "total_quantidade": "15.00",
+    "total_receita": "2669.00",
+    "preco_medio": "177.79",
+    "ultima_venda": "2026-03-05"
+  },
+  {
+    "descricao": "Gorro  Unissex D.  Verde Claro",
+    "codigo": "002-SD-009-000-F",
+    "total_pedidos": 6,
+    "total_quantidade": "15.00",
+    "total_receita": "680.00",
+    "preco_medio": "45.83",
+    "ultima_venda": "2026-03-20"
+  },
+  {
+    "descricao": "Avental Cozinha Gabardine Cinza Tamanho:P",
+    "codigo": "497-SD-013-000-U-P00",
+    "total_pedidos": 1,
+    "total_quantidade": "15.00",
+    "total_receita": "1050.00",
+    "preco_medio": "70.00",
+    "ultima_venda": "2025-10-09"
+  },
+  {
+    "descricao": "Turbante Bege",
+    "codigo": "004-SD-006",
+    "total_pedidos": 14,
+    "total_quantidade": "15.00",
+    "total_receita": "894.00",
+    "preco_medio": "59.57",
+    "ultima_venda": "2026-02-09"
+  },
+  {
+    "descricao": "Calça Scrub Masculino AVULSA",
+    "codigo": "072-SD-000-000-M-000",
+    "total_pedidos": 11,
+    "total_quantidade": "15.00",
+    "total_receita": "1500.00",
+    "preco_medio": "100.00",
+    "ultima_venda": "2026-04-08"
+  },
+  {
+    "descricao": "Jaleco Tec Easy Clara Cacau Tamanho:M;Cor:Cacau",
+    "codigo": "700-SD-083-000-F-M00",
+    "total_pedidos": 13,
+    "total_quantidade": "14.00",
+    "total_receita": "5596.28",
+    "preco_medio": "399.73",
+    "ultima_venda": "2026-04-23"
+  }
+]
