@@ -10,13 +10,36 @@ setup-supabase.sql
 *token*.txt
 *token*.json
 TOKENS/
+*CRON_SECRET*
+*WEBHOOK_SECRET*
+*SERVICE_KEY*
+*service_role*
+
+# Snapshots de Bling com dados sensíveis (PII fornecedores, preço custo, faturamento)
+bling-matriz/
+bling_*.json
+bling_*.csv
+**/snapshot_bling*
 
 # Backups locais
 *.backup-*
 index.html.backup-*
+backups/
+*.gz
+*.zip
+
+# Logs
+*.log
+npm-debug.log*
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*~
+*.swo
 
 # Temporários
 .DS_Store
 Thumbs.db
-*.swp
-*~
+~$*

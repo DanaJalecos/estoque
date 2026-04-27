@@ -385,6 +385,8 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
 
         <!-- Tira de vendas Bling -->
         <div id="dashBlingStrip" data-perm="bling" style="display:none;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.2rem;margin-bottom:1.2rem;"></div>
+        <!-- Resumo de Produção do Mês -->
+        <div id="dashProducao" style="margin-bottom:1.2rem;"></div>
         <div id="dashFichaAlertas" data-perm="ficha" style="margin-bottom:1.2rem;"></div>
 
         <!-- GRÁFICOS -->
@@ -596,7 +598,13 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
 
     <!-- ALERTAS -->
     <div id="page-alertas" class="page hidden">
-      <div class="topbar"><h2>Alertas de Estoque</h2><div class="topbar-actions"><button class="btn btn-primary" onclick="exportPDF()">↓ Exportar PDF</button></div></div>
+      <div class="topbar">
+        <h2>Alertas de Estoque</h2>
+        <div class="topbar-actions">
+          <button class="btn" onclick="abrirPedidoCompra()" title="Gerar PDF + WhatsApp por fornecedor">📄 Pedido de Compra</button>
+          <button class="btn btn-primary" onclick="exportPDF()">↓ Exportar PDF</button>
+        </div>
+      </div>
       <div class="content">
         <div class="stats-grid" id="alertStats"></div>
         <div id="alertCritical"></div>
@@ -620,7 +628,10 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
 
     <!-- COMPRAS -->
     <div id="page-compras" class="page hidden">
-      <div class="topbar"><h2>Histórico de Compras</h2><div class="topbar-actions"><button class="btn btn-primary" onclick="exportPurchasesPDF()">↓ Exportar PDF</button></div></div>
+      <div class="topbar"><h2>Histórico de Compras</h2><div class="topbar-actions">
+        <button class="btn" onclick="abrirComparadorPrecos()" title="Compara preços do mesmo produto entre fornecedores">⚖️ Comparar Preços</button>
+        <button class="btn btn-primary" onclick="exportPurchasesPDF()">↓ Exportar PDF</button>
+      </div></div>
       <div class="content">
         <div class="stats-grid" id="purchaseStats"></div>
         <!-- Charts -->
@@ -1012,6 +1023,14 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
   </div>
 </div>
 
+<!-- Modal customizado: HTML livre dentro do body -->
+<div class="modal-overlay" id="customModal" style="z-index:10000;">
+  <div class="modal" id="customModalBox" style="max-width:900px;width:95vw;max-height:88vh;overflow-y:auto;">
+    <div id="customModalBody"></div>
+    <div class="modal-actions"><button class="btn" onclick="closeCustomModal()">Fechar</button></div>
+  </div>
+</div>
+
 <script>
 const SUPA_URL='https://jkvoqqqiwtpsruwoioxl.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imprdm9xcXFpd3Rwc3J1d29pb3hsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcwNDI4NTcsImV4cCI6MjA5MjYxODg1N30.iUZL9Tdx7qF5eWD1Viai2I-zOOrbqnV28xYM8Wq8KL0';
@@ -1265,10 +1284,12 @@ async function enterApp(){
 let purchases=[];
 let fornecedores=[];
 let fichaProdutos=[],fichaItens=[],vendasPorCodigo=[],consumoProjetado=[];
+let fabricCustoMedio=[]; // [{fabric_id, custo_medio_ponderado, ultimo_custo, valor_em_estoque, ...}]
+let comparadorPrecos=[]; // [{fabric_id, produto, fornecedor_id, fornecedor_nome, preco_medio, ultimo_preco, ...}]
 // Bling caches
 let blingTrendPeriodo=[],blingVendasMes=[],blingDiaSemana=[],blingTopProdutos=[],blingVelocidade=[],blingCatalogo=[],blingSyncMeta=null;
 async function loadAll(){
-  const[f,m,p,pu,rp,fo,btp,bvm,bds,btop,bvel,bmeta,fp,ft,vpc,cp]=await Promise.all([
+  const[f,m,p,pu,rp,fo,btp,bvm,bds,btop,bvel,bmeta,fp,ft,vpc,cp,fcm,cmp]=await Promise.all([
     sb.from('fabrics').select('*').order('created_at',{ascending:false}),
     sb.from('movements').select('*').order('created_at',{ascending:false}),
     sb.from('profiles').select('*'),
@@ -1284,7 +1305,9 @@ async function loadAll(){
     sb.from('ficha_produtos').select('*').order('custo_total',{ascending:false}),
     sb.from('ficha_tecnica').select('*').order('produto_codigo,ordem'),
     sb.from('vendas_por_codigo_ficha').select('*'),
-    sb.from('consumo_projetado').select('*').order('dias_de_cobertura',{ascending:true,nullsFirst:false})
+    sb.from('consumo_projetado').select('*').order('dias_de_cobertura',{ascending:true,nullsFirst:false}),
+    sb.from('fabric_custo_medio').select('*'),
+    sb.from('comparador_precos').select('*')
   ]);
   fabrics=f.data||[];movements=m.data||[];profiles=p.data||[];purchases=pu.data||[];
   rolePerms=(rp.data?.permissions)||{};
@@ -1292,11 +1315,22 @@ async function loadAll(){
   blingTrendPeriodo=btp.data||[];blingVendasMes=bvm.data||[];blingDiaSemana=bds.data||[];
   blingTopProdutos=btop.data||[];blingVelocidade=bvel.data||[];blingSyncMeta=bmeta.data||null;
   fichaProdutos=fp.data||[];fichaItens=ft.data||[];vendasPorCodigo=vpc.data||[];consumoProjetado=cp.data||[];
+  fabricCustoMedio=fcm.data||[];
+  comparadorPrecos=cmp.data||[];
+}
+// Helper: pega custo médio ponderado do fabric (com fallback pro último preço)
+function getCustoMedio(fabricId){
+  const r=fabricCustoMedio.find(x=>x.fabric_id===fabricId);
+  return r?Number(r.custo_medio_ponderado||r.ultimo_custo||0):0;
 }
 // Helpers de reload individual (usados pelo realtime)
 async function loadPurchases(){
-  const{data}=await sb.from('purchases').select('*').order('date',{ascending:false});
-  purchases=data||[];
+  const[p,fcm]=await Promise.all([
+    sb.from('purchases').select('*').order('date',{ascending:false}),
+    sb.from('fabric_custo_medio').select('*')
+  ]);
+  purchases=p.data||[];
+  fabricCustoMedio=fcm.data||[];
 }
 async function loadFichaProdutos(){
   const{data}=await sb.from('ficha_produtos').select('*').order('custo_total',{ascending:false});
@@ -1586,6 +1620,87 @@ function openFichaDrawer(codigo){
 }
 
 function closeFichaDrawer(){$('fichaDrawerOverlay').classList.remove('show');}
+
+// Card de Produção do Mês: parseia movements detail "Produção: Nx CODIGO" + soma custos
+function renderDashProducao(){
+  const el=$('dashProducao');
+  if(!el)return;
+  const hoje=new Date();
+  const inicioMes=new Date(hoje.getFullYear(),hoje.getMonth(),1).toISOString().slice(0,10);
+  const inicioMesAnt=new Date(hoje.getFullYear(),hoje.getMonth()-1,1).toISOString().slice(0,10);
+  const fimMesAnt=new Date(hoje.getFullYear(),hoje.getMonth(),0).toISOString().slice(0,10);
+
+  // Saídas com detail começando com "Produção:" ou "Bling:" (webhook)
+  function ehProducao(m){return m.type==='saida' && /^(Produ[çc][ãa]o|Bling):/i.test(m.detail||'');}
+  const saidasProdMesAtual=movements.filter(m=>ehProducao(m)&&m.date>=inicioMes);
+  const saidasProdMesAnt=movements.filter(m=>ehProducao(m)&&m.date>=inicioMesAnt&&m.date<=fimMesAnt);
+
+  // Conta peças por modelo de produto (regex no detail)
+  function contaPecasPorProduto(saidas){
+    const r={};
+    let totalPecas=0;
+    saidas.forEach(m=>{
+      // formatos possíveis no detail: "Produção: 5× JALECO 375-ADA" ou "Bling: 1× 375-ADA (NF #...)"
+      const match=(m.detail||'').match(/(\d+)\s*[x×]\s*([\w\s\-\.\/]+?)(?=\s*\(|$)/i);
+      if(match){
+        const qty=parseInt(match[1])||0;
+        const codigo=match[2].trim();
+        r[codigo]=(r[codigo]||0)+qty;
+        totalPecas+=qty;
+      }
+    });
+    return {porProduto:r, totalPecas};
+  }
+
+  const cMes=contaPecasPorProduto(saidasProdMesAtual);
+  const cAnt=contaPecasPorProduto(saidasProdMesAnt);
+
+  // Custo total = soma de cada movement.qty × custo médio do fabric
+  function custoTotal(saidas){
+    return saidas.reduce((s,m)=>s+(getCustoMedio(m.fabric_id)*Number(m.qty||0)),0);
+  }
+  const custoMes=custoTotal(saidasProdMesAtual);
+  const custoAnt=custoTotal(saidasProdMesAnt);
+  const custoMedioPeca=cMes.totalPecas?custoMes/cMes.totalPecas:0;
+
+  if(!cMes.totalPecas&&!cAnt.totalPecas){
+    el.innerHTML='';
+    return;
+  }
+
+  const variacao=cAnt.totalPecas?(((cMes.totalPecas-cAnt.totalPecas)/cAnt.totalPecas)*100).toFixed(1):0;
+  const cor=variacao>0?'var(--green)':variacao<0?'var(--red)':'var(--text-muted)';
+  const ico=variacao>0?'▲':variacao<0?'▼':'=';
+
+  // Top 5 produtos
+  const topProdutos=Object.entries(cMes.porProduto).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+  el.innerHTML=`
+    <div style="background:linear-gradient(135deg,rgba(96,165,250,.08),rgba(74,222,128,.05));border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem 1.4rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1rem;">
+        <div>
+          <div style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:.3rem;">🏭 Produção do Mês</div>
+          <div style="font-size:1.6rem;font-weight:700;">${cMes.totalPecas} peça${cMes.totalPecas!==1?'s':''}</div>
+          <div style="font-size:.78rem;color:${cor};margin-top:.2rem;">
+            ${ico} ${Math.abs(variacao)}% vs mês anterior (${cAnt.totalPecas} peças)
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:.7rem;color:var(--text-muted);">Custo de matéria-prima</div>
+          <div style="font-size:1.4rem;font-weight:700;color:var(--orange);">R$ ${fmtMoney(custoMes)}</div>
+          <div style="font-size:.72rem;color:var(--text-muted);">≈ R$ ${fmtMoney(custoMedioPeca)} / peça</div>
+        </div>
+      </div>
+      ${topProdutos.length?`
+      <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
+        ${topProdutos.map(([cod,qty])=>`
+          <div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:.5rem .8rem;font-size:.78rem;">
+            <strong>${qty}×</strong> <span style="color:var(--text-muted);">${esc(cod.slice(0,30))}</span>
+          </div>
+        `).join('')}
+      </div>`:''}
+    </div>`;
+}
 
 function renderDashFichaAlertas(){
   const el=$('dashFichaAlertas');
@@ -1978,21 +2093,40 @@ function mapUnit(raw){
   return'unidades';
 }
 
+// Normaliza nome de produto: remove acentos, pontuação, sufixos comuns FT/UN/SOFT/STR
+function normFabricName(s){
+  if(!s)return'';
+  let n=s.toUpperCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'');
+  // Remove sufixos genéricos no final que não diferenciam produto
+  n=n.replace(/\b(FT|FT2|UN|UNI|SOFT|STR|PCS|UND|REF\.?\s*\d+)\b/g,'');
+  n=n.replace(/[^A-Z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+  return n;
+}
+
 function findMatchingProduct(nome,cor){
   const n=nome.toLowerCase();
   const c=(cor||'').toLowerCase();
-  // Try exact match (name + variation)
-  const exact=fabrics.find(f=>f.name.toLowerCase()===n&&f.color.toLowerCase()===c);
+  // 1) Match exato (case insensitive)
+  const exact=fabrics.find(f=>f.name.toLowerCase().trim()===n.trim()&&(f.color||'').toLowerCase().trim()===c.trim());
   if(exact)return exact.id;
-  // Try partial match on name BUT only if variation also matches
+  // 2) Match por nome normalizado (remove acentos/sufixos triviais) — combate duplicados FT/UN/SOFT
+  const targetNorm=normFabricName(nome);
+  if(targetNorm){
+    const normMatch=fabrics.find(f=>{
+      const fNorm=normFabricName(f.name);
+      return fNorm===targetNorm&&(c===''||fNorm===targetNorm);
+    });
+    if(normMatch)return normMatch.id;
+  }
+  // 3) Match parcial com variação (cor)
   if(c){
     const partialWithColor=fabrics.find(f=>
       (f.name.toLowerCase().includes(n)||n.includes(f.name.toLowerCase()))&&
-      f.color.toLowerCase()===c
+      (f.color||'').toLowerCase()===c
     );
     if(partialWithColor)return partialWithColor.id;
   }
-  // Try partial match on name only if there's no variation to compare
+  // 4) Match parcial sem variação
   if(!c){
     const partial=fabrics.find(f=>
       f.name.toLowerCase().includes(n)||n.includes(f.name.toLowerCase())
@@ -2032,19 +2166,57 @@ function toggleNFAll(checked){
   $('nfSelectAll').checked=checked;
 }
 
+// Normalização agressiva pra fuzzy match: remove acentos, sufixos LTDA/SA/EIRELI, etc
+function normFornName(s){
+  if(!s)return'';
+  let n=s.toUpperCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'');
+  n=n.replace(/\b(LTDA|EIRELI|S\.?A\.?|ME|EPP|MEI|COMERCIAL|COMERCIO|INDUSTRIA|IMPORTACAO|EXPORTACAO|EI)\b/g,'');
+  n=n.replace(/[^A-Z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+  return n;
+}
+
 async function vincularFornecedorNF(){
-  // Retorna {id, nome} ou null. Usa CNPJ primeiro, depois nome exato.
+  // Retorna {id, nome} ou null. Estratégias em ordem:
+  // 1) Match exato pelo CNPJ principal
+  // 2) Match em cnpjs_adicionais (filiais consolidadas)
+  // 3) Match exato por nome normalizado (sem acento/sufixo)
+  // 4) Cria novo (se admin/gerente)
   if(!nfCNPJ && !nfSupplier)return null;
+
+  // 1) CNPJ principal
   if(nfCNPJ){
     const byCnpj=fornecedores.find(f=>digits(f.cnpj||'')===nfCNPJ);
     if(byCnpj)return byCnpj;
+    // 2) cnpjs_adicionais
+    const byCnpjAdd=fornecedores.find(f=>(f.cnpjs_adicionais||[]).some(c=>digits(c)===nfCNPJ));
+    if(byCnpjAdd){
+      // Adiciona o CNPJ principal nas adicionais? Não — já está nas adicionais.
+      return byCnpjAdd;
+    }
   }
+  // 3) Match por nome normalizado
   if(nfSupplier){
-    const norm=s=>(s||'').trim().toUpperCase();
-    const byNome=fornecedores.find(f=>norm(f.nome)===norm(nfSupplier)||norm(f.razao_social)===norm(nfSupplier));
-    if(byNome)return byNome;
+    const target=normFornName(nfSupplier);
+    if(target){
+      const byNome=fornecedores.find(f=>{
+        const n1=normFornName(f.nome);
+        const n2=normFornName(f.razao_social);
+        return n1===target||n2===target;
+      });
+      if(byNome){
+        // Se achou por nome mas CNPJ é diferente, adiciona nas cnpjs_adicionais
+        if(nfCNPJ && byNome.cnpj && digits(byNome.cnpj)!==nfCNPJ){
+          const adicionais=[...(byNome.cnpjs_adicionais||[]),nfCNPJ];
+          await sb.from('fornecedores').update({cnpjs_adicionais:adicionais}).eq('id',byNome.id);
+          byNome.cnpjs_adicionais=adicionais;
+          toast(`CNPJ adicional registrado pra ${byNome.nome}`);
+        }
+        return byNome;
+      }
+    }
   }
-  // Nao existe — criar se usuario for admin/gerente
+
+  // 4) Cria novo
   if(!canAccess('fornecedores_editar'))return null;
   const novoFornecedor={
     nome:nfSupplier||('CNPJ '+nfCNPJ),
@@ -2055,7 +2227,9 @@ async function vincularFornecedorNF(){
     uf:nfEmitEnd.uf||null,
     cep:nfEmitEnd.cep?digits(nfEmitEnd.cep):null,
     categorias:['outro'],
-    ativo:true
+    naturezas_operacao:['Compra (NF-e import)'],
+    ativo:true,
+    observacoes:'Importado via NF-e XML'
   };
   const{data,error}=await sb.from('fornecedores').insert(novoFornecedor).select().single();
   if(error){console.warn('Falhou criar fornecedor auto:',error.message);return null;}
@@ -3182,13 +3356,8 @@ function renderDash(){
   const low=fabrics.filter(f=>f.stock>0&&(f.min_stock||0)>0&&f.stock<=f.min_stock).length;
   const crit=fabrics.filter(f=>(f.stock||0)<=0).length;
 
-  // Valor em estoque (R$) — cruza fabric × último custo unitário das purchases
-  const lastPrice={}; // fabric_id → último unit_price
-  if(typeof purchases!=='undefined'&&purchases.length){
-    const sortedP=[...purchases].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
-    sortedP.forEach(p=>{ if(p.fabric_id&&!lastPrice[p.fabric_id]&&p.unit_price)lastPrice[p.fabric_id]=Number(p.unit_price); });
-  }
-  const valorEstoque=fabrics.reduce((s,f)=>s+(Number(f.stock||0)*Number(lastPrice[f.id]||0)),0);
+  // Valor em estoque (R$) — usa custo médio ponderado da view fabric_custo_medio
+  const valorEstoque=fabricCustoMedio.reduce((s,r)=>s+Number(r.valor_em_estoque||0),0);
 
   // Entradas: registradas no sistema nos últimos 30 dias
   // (usa created_at — não m.date, porque NFes podem ter data antiga mesmo registradas hoje)
@@ -3219,6 +3388,7 @@ function renderDash(){
     <div class="stat-card"><div class="stat-label">🔮 Acabam em 14 dias</div><div class="stat-value" style="color:${urgentCount?'var(--red)':'var(--green)'}">${urgentCount}</div></div>
   `;
 
+  renderDashProducao();
   renderDashFichaAlertas();
   renderCharts();
 
@@ -3406,16 +3576,71 @@ function renderStock(){
 }
 
 // ═══ ALERTS ═══
+// Sugere qty pra repor — máximo entre: (2×min - stock_atual), 45d de consumo, ou min_stock
+function suggestQty(f){
+  const d30ago=new Date();d30ago.setDate(d30ago.getDate()-30);
+  const d30str=d30ago.toISOString().slice(0,10);
+  const exits=movements.filter(m=>m.fabric_id===f.id&&m.type==='saida'&&m.date>=d30str);
+  const consumo30=exits.reduce((s,m)=>s+Number(m.qty||0),0);
+  const a=Number(f.min_stock||0)*2-Number(f.stock||0);
+  const b=consumo30*1.5; // 45 dias de margem
+  const c=Number(f.min_stock||0);
+  return Math.max(1, Math.ceil(Math.max(a,b,c)));
+}
+
+// Lookup fornecedor: prefere fabric.fornecedor_id; fallback acha pelo último purchase
+function fabricFornecedor(f){
+  if(f.fornecedor_id){
+    const found=fornecedores.find(x=>x.id===f.fornecedor_id);
+    if(found)return found;
+  }
+  const lastPurchase=[...purchases].filter(p=>p.fabric_id===f.id&&p.fornecedor_id)
+    .sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0];
+  return lastPurchase ? fornecedores.find(x=>x.id===lastPurchase.fornecedor_id) : null;
+}
+
+function comprarViaWhatsApp(fabId){
+  const f=fabrics.find(x=>x.id===fabId);
+  if(!f){toast('Produto não encontrado.');return;}
+  const forn=fabricFornecedor(f);
+  if(!forn){
+    showConfirm('Sem fornecedor cadastrado',`O produto "${esc(f.name)}" não tem fornecedor vinculado.\n\nQuer abrir o cadastro do produto pra escolher um?`,()=>{
+      showPage('cadastro',navBtn('cadastro'));setTimeout(()=>editFab(f.id),200);
+    });
+    return;
+  }
+  const phone=(forn.whatsapp||forn.telefone||'').replace(/\D/g,'');
+  if(!phone){
+    toast(`${forn.nome} não tem telefone/whatsapp cadastrado.`);
+    return;
+  }
+  const fullPhone=phone.startsWith('55')?phone:'55'+phone;
+  const qty=suggestQty(f);
+  const cmp=getCustoMedio(f.id);
+  const valorEstim=cmp?` ≈ R$ ${fmtMoney(cmp*qty)}`:'';
+  const msg=encodeURIComponent(`Olá, ${forn.contato_nome||forn.nome}! Tudo bem?\n\nPreciso fazer um pedido:\n\n📦 *${f.name}*${f.color?'\nVariação: '+f.color:''}\nQuantidade: *${qty} ${f.unit}*${valorEstim}\n\nPode me confirmar:\n• Disponibilidade\n• Prazo de entrega\n• Valor unitário atual\n• Forma de pagamento\n\nObrigado!\n\n_-- Dana Jalecos --_`);
+  window.open(`https://wa.me/${fullPhone}?text=${msg}`,'_blank');
+}
+
 function renderAlerts(){
-  const critical=fabrics.filter(f=>f.stock<=0);
-  const low=fabrics.filter(f=>f.stock>0&&f.stock<=f.min_stock);
-  const ok=fabrics.filter(f=>f.stock>f.min_stock);
+  const critical=fabrics.filter(f=>(f.stock||0)<=0);
+  const low=fabrics.filter(f=>f.stock>0&&(f.min_stock||0)>0&&f.stock<=f.min_stock);
+  const ok=fabrics.filter(f=>f.stock>(f.min_stock||0));
 
   $('alertStats').innerHTML=`
     <div class="stat-card" style="border-left:3px solid var(--red);"><div class="stat-label">Sem Estoque</div><div class="stat-value" style="color:var(--red)">${critical.length}</div><div class="stat-sub">Precisam de reposição urgente</div></div>
     <div class="stat-card" style="border-left:3px solid var(--orange);"><div class="stat-label">Estoque Baixo</div><div class="stat-value" style="color:var(--orange)">${low.length}</div><div class="stat-sub">Abaixo do mínimo definido</div></div>
     <div class="stat-card" style="border-left:3px solid var(--green);"><div class="stat-label">Estoque OK</div><div class="stat-value" style="color:var(--green)">${ok.length}</div><div class="stat-sub">Acima do mínimo</div></div>
   `;
+
+  function rowAcao(f){
+    const forn=fabricFornecedor(f);
+    const tem=forn&&((forn.whatsapp||'').replace(/\D/g,'').length>0||(forn.telefone||'').replace(/\D/g,'').length>0);
+    const qty=suggestQty(f);
+    if(tem)return`<button class="btn btn-sm" style="background:#25d366;color:#fff;font-weight:600;" onclick="comprarViaWhatsApp('${f.id}')" title="Sugestão: ${qty} ${f.unit} para ${esc(forn.nome)}">📱 Comprar (${qty} ${f.unit})</button>`;
+    if(forn)return`<span style="font-size:.72rem;color:var(--text-muted);">${esc(forn.nome.slice(0,20))}<br><em>sem WhatsApp</em></span>`;
+    return`<button class="btn btn-sm" onclick="showPage('cadastro',navBtn('cadastro'));setTimeout(()=>editFab('${f.id}'),200)">Vincular fornecedor</button>`;
+  }
 
   // Critical section
   if(critical.length){
@@ -3425,11 +3650,12 @@ function renderAlerts(){
         <h3 style="font-size:.9rem;font-weight:700;color:var(--red);">Sem Estoque — Reposição Urgente</h3>
       </div>
       <div class="table-wrap"><table>
-        <thead><tr><th>Produto</th><th>Variação</th><th>Fornecedor</th><th>Estoque</th><th>Mínimo</th></tr></thead>
+        <thead><tr><th>Produto</th><th>Variação</th><th>Estoque</th><th>Mínimo</th><th>Ação</th></tr></thead>
         <tbody>${critical.map(f=>`<tr>
-          <td><strong>${esc(f.name)}</strong></td><td>${esc(f.color)}</td><td>${esc(f.supplier||'—')}</td>
+          <td><strong>${esc(f.name)}</strong></td><td>${esc(f.color)}</td>
           <td style="color:var(--red);font-weight:700;">${fmt(f.stock)} ${f.unit}</td>
           <td>${f.min_stock} ${f.unit}</td>
+          <td>${rowAcao(f)}</td>
         </tr>`).join('')}</tbody>
       </table></div>`;
   } else {
@@ -3444,14 +3670,15 @@ function renderAlerts(){
         <h3 style="font-size:.9rem;font-weight:700;color:var(--orange);">Estoque Baixo — Atenção</h3>
       </div>
       <div class="table-wrap"><table>
-        <thead><tr><th>Produto</th><th>Variação</th><th>Fornecedor</th><th>Estoque</th><th>Mínimo</th><th>Faltam</th></tr></thead>
+        <thead><tr><th>Produto</th><th>Variação</th><th>Estoque</th><th>Mínimo</th><th>Faltam</th><th>Ação</th></tr></thead>
         <tbody>${low.map(f=>{
           const falta=fmt(f.min_stock-f.stock);
           return`<tr>
-            <td><strong>${esc(f.name)}</strong></td><td>${esc(f.color)}</td><td>${esc(f.supplier||'—')}</td>
+            <td><strong>${esc(f.name)}</strong></td><td>${esc(f.color)}</td>
             <td style="color:var(--orange);font-weight:700;">${fmt(f.stock)} ${f.unit}</td>
             <td>${f.min_stock} ${f.unit}</td>
             <td style="color:var(--red);font-weight:600;">${falta} ${f.unit}</td>
+            <td>${rowAcao(f)}</td>
           </tr>`;
         }).join('')}</tbody>
       </table></div>`;
@@ -3462,7 +3689,194 @@ function renderAlerts(){
   if(!critical.length&&!low.length){
     $('alertCritical').innerHTML='<div class="empty-state" style="padding:3rem;"><span class="icon">✅</span><p>Tudo certo! Nenhum produto com estoque baixo.</p></div>';
   }
+}
 
+// ═══ COMPARADOR DE PREÇOS ═══
+function abrirComparadorPrecos(){
+  // Agrupa por fabric_id; só interessa quem tem 2+ fornecedores
+  const porFabric={};
+  for(const cp of comparadorPrecos){
+    if(!porFabric[cp.fabric_id])porFabric[cp.fabric_id]={produto:cp.produto,unit:cp.unit,fornecedores:[]};
+    porFabric[cp.fabric_id].fornecedores.push(cp);
+  }
+  const grupos=Object.entries(porFabric).filter(([,g])=>g.fornecedores.length>=2);
+  const apenas1=Object.entries(porFabric).filter(([,g])=>g.fornecedores.length===1);
+
+  if(!grupos.length){
+    showCustomModal('⚖️ Comparador de Preços',`
+      <p style="font-size:.9rem;color:var(--text-muted);">
+        Nenhum produto foi comprado de mais de um fornecedor ainda.
+      </p>
+      <p style="font-size:.85rem;margin-top:1rem;">
+        ${apenas1.length} produto${apenas1.length>1?'s':''} têm preços registrados, mas todos com 1 fornecedor cada.
+      </p>
+      <p style="font-size:.8rem;color:var(--text-muted);margin-top:.6rem;">
+        Esta tela vai ganhar valor à medida que você diversifica fornecedores. Quando o mesmo SKU for comprado de 2+ fornecedores, vai aparecer aqui pra comparar.
+      </p>
+    `);
+    return;
+  }
+
+  let html=`<p style="font-size:.85rem;color:var(--text-muted);margin-bottom:1rem;">
+    ${grupos.length} produto${grupos.length>1?'s':''} comprado${grupos.length>1?'s':''} de múltiplos fornecedores. Compare valores e escolha o mais vantajoso.
+  </p>`;
+
+  grupos.sort((a,b)=>b[1].fornecedores.length-a[1].fornecedores.length);
+  for(const [fabId, g] of grupos){
+    const sortedF=[...g.fornecedores].sort((a,b)=>Number(a.ultimo_preco||0)-Number(b.ultimo_preco||0));
+    const min=Number(sortedF[0].ultimo_preco||0);
+    const max=Number(sortedF[sortedF.length-1].ultimo_preco||0);
+    const economia=max>0?((max-min)/max*100).toFixed(1):0;
+    html+=`<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:.8rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;margin-bottom:.6rem;">
+        <strong style="font-size:.95rem;">${esc(g.produto.slice(0,60))}</strong>
+        ${economia>0?`<span style="font-size:.78rem;color:var(--green);">💰 economia até ${economia}%</span>`:''}
+      </div>
+      <table style="font-size:.78rem;width:100%;">
+        <thead><tr><th style="text-align:left;">Fornecedor</th><th style="text-align:right;">Compras</th><th style="text-align:right;">Preço médio</th><th style="text-align:right;">Último preço</th><th style="text-align:right;">Última compra</th></tr></thead>
+        <tbody>${sortedF.map((s,i)=>{
+          const isBest=i===0&&sortedF.length>1;
+          return`<tr${isBest?' style="background:rgba(74,222,128,.06);"':''}>
+            <td>${isBest?'🏆 ':''}${esc(s.fornecedor_nome)}</td>
+            <td style="text-align:right;">${s.num_compras}</td>
+            <td style="text-align:right;">R$ ${fmtMoney(Number(s.preco_medio||0))}/${g.unit}</td>
+            <td style="text-align:right;${isBest?'color:var(--green);font-weight:700;':''}">R$ ${fmtMoney(Number(s.ultimo_preco||0))}</td>
+            <td style="text-align:right;color:var(--text-muted);">${s.ultima_compra?fmtDate(s.ultima_compra):'—'}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+    </div>`;
+  }
+  showCustomModal('⚖️ Comparador de Preços',html);
+}
+
+// ═══ PEDIDO DE COMPRA (PO) ═══
+// Agrupa itens em alerta por fornecedor e oferece PDF + WhatsApp por fornecedor
+function abrirPedidoCompra(){
+  const itensReposicao = fabrics.filter(f=>(f.stock||0)<=0||(f.stock>0&&(f.min_stock||0)>0&&f.stock<=f.min_stock));
+  if(!itensReposicao.length){toast('Nenhum produto precisa de reposição agora.');return;}
+
+  // Agrupa por fornecedor
+  const porForn = {};
+  for(const f of itensReposicao){
+    const forn = fabricFornecedor(f);
+    const fId = forn?forn.id:'__sem__';
+    if(!porForn[fId])porForn[fId]={fornecedor:forn,itens:[]};
+    porForn[fId].itens.push(f);
+  }
+
+  // Modal HTML
+  const fornsArr = Object.values(porForn);
+  let html=`<p style="font-size:.85rem;color:var(--text-muted);margin-bottom:1rem;">
+      ${itensReposicao.length} produto${itensReposicao.length>1?'s':''} em alerta · agrupados em ${fornsArr.length} fornecedor${fornsArr.length>1?'es':''}.
+    </p>`;
+  for(const grp of fornsArr){
+    const forn = grp.fornecedor;
+    const nome = forn?forn.nome:'(Sem fornecedor cadastrado)';
+    const itens = grp.itens;
+    const valorTotal = itens.reduce((s,f)=>s+(getCustoMedio(f.id)*suggestQty(f)),0);
+    const tem = forn&&((forn.whatsapp||'').replace(/\D/g,'').length>0||(forn.telefone||'').replace(/\D/g,'').length>0);
+    html+=`<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:.8rem;">
+      <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:.5rem;margin-bottom:.6rem;">
+        <div>
+          <strong style="font-size:.95rem;">${esc(nome)}</strong>
+          <div style="font-size:.75rem;color:var(--text-muted);">${itens.length} produto${itens.length>1?'s':''} · estimado R$ ${fmtMoney(valorTotal)}</div>
+        </div>
+        <div style="display:flex;gap:.4rem;">
+          ${forn?`<button class="btn btn-sm" onclick="gerarPOPDFFornecedor('${forn.id}')">📄 PDF</button>`:''}
+          ${tem?`<button class="btn btn-sm" style="background:#25d366;color:#fff;font-weight:600;" onclick="enviarPOWhatsAppFornecedor('${forn.id}')">📱 WhatsApp</button>`:''}
+        </div>
+      </div>
+      <table style="font-size:.78rem;width:100%;">
+        <thead><tr><th style="text-align:left;">Produto</th><th style="text-align:right;">Sugerido</th><th style="text-align:right;">Custo médio</th><th style="text-align:right;">Subtotal</th></tr></thead>
+        <tbody>${itens.map(f=>{
+          const qty=suggestQty(f);
+          const cmp=getCustoMedio(f.id);
+          return`<tr>
+            <td>${esc(f.name)}${f.color?' / '+esc(f.color):''}</td>
+            <td style="text-align:right;">${qty} ${f.unit}</td>
+            <td style="text-align:right;">${cmp?'R$ '+fmtMoney(cmp):'—'}</td>
+            <td style="text-align:right;">${cmp?'R$ '+fmtMoney(cmp*qty):'—'}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+    </div>`;
+  }
+  showCustomModal('📄 Pedido de Compra',html);
+}
+
+// Helper: dado fornecedor_id, monta items pra usar nas funções abaixo
+function _itensReposicaoDoFornecedor(fornecedorId){
+  return fabrics.filter(f=>{
+    if((f.stock||0)>(f.min_stock||0))return false;
+    const forn=fabricFornecedor(f);
+    return forn&&forn.id===fornecedorId;
+  });
+}
+
+function gerarPOPDFFornecedor(fornecedorId){
+  const forn = fornecedores.find(f=>f.id===fornecedorId);
+  if(!forn){toast('Fornecedor não encontrado.');return;}
+  const items = _itensReposicaoDoFornecedor(fornecedorId);
+  if(!items.length){toast('Sem itens em alerta pra esse fornecedor.');return;}
+  if(typeof window.jspdf==='undefined'){toast('jsPDF não carregado.');return;}
+  const{jsPDF}=window.jspdf;
+  const doc=new jsPDF();
+  // Header
+  doc.setFontSize(18);doc.setFont(undefined,'bold');
+  doc.text('PEDIDO DE COMPRA',105,20,{align:'center'});
+  doc.setFont(undefined,'normal');doc.setFontSize(10);
+  doc.text('Dana Jalecos · Industria de Confeccoes',105,27,{align:'center'});
+  doc.setLineWidth(.5);doc.line(14,32,196,32);
+  // Dados fornecedor
+  doc.setFontSize(11);doc.setFont(undefined,'bold');
+  doc.text('Fornecedor:',14,42);
+  doc.setFont(undefined,'normal');
+  doc.text(forn.nome.slice(0,80),38,42);
+  let y=49;
+  if(forn.cnpj){doc.text(`CNPJ: ${forn.cnpj}`,14,y);y+=6;}
+  if(forn.telefone||forn.whatsapp){doc.text(`Telefone: ${forn.telefone||forn.whatsapp}`,14,y);y+=6;}
+  if(forn.email){doc.text(`Email: ${forn.email}`,14,y);y+=6;}
+  if(forn.cidade){doc.text(`Cidade: ${forn.cidade}/${forn.uf||''}`,14,y);y+=6;}
+  // Data + numero
+  doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`,150,42);
+  doc.text(`PO: ${Date.now().toString().slice(-8)}`,150,49);
+  // Tabela
+  y=Math.max(y+5,75);
+  const rows=items.map(f=>{
+    const qty=suggestQty(f);
+    const cmp=getCustoMedio(f.id);
+    return[f.name.slice(0,40)+(f.color?' / '+f.color:''),`${qty} ${f.unit}`,cmp?'R$ '+fmtMoney(cmp):'—',cmp?'R$ '+fmtMoney(cmp*qty):'—'];
+  });
+  const totalEstim=items.reduce((s,f)=>s+(getCustoMedio(f.id)*suggestQty(f)),0);
+  rows.push(['','','TOTAL ESTIMADO:','R$ '+fmtMoney(totalEstim)]);
+  doc.autoTable({startY:y,head:[['Produto','Quantidade','Custo Unit.','Subtotal']],body:rows,
+    theme:'striped',headStyles:{fillColor:[40,40,50]},styles:{fontSize:9}});
+  // Footer
+  const fy=doc.lastAutoTable.finalY+15;
+  doc.setFontSize(9);doc.setFont(undefined,'italic');
+  doc.text('Valores estimados com base no custo medio das ultimas compras.',14,fy);
+  doc.text('Aguardamos confirmacao de disponibilidade, prazo e valor unitario atualizado.',14,fy+5);
+  // Salva
+  doc.save(`pedido-compra_${forn.nome.replace(/[^a-z0-9]/gi,'_').slice(0,30)}_${new Date().toISOString().slice(0,10)}.pdf`);
+  toast('PDF gerado!');
+}
+
+function enviarPOWhatsAppFornecedor(fornecedorId){
+  const forn = fornecedores.find(f=>f.id===fornecedorId);
+  if(!forn){toast('Fornecedor não encontrado.');return;}
+  const items = _itensReposicaoDoFornecedor(fornecedorId);
+  if(!items.length){toast('Sem itens em alerta pra esse fornecedor.');return;}
+  const phone = (forn.whatsapp||forn.telefone||'').replace(/\D/g,'');
+  if(!phone){toast(`${forn.nome} não tem telefone.`);return;}
+  const fullPhone = phone.startsWith('55')?phone:'55'+phone;
+  const linhas = items.map(f=>{
+    const qty=suggestQty(f);
+    return`• *${f.name}*${f.color?' ('+f.color+')':''} — ${qty} ${f.unit}`;
+  });
+  const totalEstim = items.reduce((s,f)=>s+(getCustoMedio(f.id)*suggestQty(f)),0);
+  const msg = encodeURIComponent(`Olá, ${forn.contato_nome||forn.nome}! Tudo bem?\n\nPreciso fazer um pedido com vários itens:\n\n${linhas.join('\n')}\n\n💰 *Estimado:* R$ ${fmtMoney(totalEstim)}\n\nPode me confirmar:\n• Disponibilidade dos itens\n• Prazo de entrega\n• Valores unitários atuais\n• Forma de pagamento\n\nObrigado!\n\n_-- Dana Jalecos --_`);
+  window.open(`https://wa.me/${fullPhone}?text=${msg}`,'_blank');
 }
 
 function renderForecast(){
@@ -4179,6 +4593,12 @@ function showConfirm(title,msg,fn){
   $('confirmModal').classList.add('show');
 }
 function closeModal(){$('confirmModal').classList.remove('show');}
+// Modal customizado pra HTML livre
+function showCustomModal(title,html){
+  $('customModalBody').innerHTML=`<h3 style="margin-bottom:1rem;">${esc(title)}</h3>${html}`;
+  $('customModal').classList.add('show');
+}
+function closeCustomModal(){$('customModal').classList.remove('show');}
 </script>
 </body>
 </html>
