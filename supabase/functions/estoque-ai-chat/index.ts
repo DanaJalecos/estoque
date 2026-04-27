@@ -173,6 +173,35 @@ const TOOLS = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'ranking_fornecedores',
+      description: 'Top fornecedores ranqueados por: total gasto, num de compras, ou volume comprado. Use para perguntas tipo "qual fornecedor mais comprei?", "ranking de fornecedores", "quem mais vendeu pra gente?", "fornecedor que mais gastei".',
+      parameters: {
+        type: 'object',
+        properties: {
+          ordenar_por: { type: 'string', enum: ['gasto_total', 'num_compras', 'ultima_compra'], description: 'Critério de ordenação (padrão: gasto_total)' },
+          limit: { type: 'number', description: 'Quantos retornar (padrão 10)' },
+          periodo_dias: { type: 'number', description: 'Opcional: filtra compras dos últimos N dias (ex: 30, 90)' },
+        },
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'ranking_produtos',
+      description: 'Top matérias-primas (fabrics) ranqueadas por: quantidade total comprada, valor total gasto, ou estoque atual. Use para "produtos mais comprados", "matéria-prima que mais consumimos", "tecido que mais vendi".',
+      parameters: {
+        type: 'object',
+        properties: {
+          ordenar_por: { type: 'string', enum: ['valor_gasto', 'quantidade_comprada', 'estoque_atual'], description: 'Critério (padrão: valor_gasto)' },
+          limit: { type: 'number', description: 'Quantos retornar (padrão 10)' },
+        },
+      },
+    },
+  },
 ];
 
 // === IMPLEMENTAÇÕES DAS TOOLS ===
@@ -328,6 +357,102 @@ async function runTool(name: string, args: any): Promise<any> {
         total_gasto_historico: `R$ ${totalGasto.toFixed(2)}`,
         valor_estoque_atual: `R$ ${valorTotal.toFixed(2)}`,
         gasto_por_mes: byMonth,
+      };
+    }
+
+    if (name === 'ranking_fornecedores') {
+      const ordenar = args.ordenar_por || 'gasto_total';
+      const limit = args.limit || 10;
+      const periodoDias = args.periodo_dias;
+      let purchasesPath = 'purchases?select=fornecedor_id,total_price,date';
+      if (periodoDias) {
+        const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - periodoDias);
+        purchasesPath += `&date=gte.${cutoff.toISOString().slice(0, 10)}`;
+      }
+      const purchases = await sb(purchasesPath + '&limit=10000');
+      if (!Array.isArray(purchases)) return { erro: 'falha consultando compras' };
+
+      // Agrega por fornecedor_id
+      const agg: Record<string, { gasto: number; num: number; ultima: string }> = {};
+      for (const p of purchases) {
+        if (!p.fornecedor_id) continue;
+        if (!agg[p.fornecedor_id]) agg[p.fornecedor_id] = { gasto: 0, num: 0, ultima: '' };
+        agg[p.fornecedor_id].gasto += Number(p.total_price || 0);
+        agg[p.fornecedor_id].num += 1;
+        if (p.date && p.date > agg[p.fornecedor_id].ultima) agg[p.fornecedor_id].ultima = p.date;
+      }
+
+      // Sort
+      const entries = Object.entries(agg).sort((a, b) => {
+        if (ordenar === 'num_compras') return b[1].num - a[1].num;
+        if (ordenar === 'ultima_compra') return b[1].ultima.localeCompare(a[1].ultima);
+        return b[1].gasto - a[1].gasto;
+      }).slice(0, limit);
+
+      // Enrich com nomes
+      const ids = entries.map(([id]) => id);
+      const forns = ids.length ? await sb(`fornecedores?select=id,nome,categorias,cidade,uf,telefone&id=in.(${ids.join(',')})`) : [];
+      const fmap: Record<string, any> = {};
+      (forns || []).forEach((f: any) => fmap[f.id] = f);
+
+      return {
+        criterio: ordenar,
+        periodo: periodoDias ? `últimos ${periodoDias} dias` : 'todo o histórico',
+        ranking: entries.map(([id, data], i) => ({
+          posicao: i + 1,
+          fornecedor: fmap[id]?.nome || '(removido)',
+          categorias: fmap[id]?.categorias || [],
+          cidade_uf: fmap[id] ? `${fmap[id].cidade || ''}/${fmap[id].uf || ''}` : '',
+          gasto_total: `R$ ${data.gasto.toFixed(2)}`,
+          num_compras: data.num,
+          ultima_compra: data.ultima,
+        })),
+        total_fornecedores_periodo: Object.keys(agg).length,
+      };
+    }
+
+    if (name === 'ranking_produtos') {
+      const ordenar = args.ordenar_por || 'valor_gasto';
+      const limit = args.limit || 10;
+      if (ordenar === 'estoque_atual') {
+        const fcm = await sb(`fabric_custo_medio?select=fabric_id,name,unit,stock,valor_em_estoque&order=valor_em_estoque.desc&limit=${limit}`);
+        if (!Array.isArray(fcm)) return { erro: 'falha' };
+        return {
+          criterio: 'valor_em_estoque',
+          ranking: fcm.map((r: any, i: number) => ({
+            posicao: i + 1,
+            produto: r.name,
+            estoque: `${r.stock} ${r.unit}`,
+            valor_em_estoque: `R$ ${Number(r.valor_em_estoque || 0).toFixed(2)}`,
+          })),
+        };
+      }
+
+      // Pra valor_gasto / quantidade_comprada — agrega purchases por fabric_id
+      const purchases = await sb(`purchases?select=fabric_id,qty,total_price&limit=10000`);
+      if (!Array.isArray(purchases)) return { erro: 'falha' };
+      const agg: Record<string, { qty: number; valor: number }> = {};
+      for (const p of purchases) {
+        if (!p.fabric_id) continue;
+        if (!agg[p.fabric_id]) agg[p.fabric_id] = { qty: 0, valor: 0 };
+        agg[p.fabric_id].qty += Number(p.qty || 0);
+        agg[p.fabric_id].valor += Number(p.total_price || 0);
+      }
+      const entries = Object.entries(agg).sort((a, b) =>
+        ordenar === 'quantidade_comprada' ? b[1].qty - a[1].qty : b[1].valor - a[1].valor
+      ).slice(0, limit);
+      const ids = entries.map(([id]) => id);
+      const fabs = ids.length ? await sb(`fabrics?select=id,name,unit&id=in.(${ids.join(',')})`) : [];
+      const fmap: Record<string, any> = {};
+      (fabs || []).forEach((f: any) => fmap[f.id] = f);
+      return {
+        criterio: ordenar,
+        ranking: entries.map(([id, data], i) => ({
+          posicao: i + 1,
+          produto: fmap[id]?.name || '(removido)',
+          quantidade_comprada: `${data.qty} ${fmap[id]?.unit || ''}`,
+          valor_gasto: `R$ ${data.valor.toFixed(2)}`,
+        })),
       };
     }
 
