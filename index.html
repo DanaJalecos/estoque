@@ -1012,6 +1012,33 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- Bot IA — Botão flutuante + painel -->
+<button id="aiBotBtn" onclick="aiToggleChat()" title="Assistente IA" style="position:fixed;bottom:20px;right:20px;width:56px;height:56px;border-radius:50%;border:none;background:linear-gradient(135deg,#a78bfa,#60a5fa);color:#fff;font-size:1.5rem;cursor:pointer;box-shadow:0 6px 20px rgba(96,165,250,.4);z-index:9000;transition:transform .2s;display:none;">🤖</button>
+
+<div id="aiChatPanel" style="position:fixed;bottom:20px;right:20px;width:420px;max-width:calc(100vw - 40px);height:600px;max-height:calc(100vh - 40px);background:var(--bg-card);border:1px solid var(--border);border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.5);z-index:9001;display:none;flex-direction:column;overflow:hidden;">
+  <div style="padding:.9rem 1rem;background:linear-gradient(135deg,rgba(167,139,250,.15),rgba(96,165,250,.1));border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+    <div>
+      <div style="font-weight:700;font-size:.95rem;">🤖 Assistente IA</div>
+      <div style="font-size:.7rem;color:var(--text-muted);">Pergunta sobre estoque, fornecedores, fichas</div>
+    </div>
+    <button onclick="aiToggleChat()" style="background:none;border:none;color:var(--text-muted);font-size:1.4rem;cursor:pointer;line-height:1;padding:0 .3rem;">×</button>
+  </div>
+  <div id="aiMessages" style="flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:.8rem;font-size:.85rem;"></div>
+  <div style="padding:.8rem;border-top:1px solid var(--border);">
+    <form onsubmit="return aiSendMsg(event)">
+      <div style="display:flex;gap:.5rem;">
+        <input id="aiInput" type="text" placeholder="Ex: quanto tenho de gabardine branca?" autocomplete="off" style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:.55rem .8rem;color:var(--text);font-size:.85rem;" required>
+        <button type="submit" id="aiSendBtn" class="btn btn-primary" style="padding:.55rem .9rem;">→</button>
+      </div>
+    </form>
+    <div style="display:flex;gap:.3rem;margin-top:.6rem;flex-wrap:wrap;">
+      <button class="btn btn-sm" onclick="aiQuickAsk('o que precisa comprar?')" style="font-size:.7rem;">⚠️ Alertas</button>
+      <button class="btn btn-sm" onclick="aiQuickAsk('o que vai acabar em 14 dias?')" style="font-size:.7rem;">📊 Projeção</button>
+      <button class="btn btn-sm" onclick="aiQuickAsk('estatísticas gerais')" style="font-size:.7rem;">📈 Geral</button>
+    </div>
+  </div>
+</div>
 <div class="modal-overlay" id="confirmModal">
   <div class="modal">
     <h3 id="confirmTitle">Confirmar</h3>
@@ -1261,6 +1288,7 @@ async function enterApp(){
   $('userName').textContent=profile.display_name;
   $('userRole').textContent=ROLE_LABELS[profile.role]||profile.role;
   $('userAvatar').textContent=profile.display_name.charAt(0).toUpperCase();
+  $('aiBotBtn').style.display='flex'; // mostra botão IA pós-login
   await loadAll();
   applyPermissions();
   // Prioridade: 1) hash da URL (#alertas), 2) sessionStorage, 3) default 'dashboard'
@@ -4587,6 +4615,90 @@ function fmtDateTime(dt){
   return`${dd}/${mm}/${yy} ${hh}:${mi}`;
 }
 function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+// ═══ BOT IA ═══
+let aiHistory=[]; // {role:'user'|'assistant', content}
+
+function aiToggleChat(){
+  const p=$('aiChatPanel');
+  const open=p.style.display!=='flex';
+  p.style.display=open?'flex':'none';
+  $('aiBotBtn').style.display=open?'none':'flex';
+  if(open){
+    if(!aiHistory.length)aiAddBubble('assistant','Oi! Sou o assistente IA do Estoque Dana. Posso ajudar com:\n• Consultar matéria-prima\n• Achar fornecedor\n• Ver alertas e projeções\n• Custos e fichas técnicas\n\nO que você quer saber?');
+    setTimeout(()=>$('aiInput').focus(),100);
+  }
+}
+
+function aiAddBubble(role, text){
+  const div=document.createElement('div');
+  const isUser=role==='user';
+  div.style.cssText=`align-self:${isUser?'flex-end':'flex-start'};max-width:85%;background:${isUser?'rgba(96,165,250,.15)':'rgba(255,255,255,.04)'};border:1px solid ${isUser?'rgba(96,165,250,.3)':'var(--border)'};border-radius:12px;padding:.6rem .85rem;line-height:1.45;white-space:pre-wrap;word-wrap:break-word;`;
+  // Markdown simples: **bold**, lista •
+  const formatted=text
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\n/g,'<br>');
+  div.innerHTML=formatted;
+  $('aiMessages').appendChild(div);
+  $('aiMessages').scrollTop=$('aiMessages').scrollHeight;
+}
+
+function aiAddTyping(){
+  const div=document.createElement('div');
+  div.id='aiTyping';
+  div.style.cssText='align-self:flex-start;color:var(--text-muted);font-size:.78rem;font-style:italic;padding:.4rem .85rem;';
+  div.textContent='pensando...';
+  $('aiMessages').appendChild(div);
+  $('aiMessages').scrollTop=$('aiMessages').scrollHeight;
+}
+
+function aiRemoveTyping(){
+  const t=$('aiTyping');if(t)t.remove();
+}
+
+async function aiSendMsg(e){
+  if(e)e.preventDefault();
+  const input=$('aiInput');
+  const text=input.value.trim();
+  if(!text)return false;
+  input.value='';
+  aiAddBubble('user',text);
+  aiHistory.push({role:'user',content:text});
+  aiAddTyping();
+  $('aiSendBtn').disabled=true;
+  try{
+    const{data:sess}=await sb.auth.getSession();
+    const jwt=sess?.session?.access_token;
+    if(!jwt){aiRemoveTyping();aiAddBubble('assistant','Sessão expirada — recarregue a página.');return false;}
+    const resp=await fetch(SUPA_URL+'/functions/v1/estoque-ai-chat',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+jwt,'Content-Type':'application/json'},
+      body:JSON.stringify({messages:aiHistory.slice(-10)}) // últimos 10 turns pra economizar
+    });
+    aiRemoveTyping();
+    if(!resp.ok){
+      const err=await resp.json().catch(()=>({}));
+      aiAddBubble('assistant',`⚠️ ${err.error||'Erro na IA'}.\n\n_${(err.details||'').slice(0,150)}_`);
+      return false;
+    }
+    const data=await resp.json();
+    const reply=data.reply||'(sem resposta)';
+    aiHistory.push({role:'assistant',content:reply});
+    aiAddBubble('assistant',reply);
+  }catch(err){
+    aiRemoveTyping();
+    aiAddBubble('assistant','⚠️ Erro: '+err.message);
+  }finally{
+    $('aiSendBtn').disabled=false;
+    input.focus();
+  }
+  return false;
+}
+
+function aiQuickAsk(q){
+  $('aiInput').value=q;
+  aiSendMsg();
+}
+
 function showConfirm(title,msg,fn){
   $('confirmTitle').textContent=title;$('confirmMsg').textContent=msg;
   $('confirmBtn').onclick=()=>{closeModal();fn();};
