@@ -1014,12 +1014,12 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
 <div class="toast" id="toast"></div>
 
 <!-- Bot IA — Botão flutuante + painel -->
-<button id="aiBotBtn" onclick="aiToggleChat()" title="Assistente IA" style="position:fixed;bottom:20px;right:20px;width:56px;height:56px;border-radius:50%;border:none;background:linear-gradient(135deg,#a78bfa,#60a5fa);color:#fff;font-size:1.5rem;cursor:pointer;box-shadow:0 6px 20px rgba(96,165,250,.4);z-index:9000;transition:transform .2s;display:none;">🤖</button>
+<button id="aiBotBtn" onclick="aiToggleChat()" title="Assistente IA" style="position:fixed;bottom:20px;right:20px;width:56px;height:56px;border-radius:50%;border:none;background:linear-gradient(135deg,#a78bfa,#60a5fa);color:#fff;font-size:1.4rem;cursor:pointer;box-shadow:0 6px 20px rgba(96,165,250,.4);z-index:9000;transition:transform .2s;display:none;align-items:center;justify-content:center;line-height:1;padding:0;">💬</button>
 
 <div id="aiChatPanel" style="position:fixed;bottom:20px;right:20px;width:420px;max-width:calc(100vw - 40px);height:600px;max-height:calc(100vh - 40px);background:var(--bg-card);border:1px solid var(--border);border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.5);z-index:9001;display:none;flex-direction:column;overflow:hidden;">
   <div style="padding:.9rem 1rem;background:linear-gradient(135deg,rgba(167,139,250,.15),rgba(96,165,250,.1));border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
     <div>
-      <div style="font-weight:700;font-size:.95rem;">🤖 Assistente IA</div>
+      <div style="font-weight:700;font-size:.95rem;">💬 Assistente IA</div>
       <div style="font-size:.7rem;color:var(--text-muted);">Pergunta sobre estoque, fornecedores, fichas</div>
     </div>
     <button onclick="aiToggleChat()" style="background:none;border:none;color:var(--text-muted);font-size:1.4rem;cursor:pointer;line-height:1;padding:0 .3rem;">×</button>
