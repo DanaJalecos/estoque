@@ -771,7 +771,7 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
       <div class="topbar">
         <h2>Vendas (Bling) — Matriz</h2>
         <div class="topbar-actions">
-          <button class="btn" onclick="refreshBlingFromDMS()" title="Puxar dados atualizados do DMS (precisa DMS anon key)">🔄 Atualizar do Bling</button>
+          <button class="btn" onclick="refreshBlingFromDMS()" title="Puxar dados atualizados do DMS · sync automático rola a cada 6h">🔄 Atualizar do Bling</button>
         </div>
       </div>
       <div class="content">
@@ -2705,10 +2705,34 @@ function switchBlingTab(name,btn){
 }
 
 async function refreshBlingFromDMS(){
-  // Stub: precisa da DMS anon key em TOKENS SUPABASE.txt (atualmente so tem do Estoque)
-  if(!canAccess('fornecedores_editar')&&profile.role!=='admin'){toast('Sem permissao pra sincronizar.');return;}
-  toast('⚠️ Sync ao vivo ainda nao configurado. Precisa do anon key do DMS (wltmiqbhziefusnzmmkt).');
-  alert(`Para ativar a atualização ao vivo do Bling, preciso do anon key público do Supabase do DMS (wltmiqbhziefusnzmmkt).\n\nEnquanto isso, os dados são do snapshot em bling-matriz/ (${blingSyncMeta?.last_sync_at?new Date(blingSyncMeta.last_sync_at).toLocaleString('pt-BR'):'—'}).\n\nPra atualizar o snapshot rode:\npython .claude/scripts/exportar-bling-matriz.py`);
+  if(profile.role!=='admin'){toast('Apenas admin pode sincronizar.');return;}
+  const btn=event?.target;
+  const orig=btn?btn.textContent:'';
+  if(btn){btn.textContent='Sincronizando...';btn.disabled=true;}
+  try{
+    const{data:sess}=await sb.auth.getSession();
+    const jwt=sess?.session?.access_token;
+    const r=await fetch(SUPA_URL+'/functions/v1/sync-bling-cache',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+jwt,'Content-Type':'application/json'},
+      body:'{}'
+    });
+    const result=await r.json();
+    if(!r.ok||result.ok===false){
+      toast('Erro na sincronização: '+(result.error||r.status));
+      console.error(result);
+      return;
+    }
+    const tabs=Object.keys(result).filter(k=>k.startsWith('bling_')).map(k=>`${k.replace('bling_','')}=${result[k]}`).join(' · ');
+    toast(`✓ Sincronizado em ${(result.ms/1000).toFixed(1)}s · ${tabs}`);
+    // Recarrega dados pro frontend ver os novos valores
+    await loadAll();
+    renderCurrent();
+  }catch(e){
+    toast('Erro: '+e.message);
+  }finally{
+    if(btn){btn.textContent=orig;btn.disabled=false;}
+  }
 }
 
 // ═══ ENTRY ═══
