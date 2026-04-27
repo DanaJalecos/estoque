@@ -342,6 +342,7 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
       <button data-perm="saida" onclick="showPage('saida',this)"><span class="icon">📤</span> Registrar Saída</button>
       <button data-perm="compras" onclick="showPage('compras',this)"><span class="icon">💰</span> Compras</button>
       <button data-perm="fornecedores" onclick="showPage('fornecedores',this)"><span class="icon">🏭</span> Fornecedores</button>
+      <button data-perm="ficha" onclick="showPage('ficha',this)"><span class="icon">🧵</span> Ficha Técnica</button>
       <button data-perm="bling" onclick="showPage('bling',this)"><span class="icon">📊</span> Vendas (Bling)</button>
       <div class="nav-section" data-perm-admin>Administração</div>
       <button data-perm-admin onclick="showPage('previsoes',this)"><span class="icon">🔮</span> Previsões Futuras</button>
@@ -364,6 +365,7 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
 
         <!-- Tira de vendas Bling -->
         <div id="dashBlingStrip" data-perm="bling" style="display:none;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.2rem;margin-bottom:1.2rem;"></div>
+        <div id="dashFichaAlertas" data-perm="ficha" style="margin-bottom:1.2rem;"></div>
 
         <!-- GRÁFICOS -->
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.8rem;margin-bottom:1.5rem;" id="chartsGrid">
@@ -774,6 +776,74 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
       </div>
     </div>
 
+    <!-- FICHA TÉCNICA -->
+    <div id="page-ficha" class="page hidden" data-perm="ficha">
+      <div class="topbar">
+        <h2>Ficha Técnica — Composição dos Produtos</h2>
+        <div class="topbar-actions">
+          <button class="btn" onclick="loadFichas()">🔄 Atualizar</button>
+        </div>
+      </div>
+      <div class="content">
+        <!-- KPIs -->
+        <div class="stats-grid" id="fichaStats"></div>
+
+        <!-- Filtros -->
+        <div class="filter-bar" style="margin-top:1rem;">
+          <input id="fichaSearch" placeholder="Buscar produto..." oninput="renderFichas()" style="flex:1;min-width:200px;">
+          <select id="fichaTipoFilter" onchange="renderFichas()">
+            <option value="all">Todos os tipos</option>
+            <option value="Jaleco">🧥 Jalecos</option>
+            <option value="Scrub">👨‍⚕️ Scrubs</option>
+            <option value="Avental">👗 Aventais</option>
+            <option value="Dolma">🥋 Dolmas</option>
+            <option value="Macacão">🧰 Macacões</option>
+            <option value="Gorro">🎩 Gorros</option>
+            <option value="Acessório">📌 Acessórios</option>
+            <option value="Home">🏠 Home</option>
+          </select>
+          <select id="fichaSortBy" onchange="renderFichas()">
+            <option value="custo_desc">Maior custo ↓</option>
+            <option value="custo_asc">Menor custo ↑</option>
+            <option value="vendas_desc">Mais vendido ↓</option>
+            <option value="nome">Nome A-Z</option>
+          </select>
+        </div>
+
+        <!-- Tabela de produtos -->
+        <div class="table-wrap" style="margin-top:1rem;">
+          <table>
+            <thead><tr>
+              <th>Código</th>
+              <th>Produto</th>
+              <th>Tipo</th>
+              <th style="text-align:center">Itens</th>
+              <th style="text-align:right">Custo Produção</th>
+              <th style="text-align:right">Vendas 90d</th>
+              <th style="text-align:right">Projeção 30d</th>
+            </tr></thead>
+            <tbody id="fichaList">
+              <tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:1rem;">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- DRAWER FICHA TÉCNICA (Detalhe BOM) -->
+    <div class="modal-overlay" id="fichaDrawerOverlay" onclick="if(event.target===this)closeFichaDrawer()">
+      <div class="modal" style="max-width:900px;max-height:92vh;overflow-y:auto;width:94%;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.8rem;">
+          <div>
+            <h3 id="fdNome" style="margin-bottom:.2rem;">—</h3>
+            <div id="fdMeta" style="font-size:.78rem;color:var(--text-muted);"></div>
+          </div>
+          <button class="btn" onclick="closeFichaDrawer()" style="padding:.3rem .6rem;">✕</button>
+        </div>
+        <div id="fdContent"></div>
+      </div>
+    </div>
+
     <!-- PERFIL -->
     <div id="page-perfil" class="page hidden">
       <div class="topbar"><h2>Meu Perfil</h2></div>
@@ -1063,7 +1133,7 @@ async function saveProfile(){
 }
 
 const ROLE_LABELS={admin:'Administrador',gerente:'Gerente',estoquista:'Estoquista',costureira:'Costureira',user:'Usuário'};
-const PERM_LABELS={dashboard:'Ver Dashboard',estoque:'Ver Estoque',alertas:'Ver Alertas',historico:'Ver Histórico',cadastro:'Cadastrar Produto',entrada:'Registrar Entrada',saida:'Registrar Saída',compras:'Ver Compras',excluir_mov:'Excluir Movimentações'};
+const PERM_LABELS={dashboard:'Ver Dashboard',estoque:'Ver Estoque',alertas:'Ver Alertas',historico:'Ver Histórico',cadastro:'Cadastrar Produto',entrada:'Registrar Entrada',saida:'Registrar Saída',compras:'Ver Compras',fornecedores:'Ver Fornecedores',fornecedores_editar:'Editar Fornecedores',ficha:'Ver Ficha Técnica',ficha_editar:'Editar Ficha Técnica',bling:'Ver Vendas Bling',excluir_mov:'Excluir Movimentações'};
 let rolePerms={};
 function hasRole(...roles){return roles.includes(profile?.role);}
 function canAccess(perm){
@@ -1114,10 +1184,11 @@ async function enterApp(){
 // ═══ DATA ═══
 let purchases=[];
 let fornecedores=[];
+let fichaProdutos=[],fichaItens=[],vendasPorCodigo=[],consumoProjetado=[];
 // Bling caches
 let blingTrendPeriodo=[],blingVendasMes=[],blingDiaSemana=[],blingTopProdutos=[],blingVelocidade=[],blingCatalogo=[],blingSyncMeta=null;
 async function loadAll(){
-  const[f,m,p,pu,rp,fo,btp,bvm,bds,btop,bvel,bmeta]=await Promise.all([
+  const[f,m,p,pu,rp,fo,btp,bvm,bds,btop,bvel,bmeta,fp,ft,vpc,cp]=await Promise.all([
     sb.from('fabrics').select('*').order('created_at',{ascending:false}),
     sb.from('movements').select('*').order('created_at',{ascending:false}),
     sb.from('profiles').select('*'),
@@ -1129,13 +1200,18 @@ async function loadAll(){
     sb.from('bling_vendas_dia_semana').select('*').order('dia_semana',{ascending:true}),
     sb.from('bling_top_produtos').select('*').order('total_quantidade',{ascending:false}),
     sb.from('bling_velocidade_90d').select('*').order('qtd_90d',{ascending:false}),
-    sb.from('bling_sync_meta').select('*').eq('id',1).maybeSingle()
+    sb.from('bling_sync_meta').select('*').eq('id',1).maybeSingle(),
+    sb.from('ficha_produtos').select('*').order('custo_total',{ascending:false}),
+    sb.from('ficha_tecnica').select('*').order('produto_codigo,ordem'),
+    sb.from('vendas_por_codigo_ficha').select('*'),
+    sb.from('consumo_projetado').select('*').order('dias_de_cobertura',{ascending:true,nullsFirst:false})
   ]);
   fabrics=f.data||[];movements=m.data||[];profiles=p.data||[];purchases=pu.data||[];
   rolePerms=(rp.data?.permissions)||{};
   fornecedores=fo.data||[];
   blingTrendPeriodo=btp.data||[];blingVendasMes=bvm.data||[];blingDiaSemana=bds.data||[];
   blingTopProdutos=btop.data||[];blingVelocidade=bvel.data||[];blingSyncMeta=bmeta.data||null;
+  fichaProdutos=fp.data||[];fichaItens=ft.data||[];vendasPorCodigo=vpc.data||[];consumoProjetado=cp.data||[];
 }
 // bling_produtos (catalogo) carrega lazy — 2205 linhas, so carrega ao abrir a aba
 async function loadBlingCatalogo(){
@@ -1188,6 +1264,7 @@ function showPage(name,btn){
   if(name==='alertas')renderAlerts();
   if(name==='compras'){popPurchaseFilter();renderPurchases();}
   if(name==='fornecedores')renderSuppliers();
+  if(name==='ficha')renderFichas();
   if(name==='bling')renderBling();
   if(name==='previsoes')renderForecast();
   if(name==='perfil'){$('profEmail').value=user.email;$('profName').value=profile.display_name;$('profRole').value=ROLE_LABELS[profile.role]||profile.role;}
@@ -1195,9 +1272,253 @@ function showPage(name,btn){
 }
 function navBtn(page){
   const btns=document.querySelectorAll('.sidebar-nav button:not(.nav-section)');
-  const map={dashboard:0,estoque:1,alertas:2,historico:3,cadastro:4,entrada:5,saida:6,compras:7,fornecedores:8,bling:9,previsoes:10,usuarios:11,perfil:12};
+  const map={dashboard:0,estoque:1,alertas:2,historico:3,cadastro:4,entrada:5,saida:6,compras:7,fornecedores:8,ficha:9,bling:10,previsoes:11,usuarios:12,perfil:13};
   return btns[map[page]];
 }
+// ═══ FICHA TÉCNICA ═══
+const TIPO_ICON={Jaleco:'🧥',Scrub:'👨‍⚕️',Avental:'👗',Dolma:'🥋',Macacão:'🧰',Gorro:'🎩','Acessório':'📌',Home:'🏠',Outro:'📦'};
+const fmtBRL=v=>'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
+const fmtNum=v=>Number(v||0).toLocaleString('pt-BR',{maximumFractionDigits:1});
+
+async function loadFichas(){
+  const[fp,ft,vpc]=await Promise.all([
+    sb.from('ficha_produtos').select('*').order('custo_total',{ascending:false}),
+    sb.from('ficha_tecnica').select('*').order('produto_codigo,ordem'),
+    sb.from('vendas_por_codigo_ficha').select('*')
+  ]);
+  fichaProdutos=fp.data||[];fichaItens=ft.data||[];vendasPorCodigo=vpc.data||[];
+  renderFichas();
+  toast('Ficha técnica atualizada');
+}
+
+function vendasDoProduto(codigo){
+  return vendasPorCodigo.find(v=>v.codigo===codigo)||{qtd_vendida_90d:0,projecao_mensal:0};
+}
+
+function renderFichas(){
+  // KPIs
+  const total=fichaProdutos.length;
+  const custoMedio=total?fichaProdutos.reduce((s,p)=>s+(parseFloat(p.custo_total)||0),0)/total:0;
+  const totalVendas90d=vendasPorCodigo.reduce((s,v)=>s+(parseFloat(v.qtd_vendida_90d)||0),0);
+  const custoTotalProducaoMes=fichaProdutos.reduce((s,p)=>{
+    const v=vendasDoProduto(p.codigo);
+    return s+(parseFloat(p.custo_total)||0)*(parseFloat(v.projecao_mensal)||0);
+  },0);
+
+  $('fichaStats').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Produtos</div><div class="stat-value">${total}</div></div>
+    <div class="stat-card"><div class="stat-label">Custo médio/peça</div><div class="stat-value" style="font-size:1.3rem;">${fmtBRL(custoMedio)}</div></div>
+    <div class="stat-card"><div class="stat-label">Vendidos últimos 90d</div><div class="stat-value">${fmtNum(totalVendas90d)}</div></div>
+    <div class="stat-card"><div class="stat-label">Custo previsto p/ próximo mês</div><div class="stat-value" style="font-size:1.2rem;color:var(--green);">${fmtBRL(custoTotalProducaoMes)}</div></div>
+  `;
+
+  // Lista
+  const search=($('fichaSearch')?.value||'').toLowerCase();
+  const tipo=$('fichaTipoFilter')?.value||'all';
+  const sortBy=$('fichaSortBy')?.value||'custo_desc';
+  let list=fichaProdutos.filter(p=>{
+    if(tipo!=='all'&&p.tipo!==tipo)return false;
+    if(search&&!(p.codigo+' '+p.nome).toLowerCase().includes(search))return false;
+    return true;
+  });
+
+  if(sortBy==='custo_desc')list.sort((a,b)=>(b.custo_total||0)-(a.custo_total||0));
+  else if(sortBy==='custo_asc')list.sort((a,b)=>(a.custo_total||0)-(b.custo_total||0));
+  else if(sortBy==='vendas_desc')list.sort((a,b)=>(vendasDoProduto(b.codigo).qtd_vendida_90d||0)-(vendasDoProduto(a.codigo).qtd_vendida_90d||0));
+  else if(sortBy==='nome')list.sort((a,b)=>a.nome.localeCompare(b.nome));
+
+  if(!list.length){
+    $('fichaList').innerHTML=`<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:1rem;">Nenhum produto encontrado</td></tr>`;
+    return;
+  }
+
+  $('fichaList').innerHTML=list.map(p=>{
+    const v=vendasDoProduto(p.codigo);
+    const ico=TIPO_ICON[p.tipo]||'📦';
+    return `<tr style="cursor:pointer" onclick="openFichaDrawer('${p.codigo.replace(/'/g,'\\\'')}')">
+      <td style="font-family:monospace;font-size:.8rem">${esc(p.codigo)}</td>
+      <td>${ico} ${esc(p.nome)}</td>
+      <td><span style="font-size:.7rem;padding:2px 8px;background:var(--bg);border-radius:999px;color:var(--text-muted);">${esc(p.tipo||'—')}</span></td>
+      <td style="text-align:center">${p.total_itens||0}</td>
+      <td style="text-align:right;font-weight:600">${fmtBRL(p.custo_total)}</td>
+      <td style="text-align:right">${fmtNum(v.qtd_vendida_90d)} un</td>
+      <td style="text-align:right;color:${v.projecao_mensal>0?'var(--green)':'var(--text-muted)'};">${fmtNum(v.projecao_mensal)} un</td>
+    </tr>`;
+  }).join('');
+}
+
+function openFichaDrawer(codigo){
+  const p=fichaProdutos.find(x=>x.codigo===codigo);
+  if(!p)return;
+  const itens=fichaItens.filter(i=>i.produto_codigo===codigo).sort((a,b)=>(a.ordem||0)-(b.ordem||0));
+  const v=vendasDoProduto(codigo);
+
+  $('fdNome').textContent=(TIPO_ICON[p.tipo]||'📦')+' '+p.nome;
+  $('fdMeta').textContent=`Código: ${p.codigo} · ${p.tipo||'—'} · ${itens.length} itens · Custo total: ${fmtBRL(p.custo_total)}`;
+
+  // Header KPIs (custo + vendas + custo previsto mensal)
+  const projecaoMes=(parseFloat(v.projecao_mensal)||0);
+  const custoMes=projecaoMes*(parseFloat(p.custo_total)||0);
+  const headerKPIs=`
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;margin-bottom:1rem;">
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:.7rem;">
+        <div style="font-size:.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">Custo de produção</div>
+        <div style="font-size:1.2rem;font-weight:700;color:var(--green);margin-top:.15rem;">${fmtBRL(p.custo_total)}</div>
+        <div style="font-size:.7rem;color:var(--text-muted);margin-top:.15rem;">por peça</div>
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:.7rem;">
+        <div style="font-size:.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">Vendido 90d</div>
+        <div style="font-size:1.2rem;font-weight:700;margin-top:.15rem;">${fmtNum(v.qtd_vendida_90d)} un</div>
+        <div style="font-size:.7rem;color:var(--text-muted);margin-top:.15rem;">média ${fmtNum(v.media_diaria)}/dia</div>
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:.7rem;">
+        <div style="font-size:.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">Projeção 30d</div>
+        <div style="font-size:1.2rem;font-weight:700;color:var(--blue);margin-top:.15rem;">${fmtNum(projecaoMes)} un</div>
+        <div style="font-size:.7rem;color:var(--text-muted);margin-top:.15rem;">próximo mês</div>
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:.7rem;">
+        <div style="font-size:.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">Custo total mês</div>
+        <div style="font-size:1.2rem;font-weight:700;color:var(--orange);margin-top:.15rem;">${fmtBRL(custoMes)}</div>
+        <div style="font-size:.7rem;color:var(--text-muted);margin-top:.15rem;">${fmtNum(projecaoMes)}×${fmtBRL(p.custo_total)}</div>
+      </div>
+    </div>
+  `;
+
+  // Tabela de matéria-prima
+  const linhas=itens.map(it=>{
+    const fab=fabrics.find(f=>f.id===it.fabric_id);
+    const consumoProj=projecaoMes*(parseFloat(it.quantidade)||0);
+    let statusEstoque='—';
+    if(fab){
+      const stock=parseFloat(fab.stock)||0;
+      if(consumoProj>0){
+        const dias=stock/(consumoProj/30);
+        if(stock<=0)statusEstoque=`<span style="color:var(--red);font-weight:600">⛔ ZERADO</span>`;
+        else if(dias<14)statusEstoque=`<span style="color:var(--red);font-weight:600">⚠️ ${fmtNum(dias)} dias</span>`;
+        else if(dias<30)statusEstoque=`<span style="color:var(--orange);font-weight:600">${fmtNum(dias)} dias</span>`;
+        else statusEstoque=`<span style="color:var(--green)">✓ ${fmtNum(dias)} dias</span>`;
+      }else{
+        if(stock<=0)statusEstoque=`<span style="color:var(--red)">⛔ Zerado</span>`;
+        else statusEstoque=`<span style="color:var(--green)">✓ ${fmtNum(stock)}</span>`;
+      }
+    }else{
+      statusEstoque=`<span style="color:var(--text-muted);font-size:.7rem">sem vínculo</span>`;
+    }
+    const fabName=fab?`<span style="font-size:.7rem;color:var(--text-muted);display:block;">└ ${esc(fab.name)}${fab.color&&fab.color!=='padrão'?' / '+esc(fab.color):''}</span>`:'';
+    return `<tr>
+      <td>${esc(it.item_descricao)}${fabName}</td>
+      <td style="text-align:right">${fmtNum(it.quantidade)}</td>
+      <td style="font-size:.78rem">${esc(it.unidade)}</td>
+      <td style="text-align:right">${fmtBRL(it.custo_unitario)}</td>
+      <td style="text-align:right;font-weight:600">${fmtBRL(it.custo_total)}</td>
+      <td style="text-align:right">${fmtNum(consumoProj)} ${esc(it.unidade)}</td>
+      <td>${statusEstoque}</td>
+    </tr>`;
+  }).join('');
+
+  const totalCusto=itens.reduce((s,it)=>s+(parseFloat(it.custo_total)||0),0);
+
+  $('fdContent').innerHTML=headerKPIs+`
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:.8rem;">
+      <h4 style="font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem;">📋 Matéria-prima necessária por unidade</h4>
+      <div class="table-wrap"><table>
+        <thead><tr>
+          <th>Item</th>
+          <th style="text-align:right">Qtd/un</th>
+          <th>Unid.</th>
+          <th style="text-align:right">Custo Un.</th>
+          <th style="text-align:right">Custo Total</th>
+          <th style="text-align:right">Consumo 30d</th>
+          <th>Status estoque</th>
+        </tr></thead>
+        <tbody>${linhas}</tbody>
+        <tfoot><tr style="background:var(--bg);font-weight:700;">
+          <td colspan="4" style="text-align:right;padding:.5rem;">CUSTO TOTAL DA PEÇA</td>
+          <td style="text-align:right;padding:.5rem;color:var(--green);">${fmtBRL(totalCusto)}</td>
+          <td colspan="2"></td>
+        </tr></tfoot>
+      </table></div>
+    </div>
+    ${projecaoMes>0?`<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:.8rem;">
+      <h4 style="font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem;">🔮 Resumo do consumo projetado (próximo mês)</h4>
+      <div style="font-size:.85rem;line-height:1.6;">
+        Vai produzir <strong>${fmtNum(projecaoMes)} ${p.nome.toLowerCase()}s</strong> (estimativa baseada em vendas).<br>
+        Custo total estimado: <strong style="color:var(--orange)">${fmtBRL(custoMes)}</strong>.<br>
+        Confira a coluna "Status estoque" acima — itens em <strong style="color:var(--red)">vermelho</strong> precisam de compra urgente.
+      </div>
+    </div>`:`<div style="font-size:.8rem;color:var(--text-muted);padding:.6rem;">⚠️ Sem dados de venda recente — projeção indisponível. Verifique se o código <code>${esc(p.codigo)}</code> bate com algum produto no Bling.</div>`}
+  `;
+
+  $('fichaDrawerOverlay').classList.add('show');
+}
+
+function closeFichaDrawer(){$('fichaDrawerOverlay').classList.remove('show');}
+
+function renderDashFichaAlertas(){
+  const el=$('dashFichaAlertas');
+  if(!el)return;
+  if(!consumoProjetado.length){el.innerHTML='';return;}
+
+  // Filtra apenas itens com cobertura crítica (<14 dias) ou zerados
+  const criticos=consumoProjetado.filter(c=>{
+    const stock=parseFloat(c.estoque_atual)||0;
+    const cons=parseFloat(c.consumo_30d_projetado)||0;
+    if(stock<=0&&cons>0)return true;  // zerado e tem consumo previsto
+    if(c.dias_de_cobertura!==null&&parseFloat(c.dias_de_cobertura)<14)return true;
+    return false;
+  }).slice(0,15);
+
+  // Calcula custo total estimado pra próximo mês (todos produtos)
+  const custoMesTotal=fichaProdutos.reduce((s,p)=>{
+    const v=vendasDoProduto(p.codigo);
+    return s+(parseFloat(p.custo_total)||0)*(parseFloat(v.projecao_mensal)||0);
+  },0);
+
+  if(!criticos.length&&custoMesTotal===0){el.innerHTML='';return;}
+
+  let html=`<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.2rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem;flex-wrap:wrap;gap:.6rem;">
+      <h3 style="font-size:.85rem;font-weight:700;display:flex;align-items:center;gap:.4rem;">
+        🔮 Projeção de Produção (próximo mês)
+      </h3>
+      <button class="btn btn-sm" onclick="showPage('ficha',navBtn('ficha'))">Ver fichas →</button>
+    </div>`;
+
+  if(custoMesTotal>0){
+    html+=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.6rem;margin-bottom:.8rem;">
+      <div style="padding:.7rem;background:var(--bg);border-radius:8px;">
+        <div style="font-size:.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">Custo previsto p/ produzir</div>
+        <div style="font-size:1.3rem;font-weight:700;color:var(--green);margin-top:.15rem;">${fmtBRL(custoMesTotal)}</div>
+      </div>
+      <div style="padding:.7rem;background:var(--bg);border-radius:8px;">
+        <div style="font-size:.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">Itens com cobertura crítica</div>
+        <div style="font-size:1.3rem;font-weight:700;color:${criticos.length?'var(--red)':'var(--green)'};margin-top:.15rem;">${criticos.length}</div>
+      </div>
+    </div>`;
+  }
+
+  if(criticos.length){
+    html+=`<div style="background:rgba(248,113,113,.05);border:1px solid rgba(248,113,113,.2);border-radius:8px;padding:.6rem .8rem;">
+      <div style="font-size:.78rem;font-weight:600;color:var(--red);margin-bottom:.5rem;">⚠️ Comprar estes itens pra não faltar:</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:.4rem;">
+        ${criticos.map(c=>{
+          const stock=parseFloat(c.estoque_atual)||0;
+          const cons=parseFloat(c.consumo_30d_projetado)||0;
+          const dias=c.dias_de_cobertura;
+          const status=stock<=0?'⛔ ZERADO':dias!==null&&dias<7?`⚠️ ${fmtNum(dias)}d`:`${fmtNum(dias||0)}d`;
+          return `<div style="font-size:.78rem;padding:.4rem .6rem;background:var(--bg);border-radius:6px;display:flex;justify-content:space-between;align-items:center;gap:.4rem;">
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;" title="${esc(c.fabric_name||'')}">${esc((c.fabric_name||'').slice(0,40))}</span>
+            <span style="color:var(--red);font-weight:600;font-size:.7rem;">${status}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }
+
+  html+=`</div>`;
+  el.innerHTML=html;
+}
+
 function updateAlertBadge(){
   const count=fabrics.filter(f=>f.stock<=f.min_stock).length;
   const b=$('alertBadge');
@@ -2578,6 +2899,7 @@ function renderDash(){
     <div class="stat-card"><div class="stat-label">🔮 Acabam em 14 dias</div><div class="stat-value" style="color:${urgentCount?'var(--red)':'var(--green)'}">${urgentCount}</div></div>
   `;
 
+  renderDashFichaAlertas();
   renderCharts();
 
   const recent=movements.slice(0,12);
