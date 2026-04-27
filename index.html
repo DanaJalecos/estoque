@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Estoque — Dana Jalecos</title>
+<link rel="icon" type="image/png" href="assets/logo-icon.png">
+<link rel="apple-touch-icon" href="assets/logo-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -42,6 +44,11 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
 .login-page::before{
   content:'';position:absolute;top:-200px;right:-200px;width:600px;height:600px;
   border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.03),transparent 70%);
+}
+.login-page::after{
+  content:'';position:absolute;bottom:-260px;left:-160px;width:540px;height:540px;
+  background:url('assets/logo-icon.png') center/contain no-repeat;
+  opacity:.025;pointer-events:none;
 }
 .login-card{
   position:relative;z-index:2;background:var(--bg-card);border:1px solid var(--border);
@@ -276,8 +283,9 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
 <div class="login-page" id="loginPage">
   <div class="login-card">
     <div class="brand">
-      <h1>Dana Jalecos</h1>
-      <p>Sistema de Estoque</p>
+      <img src="assets/logo-icon.png" alt="Dana Jalecos" style="width:96px;height:96px;display:block;margin:0 auto .8rem;opacity:.95;filter:drop-shadow(0 4px 12px rgba(0,0,0,.4));">
+      <img src="assets/logo-horizontal.png" alt="Dana Jalecos" style="height:32px;display:block;margin:0 auto;opacity:.92;">
+      <p style="margin-top:.6rem;">Sistema de Estoque</p>
     </div>
     <div class="login-tabs">
       <button class="active" onclick="switchTab('login',this)">Entrar</button>
@@ -322,7 +330,10 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
 <!-- ═══ APP ═══ -->
 <div class="app" id="app">
   <aside class="sidebar">
-    <div class="sidebar-brand"><h1>Dana Jalecos</h1><p>Controle de Estoque</p></div>
+    <div class="sidebar-brand" style="text-align:center;">
+      <img src="assets/logo-horizontal.png" alt="Dana Jalecos" style="height:32px;max-width:100%;display:block;margin:0 auto;opacity:.95;">
+      <p style="font-size:.62rem;margin-top:.35rem;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;">Controle de Estoque</p>
+    </div>
     <div class="sidebar-user">
       <div class="sidebar-avatar" id="userAvatar">?</div>
       <div class="sidebar-userinfo">
