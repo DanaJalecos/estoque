@@ -346,9 +346,10 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
       <button data-perm="dashboard" class="active" onclick="showPage('dashboard',this)"><span class="icon">📊</span> Dashboard</button>
       <button data-perm="alertas" onclick="showPage('alertas',this)"><span class="icon">⚠️</span> Alertas <span id="alertBadge" style="background:var(--red);color:var(--bg);font-size:.65rem;font-weight:700;padding:.1rem .4rem;border-radius:10px;margin-left:.3rem;display:none;">0</span></button>
 
-      <div class="nav-section" data-perm-section="estoque,historico">Estoque</div>
+      <div class="nav-section" data-perm-section="estoque,historico,cadastro">Estoque</div>
       <button data-perm="estoque" onclick="showPage('estoque',this)"><span class="icon">🧵</span> Matéria-prima</button>
       <button data-perm="historico" onclick="showPage('historico',this)"><span class="icon">📜</span> Histórico</button>
+      <button data-perm="cadastro" onclick="showPage('cadastro',this)"><span class="icon">📝</span> Cadastrar Produto</button>
 
       <div class="nav-section" data-perm-section="entrada,saida">Movimentar</div>
       <button data-perm="entrada" onclick="showPage('entrada',this)"><span class="icon">📥</span> Registrar Entrada</button>
@@ -357,17 +358,14 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
       <div class="nav-section" data-perm-section="compras,fornecedores">Compras</div>
       <button data-perm="compras" onclick="showPage('compras',this)"><span class="icon">💰</span> Histórico Compras</button>
       <button data-perm="fornecedores" onclick="showPage('fornecedores',this)"><span class="icon">🏭</span> Fornecedores</button>
+      <button data-perm-admin onclick="showPage('previsoes',this)"><span class="icon">🔮</span> Previsões Futuras</button>
 
       <div class="nav-section" data-perm-section="ficha,bling">Produção</div>
       <button data-perm="ficha" onclick="showPage('ficha',this)"><span class="icon">🧬</span> Ficha Técnica</button>
       <button data-perm="bling" onclick="showPage('bling',this)"><span class="icon">📈</span> Vendas (Bling)</button>
 
-      <div class="nav-section" data-perm-section="cadastro">Cadastros</div>
-      <button data-perm="cadastro" onclick="showPage('cadastro',this)"><span class="icon">📝</span> Cadastrar Produto</button>
-      <button data-perm-admin onclick="showPage('usuarios',this)"><span class="icon">👥</span> Usuários</button>
-
       <div class="nav-section" data-perm-admin>Administração</div>
-      <button data-perm-admin onclick="showPage('previsoes',this)"><span class="icon">🔮</span> Previsões Futuras</button>
+      <button data-perm-admin onclick="showPage('usuarios',this)"><span class="icon">👥</span> Gerenciar Usuários</button>
 
       <div class="nav-section">Conta</div>
       <button onclick="showPage('perfil',this)"><span class="icon">👤</span> Meu Perfil</button>
