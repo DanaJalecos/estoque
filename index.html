@@ -3147,10 +3147,14 @@ function renderDash(){
   }
   const valorEstoque=fabrics.reduce((s,f)=>s+(Number(f.stock||0)*Number(lastPrice[f.id]||0)),0);
 
-  // Entradas: últimos 30 dias rolling
+  // Entradas: registradas no sistema nos últimos 30 dias
+  // (usa created_at — não m.date, porque NFes podem ter data antiga mesmo registradas hoje)
   const d30agoEntry=new Date();d30agoEntry.setDate(d30agoEntry.getDate()-30);
-  const d30entryStr=d30agoEntry.toISOString().slice(0,10);
-  const entriesMonth=movements.filter(m=>m.type==='entrada'&&m.date>=d30entryStr).length;
+  const entriesMonth=movements.filter(m=>{
+    if(m.type!=='entrada')return false;
+    const ref=m.created_at||m.date;
+    return ref && new Date(ref) >= d30agoEntry;
+  }).length;
 
   // Count products running out in 14 days
   const d30ago=new Date();d30ago.setDate(d30ago.getDate()-30);
