@@ -1244,10 +1244,20 @@ async function enterApp(){
   $('userAvatar').textContent=profile.display_name.charAt(0).toUpperCase();
   await loadAll();
   applyPermissions();
-  const lastPage=sessionStorage.getItem('dana_page')||'dashboard';
-  const page=canAccess(lastPage)?lastPage:'dashboard';
+  // Prioridade: 1) hash da URL (#alertas), 2) sessionStorage, 3) default 'dashboard'
+  const hashPage=(location.hash||'').replace('#','').trim();
+  const stored=sessionStorage.getItem('dana_page');
+  const candidate=hashPage||stored||'dashboard';
+  const page=canAccess(candidate)?candidate:'dashboard';
   showPage(page,navBtn(page));
   setupRealtime();
+  // Reage a Voltar/Avançar do navegador e a edição manual do hash
+  window.addEventListener('hashchange',()=>{
+    const target=(location.hash||'').replace('#','').trim();
+    if(target && target!==sessionStorage.getItem('dana_page') && canAccess(target)){
+      showPage(target,navBtn(target));
+    }
+  });
   appReady=true;
 }
 
@@ -1354,6 +1364,10 @@ function renderCurrent(){
 // ═══ NAV ═══
 function showPage(name,btn){
   sessionStorage.setItem('dana_page',name);
+  // Atualiza URL hash (deep-linking) sem disparar evento hashchange recursivo
+  if(location.hash!=='#'+name){
+    history.replaceState(null,'','#'+name);
+  }
   document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));
   $('page-'+name).classList.remove('hidden');
   document.querySelectorAll('.sidebar-nav button').forEach(b=>b.classList.remove('active'));
@@ -2898,16 +2912,30 @@ async function updateProfile(){
 }
 
 // ═══ USER MANAGEMENT (admin only) ═══
-const SERVICE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imprdm9xcXFpd3Rwc3J1d29pb3hsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzA0Mjg1NywiZXhwIjoyMDkyNjE4ODU3fQ.34ub4HUp0ewCOBJEkxo625vNexU4bDMgKrRAAvybRaw';
+// Toda gestão admin (criar/listar/apagar/mudar role) passa pela edge function
+// 'admin-users' que valida no servidor que o caller é admin. Service key
+// NUNCA é exposta no frontend.
 let authUsers=[];
+
+async function adminUsersCall(payload){
+  const{data:sess}=await sb.auth.getSession();
+  const jwt=sess?.session?.access_token;
+  if(!jwt){toast('Sessão expirada — recarregue a página');return null;}
+  const res=await fetch(SUPA_URL+'/functions/v1/admin-users',{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+jwt,'Content-Type':'application/json'},
+    body:JSON.stringify(payload)
+  });
+  let result=null;try{result=await res.json();}catch{}
+  if(!res.ok)return{ok:false,status:res.status,...(result||{})};
+  return result;
+}
 
 async function loadAuthUsers(){
   try{
-    const res=await fetch(SUPA_URL+'/auth/v1/admin/users',{
-      headers:{'apikey':SERVICE_KEY,'Authorization':'Bearer '+SERVICE_KEY}
-    });
-    const data=await res.json();
-    authUsers=data.users||data||[];
+    const data=await adminUsersCall({action:'list'});
+    if(!data||data.ok===false){authUsers=[];return;}
+    authUsers=data.users||[];
   }catch(e){authUsers=[];}
 }
 function getEmailById(uid){
@@ -2964,18 +2992,11 @@ async function deleteUser(uid){
   const p=profiles.find(x=>x.id===uid);
   const email=getEmailById(uid);
   showConfirm('Apagar Usuário','Tem certeza que deseja apagar "'+( p?.display_name||'')+ '" ('+email+')? Essa ação não pode ser desfeita.',async()=>{
-    try{
-      // Delete from auth (cascades to profile)
-      const res=await fetch(SUPA_URL+'/auth/v1/admin/users/'+uid,{
-        method:'DELETE',
-        headers:{'apikey':SERVICE_KEY,'Authorization':'Bearer '+SERVICE_KEY}
-      });
-      if(!res.ok){toast('Erro ao apagar usuário.');return;}
-      // Remove from local cache
-      profiles=profiles.filter(x=>x.id!==uid);
-      renderUsers();
-      toast('Usuário apagado.');
-    }catch(e){toast('Erro: '+e.message);}
+    const r=await adminUsersCall({action:'delete',uid});
+    if(!r||r.ok===false){toast('Erro ao apagar: '+(r?.error||'?'));return;}
+    profiles=profiles.filter(x=>x.id!==uid);
+    renderUsers();
+    toast('Usuário apagado.');
   });
 }
 
@@ -3047,33 +3068,17 @@ async function createUser(e){
   $('newUserSuccess').style.display='none';
 
   try{
-    // Use Admin API directly to create user WITHOUT changing current session
-    const res=await fetch(SUPA_URL+'/auth/v1/admin/users',{
-      method:'POST',
-      headers:{'apikey':SERVICE_KEY,'Authorization':'Bearer '+SERVICE_KEY,'Content-Type':'application/json'},
-      body:JSON.stringify({email,password:pw,email_confirm:true})
-    });
-    const result=await res.json();
-    if(!res.ok){
+    // Cria usuário via edge function admin-users (não expõe service_role)
+    const result=await adminUsersCall({action:'create',email,password:pw,name,role});
+    if(!result||result.ok===false){
       btn.textContent='Criar Usuário';btn.disabled=false;
-      const m=result.msg||result.message||result.error||'';
+      const m=result?.error||'';
       if(m.includes('already')&&m.includes('registered'))
         $('newUserError').textContent='Esse email já está cadastrado.';
       else
-        $('newUserError').textContent='Erro: '+m;
+        $('newUserError').textContent='Erro: '+(m||'falha desconhecida');
       $('newUserError').style.display='';
       return false;
-    }
-    // Set profile with name and role via service key
-    if(result.id){
-      await fetch(SUPA_URL+'/rest/v1/profiles',{
-        method:'POST',
-        headers:{
-          'apikey':SERVICE_KEY,'Authorization':'Bearer '+SERVICE_KEY,
-          'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'
-        },
-        body:JSON.stringify({id:result.id,display_name:name,role:role})
-      });
     }
     btn.textContent='Criar Usuário';btn.disabled=false;
     $('newUserSuccess').textContent='Usuário "'+name+'" criado com sucesso! ('+ROLE_LABELS[role]+')';
