@@ -1,10 +1,12 @@
 # DOCUMENTAÇÃO COMPLETA — Sistema de Estoque Dana Jalecos
 
-> **Última atualização:** 27/04/2026
-> **Repo GitHub:** https://github.com/zJu4nnIA/dana-jalecos-estoque
+> **Última atualização:** 27/04/2026 (tarde — ciclo "100% redondo")
+> **Repo GitHub (oficial):** https://github.com/DanaJalecos/estoque
+> **Site público:** https://danajalecos.github.io/estoque/
+> **Repo antigo (arquivado/privado):** ~~zJu4nnIA/dana-jalecos-estoque~~
 > **Localização local:** `C:\Users\Juan - Dana Jalecos\Documents\Sistema Marketing\. Outro sistema\Tecidos Projeto\`
 > **Supabase:** `jkvoqqqiwtpsruwoioxl` ("Sistema Controle de Estoque/Compras")
-> **Stack:** Single-page HTML + Supabase (Auth + Postgres + Realtime + Storage) + IA (Groq Llama 3.3)
+> **Stack:** Single-page HTML + Supabase (Auth + Postgres + Realtime + Storage + Edge Functions Deno) + IA (Groq Llama 3.3)
 
 ---
 
@@ -706,6 +708,154 @@ Variáveis de ambiente NÃO são usadas — credenciais hardcoded nos scripts (l
 
 ---
 
+## 16. CICLO 27/04/2026 (TARDE) — 100% REDONDO
+
+### 16.1 Migração de repo + GitHub Pages
+
+- Repo migrado: `zJu4nnIA/dana-jalecos-estoque` → **`DanaJalecos/estoque`**
+- GitHub Pages ligado: **https://danajalecos.github.io/estoque/**
+- Repo antigo arquivado + privado (continha SERVICE_KEY exposta)
+- Hash routing: `/#dashboard`, `/#alertas`, `/#estoque`, etc
+
+### 16.2 Segurança
+
+- **SERVICE_KEY removida do HTML** (era do projeto antigo deprecated)
+- Edge Function `admin-users` valida server-side (admin via `profiles.role`)
+- `.gitignore` reforçado: TOKENS/, bling-matriz/, *SECRET*, backups/
+- **Pasta `bling-matriz/` removida do repo** (continha PII de 282 fornecedores + custos + faturamento)
+
+### 16.3 Edge Functions deployadas
+
+| Função | Trigger | Função |
+|---|---|---|
+| `admin-users` | Frontend admin | list / create / delete / update_role |
+| `sync-bling-cache` | Cron 6h + botão manual | Copia DMS→Estoque (7 tabelas bling_*) |
+| `bling-webhook` | POST do Bling | Quando pedido fica "Atendido" → desconta matéria-prima |
+
+### 16.4 Cron pg_cron
+
+- `sync-bling-cache-6h` — `7 */6 * * *` chama edge function via http_post + CRON_SECRET
+
+### 16.5 Realtime configurado
+
+Publication `supabase_realtime` inclui: `fabrics`, `movements`, `purchases`, `fornecedores`, `ficha_produtos`, `ficha_tecnica` — todas com `REPLICA IDENTITY FULL`. Canal escuta com debounce 250ms + re-render automático ao focar janela.
+
+### 16.6 Importação Jan+Fev/2026
+
+- 109 NFes processadas: 65 industrialização + 27 uso/consumo + 17 puladas
+- 37 fornecedores novos · 103 fabrics novos · 162 purchases · 162 movements
+- Total agora: 175 fabrics · 236 compras · 68 fornecedores
+
+### 16.7 Consolidação de duplicados
+
+- `Broche Magnetico Personalizado` (3x) → 1 (stock 121+11+117 = 249)
+- `BI STRET BLUE UNI FT` → mergiu com `BI STRET BLUE UNI` (stock 239+309 = 548)
+- `ETIQ:DANA JALECOS MANEQ:G` → `ETIQ DANA JALECOS MANEQ - G` (renomeado limpo)
+
+### 16.8 Min stock = 10 em todos
+
+Aplicado em massa em todos os 175 fabrics. Resultado:
+- Estoque OK: 114
+- Estoque Baixo (1-9): 43
+- Sem Estoque (=0): 18
+
+### 16.9 Custo médio ponderado
+
+View `fabric_custo_medio` agrega purchases por `fabric_id`:
+- `custo_medio_ponderado = SUM(total_price) / SUM(qty)`
+- `valor_em_estoque = cmp × stock`
+
+Dashboard "💰 Valor em Estoque" agora usa cmp em vez de "último preço" — mais preciso.
+
+### 16.10 Webhook Bling configurado
+
+URL cadastrada no Bling Matriz:
+```
+https://jkvoqqqiwtpsruwoioxl.supabase.co/functions/v1/bling-webhook?secret=<WEBHOOK_SECRET>
+```
+Card ativado: **Pedidos de Vendas** (Criação + Atualização + Exclusão). Quando pedido fica `situacao=9 (Atendido)`, edge function desconta matéria-prima da ficha técnica automaticamente.
+
+### 16.11 Card de Alertas com WhatsApp
+
+Cada item em alerta na página `/#alertas` tem botão verde **"📱 Comprar (X un)"** que:
+- Calcula qty sugerida (max(2×min - stock, 45d consumo, min_stock))
+- Abre WhatsApp Web pré-formatado pro fornecedor vinculado
+- Helper `fabricFornecedor(f)` lookup com fallback no último purchase
+
+### 16.12 Pedido de Compra (PO)
+
+Botão "📄 Pedido de Compra" no topbar de Alertas:
+- Agrupa todos os items em alerta por fornecedor
+- Por fornecedor: PDF formal (jsPDF + autotable) + botão WhatsApp
+- PDF tem cabeçalho, CNPJ, total estimado, número PO, data
+
+### 16.13 Dashboard Produção mensal
+
+Card no Dashboard parsing de movements detail (`Produção: Nx CODIGO` e `Bling: 1× CODIGO`):
+- Total peças produzidas no mês
+- Custo de matéria-prima (via custo médio)
+- Custo médio por peça
+- Variação % vs mês anterior
+- Top 5 produtos do mês
+
+### 16.14 Comparador de preços
+
+View `comparador_precos` agrega purchases por `fabric_id + fornecedor_id`. Modal "⚖️ Comparar Preços" no topbar de Histórico de Compras:
+- Lista produtos comprados de 2+ fornecedores
+- Marca o melhor preço com 🏆 + economia %
+- Hoje só CR:40 e CR:60 têm múltiplos fornecedores; vai crescer com o tempo
+
+### 16.15 Import NF-e XML melhorado
+
+- `normFornName(s)` ignora acentos + sufixos LTDA/EIRELI/SA pra match
+- Match em `cnpjs_adicionais` (filiais consolidadas)
+- Auto-adiciona CNPJ alternativo se nome bater mas CNPJ for diferente
+- `normFabricName(s)` ignora sufixos triviais FT/UN/SOFT/STR pra evitar duplicado
+
+### 16.16 Backup semanal
+
+- Script `scripts/backup/backup-supabase.py` (env-driven)
+- Workflow `.github/workflows/backup-supabase.yml` (criado local; precisa adicionar via UI GitHub porque PAT não tem scope `workflow`)
+- Secrets `SUPABASE_PAT` + `PROJECT_REF` já configurados no repo via API
+- Roda Domingo 00:17 BRT, mantém últimos 12 backups
+
+### 16.17 Estado atual dos dados (27/04/2026)
+
+| Tabela | Rows |
+|---|---|
+| fabrics | 175 |
+| purchases | 236 (R$ 478.192,89 total) |
+| movements | 236 |
+| fornecedores | 68 |
+| ficha_produtos | 50 |
+| ficha_tecnica | 411 itens |
+| bling_produtos | 2.205 |
+| bling_velocidade_90d | 100 |
+
+### 16.18 Pendências do user
+
+1. ⏳ Adicionar `.github/workflows/backup-supabase.yml` via UI GitHub
+2. ⏳ Apagar de fato o repo antigo `zJu4nnIA/dana-jalecos-estoque` (atualmente arquivado privado)
+3. ⏳ Cadastrar fornecedor pros 18 fabrics que ainda têm stock=0 (manual quando comprar)
+4. ⏳ Limpar histórico do git (commit antigo ainda tem `bling-matriz/` PII — só `git filter-repo` removeria de fato)
+
+### 16.19 Tokens/secrets em uso
+
+| Secret | Local | Uso |
+|---|---|---|
+| `SB_SERVICE_KEY` | env Edge Functions | Auto-injetado Supabase |
+| `DMS_URL` | env Edge Functions | URL do projeto DMS pra sync |
+| `DMS_SERVICE_KEY` | env Edge Functions | Service role do DMS |
+| `CRON_SECRET` | env Edge Functions + cron job | Auth do cron pra `sync-bling-cache` |
+| `WEBHOOK_SECRET` | env Edge Function + Bling | Auth dos webhooks |
+| `SUPABASE_PAT` | GitHub repo secrets | Backup workflow |
+| `PROJECT_REF` | GitHub repo secrets | Backup workflow |
+| `ghp_tBKNahody...` | local + remote git | Push pro `DanaJalecos/estoque` |
+
+Todos secrets locais ficam em `TOKENS/` (gitignored).
+
+---
+
 ## CONTATOS DESTE PROJETO
 
 - **Owner / dev:** Juan
@@ -714,4 +864,4 @@ Variáveis de ambiente NÃO são usadas — credenciais hardcoded nos scripts (l
 
 ---
 
-**Fim · v1.0 · 27/04/2026**
+**Fim · v1.1 · 27/04/2026 (tarde — ciclo "100% redondo")**
