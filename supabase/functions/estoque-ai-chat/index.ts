@@ -387,6 +387,7 @@ Deno.serve(async (req) => {
           headers: {
             'Authorization': `Bearer ${provider.key}`,
             'Content-Type': 'application/json',
+            'User-Agent': 'Mozilla/5.0 EstoqueBot/1.0', // Groq Cloudflare bloqueia sem UA
           },
           body: JSON.stringify({
             model: provider.model,
