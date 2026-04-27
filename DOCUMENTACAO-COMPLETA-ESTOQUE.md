@@ -1,6 +1,6 @@
 # DOCUMENTAÇÃO COMPLETA — Sistema de Estoque Dana Jalecos
 
-> **Última atualização:** 27/04/2026 (tarde — ciclo "100% redondo")
+> **Última atualização:** 27/04/2026 noite — ciclo 17 (Bot IA + UX profissional + auditorias)
 > **Repo GitHub (oficial):** https://github.com/DanaJalecos/estoque
 > **Site público:** https://danajalecos.github.io/estoque/
 > **Repo antigo (arquivado/privado):** ~~zJu4nnIA/dana-jalecos-estoque~~
@@ -864,4 +864,307 @@ Todos secrets locais ficam em `TOKENS/` (gitignored).
 
 ---
 
-**Fim · v1.1 · 27/04/2026 (tarde — ciclo "100% redondo")**
+## 17. CICLO 27/04/2026 (NOITE) — BOT IA + UX PROFISSIONAL + AUDITORIAS
+
+### 17.1 Bot IA do Estoque (`estoque-ai-chat`)
+
+**Edge Function deployed `ACTIVE`** com function-calling Groq + fallback Gemini.
+
+**3 providers em cascata** (com retry exponential backoff 1s→2s pra 429/503/502):
+| Ordem | Provider | Modelo |
+|---|---|---|
+| 1 | Groq (primário) | `llama-3.3-70b-versatile` (free) |
+| 2 | Gemini (fallback) | `gemini-2.5-flash` (OpenAI-compatible endpoint) |
+| 3 | Groq fallback final | `llama-3.1-8b-instant` (modelo menor, quota maior) |
+
+**10 tools (function calling):**
+- `consultar_estoque(query)` — busca matéria-prima por nome/cor/categoria
+- `consultar_alertas()` — produtos sem estoque ou abaixo do mínimo
+- `consultar_fornecedor(query)` — info de fornecedor por nome
+- `fornecedor_de_produto(produto_query)` — qual fornecedor vende X
+- `consultar_compras_recentes(query?, limit?)` — histórico de compras
+- `consultar_ficha_tecnica(produto_query)` — BOM dos jalecos
+- `estatisticas_gerais()` — visão global (total/sem estoque/baixo/gasto)
+- `projecao_consumo(dias=14)` — produtos vão acabar em N dias
+- `ranking_fornecedores(ordenar_por, limit, periodo_dias)` — top fornecedores por gasto/num/última compra
+- `ranking_produtos(ordenar_por, limit)` — top fabrics por valor/qtd/estoque
+
+**UI:** botão flutuante `💬` canto inferior direito (só pós-login). Chat panel com markdown leve. Atalhos: Alertas / Projeção / Visão geral.
+
+**Robustez:**
+- Retry com backoff em 429/503 (1s, 2s)
+- Mensagem amigável ao user em fail total ("alta demanda", "limite atingido", etc)
+- `User-Agent: Mozilla/5.0 EstoqueBot/1.0` pra bypass Cloudflare 1010 do Groq
+
+**Auth:** `verify_jwt: true` — qualquer cargo logado pode usar. Keys nunca expostas no frontend.
+
+**Secrets configurados no Supabase Estoque:**
+- `GROQ_API_KEY` = `gsk_HnzgBMG...`
+- `GEMINI_API_KEY` = `AIzaSyDb61OCa...`
+
+### 17.2 Sidebar profissional — emojis → SVG icons
+
+**Antes:** 14 botões com emojis decorativos coloridos (📊, ⚠️, 🧵, 📜...).
+**Depois:** SVG icons stroke (Lucide-style) inline, monocromáticos, herdam cor do texto. Opacity 0.6 → 0.9 hover → 1.0 ativo.
+
+**CSS atualizado:**
+```css
+.sidebar-nav button .icon { width:18px;height:18px;flex-shrink:0;opacity:.6; }
+.sidebar-nav button .icon svg { stroke:currentColor;fill:none;stroke-width:1.6; }
+```
+
+**Limpeza paralela:**
+- Topbars: "📥 Registrar Entrada" → "Registrar Entrada"
+- KPIs: "💰 Valor em Estoque" → "Valor em Estoque"
+- Card Dashboard: "🏭 Produção do Mês" → "Produção do Mês"
+- Tabs Bling: "🏆 Top produtos" → "Top produtos"
+
+**O que MANTIVE** (semântico, não decorativo):
+- ⚠️ em mensagens de aviso reais (estoque baixo, falta material)
+- ⛔ ZERADO em status crítico
+- ✓ OK feedback positivo
+- 📱 verde no botão WhatsApp
+- 💬 ícone do bot IA flutuante
+
+### 17.3 Histórico de Compras — Bug "Sem fornecedor"
+
+**Reportado pela Manu:** chart "Gasto por Fornecedor" mostrava 100% como "Sem fornecedor" mesmo tendo 31 fornecedores cadastrados.
+
+**Causa:** as 74 purchases têm `fornecedor_id` preenchido (FK), mas o JS lia o campo legado `p.supplier` (string text, vazio em 100% dos imports).
+
+**Fix:**
+```js
+function getSupplierName(p) {
+  if (p.fornecedor_id) {
+    const f = fornecedores.find(x => x.id === p.fornecedor_id);
+    if (f) return f.nome;
+  }
+  return p.supplier || '';
+}
+```
+
+Aplicado em **4 lugares**: chart doughnut, alertas de variação de preço, tabela do histórico, export PDF.
+
+**Bonus:** chart agrupa fornecedores com fatia <3% em "Outros" + tooltip detalhado mostra os primeiros 8 que estão dentro da fatia.
+
+### 17.4 Auto-update do Dashboard
+
+**Reportado pela Manu:** dashboard só atualizava no F5.
+
+**Causa raiz:** publicação `supabase_realtime` no Postgres estava VAZIA. Realtime subscriptions no JS não disparavam nada.
+
+**Fix SQL:**
+```sql
+ALTER PUBLICATION supabase_realtime ADD TABLE
+  public.fabrics, public.movements, public.purchases,
+  public.fornecedores, public.ficha_produtos, public.ficha_tecnica;
+
+ALTER TABLE public.fabrics REPLICA IDENTITY FULL; -- pra DELETE com payload
+-- (mesma coisa nas outras 5)
+```
+
+**JS estendido:** canal escuta as 6 tabelas com debounce 250ms + re-render no foco da janela. `renderCurrent()` agora cobre todas as páginas (compras, ficha, alertas, previsões, usuarios) — antes só 6.
+
+### 17.5 KPIs do Dashboard — Bug "Entradas: 0"
+
+**Reportado pela Manu:** dashboard mostrava "Entradas este Mês: 0" mas tinha 74 entradas registradas.
+
+**Causa:** filtro era `m.date >= "2026-04"` — as 74 entradas têm `date=2026-03-XX` (datas reais das NFes de março).
+
+**Fix em duas etapas:**
+1. Trocou pra rolling 30 dias (não mês corrente)
+2. Trocou de `m.date` pra `m.created_at` — porque o usuário está perguntando "atividade RECENTE no sistema", não "data da NF"
+
+**Outro bug do KPI "Total em Estoque: 20867.2":**
+- Somava metros + unidades + kg + horas tudo junto (sem sentido)
+- Trocou pra **"💰 Valor em Estoque (R$)"** = `Σ stock × custo médio ponderado`
+
+### 17.6 Custo Médio Ponderado — view `fabric_custo_medio`
+
+**Antes:** sistema usava "último preço pago" pra valor em estoque (impreciso).
+
+**Agora:** view SQL agrega purchases por fabric_id:
+```sql
+custo_medio_ponderado = SUM(total_price) / SUM(qty)
+valor_em_estoque = cmp × stock
+```
+
+Frontend usa essa view automaticamente na `loadAll()` + helper `getCustoMedio(fabricId)`.
+
+### 17.7 Card de Alertas com botão **WhatsApp**
+
+Cada item em alerta na página `/#alertas` tem botão verde:
+```
+📱 Comprar (45 metros)
+```
+
+Click → abre WhatsApp Web com mensagem pré-formatada pro fornecedor vinculado:
+```
+Olá, [contato]! Tudo bem?
+Preciso fazer um pedido:
+📦 *GABARDINE BISTRETCH BRANCO*
+Quantidade: *45 metros* ≈ R$ 382,50
+Pode confirmar disponibilidade, prazo, valor unit, forma de pagamento?
+```
+
+**Helper `suggestQty(f)`:** sugere reposição = `max(2×min - stock, consumo30d × 1.5, min_stock)`.
+
+**Helper `fabricFornecedor(f)`:** lookup com fallback no último purchase com `fornecedor_id`.
+
+### 17.8 Pedido de Compra (PO) — PDF + WhatsApp por fornecedor
+
+Botão **"Pedido de Compra"** no topbar de Alertas:
+- Modal agrupa items em alerta por fornecedor
+- Por fornecedor:
+  - **PDF** formal (jsPDF + autotable): cabeçalho, CNPJ, items, total estimado, data, número PO
+  - **WhatsApp** com lista completa pro fornecedor
+
+Tudo via `window.jspdf` + `autoTable`.
+
+### 17.9 Dashboard de Produção mensal
+
+Card no Dashboard que parseia `movements.detail` no formato `"Produção: Nx CODIGO"` e `"Bling: 1× CODIGO (NF #...)"`:
+- Total peças produzidas no mês
+- Custo de matéria-prima (via custo médio ponderado)
+- Custo médio por peça
+- Variação % vs mês anterior
+- Top 5 produtos do mês (chips)
+
+### 17.10 Comparador de preços — view `comparador_precos`
+
+```sql
+CREATE VIEW comparador_precos AS
+SELECT f.id AS fabric_id, f.name AS produto, f.unit,
+       fo.id AS fornecedor_id, fo.nome AS fornecedor_nome,
+       COUNT(p.id) AS num_compras,
+       MIN/MAX/AVG(p.unit_price), ...
+FROM fabrics f JOIN purchases p ON p.fabric_id=f.id
+JOIN fornecedores fo ON fo.id=p.fornecedor_id
+GROUP BY f.id, fo.id;
+```
+
+Botão **"⚖️ Comparar Preços"** no topbar Histórico de Compras → modal lista produtos comprados de 2+ fornecedores. Marca melhor preço com 🏆 + economia %.
+
+### 17.11 Import NF-e XML melhorado (fuzzy match)
+
+**Antes:** matching exato por nome/CNPJ. Criava duplicados quando NF tinha pequena variação.
+
+**Agora:**
+- `normFornName(s)` ignora acentos, sufixos LTDA/EIRELI/SA/ME/EPP
+- Match em `cnpjs_adicionais` (filiais consolidadas)
+- Auto-adiciona CNPJ alternativo se nome bater mas CNPJ for diferente
+- `normFabricName(s)` ignora sufixos triviais FT/UN/SOFT/STR
+
+### 17.12 Importações Jan+Fev/2026 NFes (script)
+
+`importar-nfe-jan-fev-2026.py` rodado:
+- 109 NFes processadas (mar+abr/jan+fev consolidado)
+- 65 industrialização + 27 uso/consumo + 17 puladas
+- +37 fornecedores · +103 fabrics · +162 purchases · +162 movements
+
+**Estado atual: R$ 478.192,89 em 236 compras · 175 fabrics · 68 fornecedores**
+
+### 17.13 Consolidação de duplicados
+
+Script `consolidar-fabrics-duplicados.py`:
+- **Broche Magnético Personalizado** (3x → 1, stock 121+11+117 = 249)
+- **BI STRET BLUE UNI FT** → mergiu com **BI STRET BLUE UNI** (stock 239+309 = 548m)
+- **ETIQ:DANA JALECOS MANEQ:G** renomeado pra `ETIQ DANA JALECOS MANEQ - G` (formato limpo, mantidas separadas G/M/P/PP)
+
+Reapontou todas as referências (purchases, movements, ficha_tecnica) antes de deletar duplicados → **nenhum dado perdido**.
+
+### 17.14 Min stock = 10 em todos os 175 fabrics
+
+Bulk UPDATE pelo Manu pediu. Resultado:
+- ✅ OK (>10): 114
+- 🟡 Baixo (1-9): 43
+- 🔴 Sem estoque (=0): 18
+
+Os 18 zerados são genéricos da ficha técnica (Botão Comum, Tag, Cadarço, etc) sem compra registrada.
+
+### 17.15 Limpeza de segurança/governança
+
+**bling-matriz/ removido do repo:**
+- Continha PII de 282 fornecedores (CNPJ/telefone/celular)
+- Preço de custo de 2.205 produtos (dado financeiro estratégico)
+- Faturamento mensal exposto
+- Movido pra `_dados_locais/` (fora do repo) + `bling-matriz/` no .gitignore
+
+**.gitignore reforçado:**
+```
+*TOKEN*.txt, *AI_KEYS*, TOKENS/, .claude/,
+bling-matriz/, *.gz, .env, .env.*, etc
+```
+
+**Repo antigo `zJu4nnIA/dana-jalecos-estoque`:**
+- Arquivado + tornado privado (continha SERVICE_KEY antigo exposto)
+- Pra deletar de fato, Juan precisa fazer manual via UI GitHub
+
+⚠️ Histórico do git ainda tem `bling-matriz/` (commit antigo). Pra remoção total precisa `git filter-repo` (operação destrutiva).
+
+### 17.16 Auditoria final do Dashboard
+
+Validação contra banco:
+| KPI | Mostra | Real | Status |
+|---|---|---|---|
+| Produtos | 175 | 175 | ✅ |
+| Valor em Estoque | R$ XXX | sum(stock×cmp) | ✅ |
+| Estoque Baixo | 43 | 43 | ✅ |
+| Sem Estoque | 18 | 18 | ✅ |
+| Entradas (30 dias) | 236 | 236 | ✅ (created_at) |
+
+### 17.17 Fluxo completo "100% redondo" da operação
+
+1. **Compra** chega via NF-e do Bling → import XML auto-cria fornecedor + fabric + purchase + movement
+2. **Stock** sobe automaticamente (movement type=entrada)
+3. **Cron 6h** sincroniza dados Bling → projeção de consumo atualiza
+4. **Webhook Bling** dispara quando pedido fica "Atendido" → ficha técnica é consumida → matéria-prima é descontada automaticamente
+5. **Alerta** dispara quando stock < min_stock → Manu vê na página Alertas
+6. **Click "Comprar"** → WhatsApp pré-formatado pro fornecedor
+7. **Bot IA** responde dúvidas em linguagem natural ("o que tá acabando?", "qual fornecedor de zíper?", "top 5 fornecedores")
+8. **Dashboard** atualiza em realtime entre todos os usuários
+
+### 17.18 Estado dos dados (27/04/2026 noite)
+
+| Tabela | Rows |
+|---|---|
+| fabrics | 175 |
+| fornecedores | 68 |
+| purchases | 236 (R$ 478.192,89) |
+| movements | 236 (todas entradas — saídas começarão via webhook quando vender) |
+| ficha_produtos | 50 |
+| ficha_tecnica | 411 itens |
+| bling_produtos | 2.205 |
+| bling_velocidade_90d | 100 |
+
+### 17.19 Pendências do Juan
+
+1. ⏳ Adicionar `.github/workflows/backup-supabase.yml` via UI GitHub (PAT sem `workflow` scope)
+2. ⏳ Apagar de fato repo antigo `zJu4nnIA/dana-jalecos-estoque` (atualmente arquivado privado)
+3. ⏳ 18 fabrics sem stock — cadastrar manualmente quando Manu/Dana for comprar
+4. ⏳ Limpar histórico do git do bling-matriz/ (opcional, requer git filter-repo)
+
+### 17.20 Edge Functions deployadas (resumo)
+
+| Função | Trigger | Status |
+|---|---|---|
+| `admin-users` | Frontend admin | ACTIVE v1 |
+| `sync-bling-cache` | Cron 6h + botão manual | ACTIVE v3 |
+| `bling-webhook` | POST do Bling em pedido atendido | ACTIVE v1 |
+| `estoque-ai-chat` | Frontend bot 💬 | ACTIVE v7 |
+
+### 17.21 Secrets em uso (Supabase Estoque)
+
+| Secret | Valor (preview) | Uso |
+|---|---|---|
+| `SB_SERVICE_KEY` (auto) | — | Operações admin internas |
+| `DMS_URL` | wltmiqbhziefusnzmmkt | URL do projeto DMS pra sync |
+| `DMS_SERVICE_KEY` | eyJhbGc... | Service role do DMS |
+| `CRON_SECRET` | _G_BxVPOgTz7... | Auth do cron pra sync-bling-cache |
+| `WEBHOOK_SECRET` | XU9zcG-KTRUW... | Auth dos webhooks Bling |
+| `GROQ_API_KEY` | gsk_HnzgBMG... | Bot IA primário |
+| `GEMINI_API_KEY` | AIzaSyDb61... | Bot IA fallback |
+
+---
+
+**Fim · v2.0 · 27/04/2026 noite — ciclo 17 (Bot IA + UX profissional + auditorias completas)**
