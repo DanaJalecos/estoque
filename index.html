@@ -143,7 +143,9 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
 }
 .sidebar-nav button:hover{background:rgba(255,255,255,.04);color:var(--text);}
 .sidebar-nav button.active{background:rgba(255,255,255,.07);color:var(--text);}
-.sidebar-nav button .icon{font-size:1rem;width:20px;text-align:center;opacity:.7;}
+.sidebar-nav button .icon{width:18px;height:18px;flex-shrink:0;opacity:.6;display:inline-flex;align-items:center;justify-content:center;}
+.sidebar-nav button .icon svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
+.sidebar-nav button:hover .icon{opacity:.9;}
 .sidebar-nav button.active .icon{opacity:1;}
 .sidebar-footer{padding:.8rem 1.2rem;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:.3rem;}
 .sidebar-footer button{
@@ -343,32 +345,32 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
     </div>
     <nav class="sidebar-nav">
       <div class="nav-section">Visão geral</div>
-      <button data-perm="dashboard" class="active" onclick="showPage('dashboard',this)"><span class="icon">📊</span> Dashboard</button>
-      <button data-perm="alertas" onclick="showPage('alertas',this)"><span class="icon">⚠️</span> Alertas <span id="alertBadge" style="background:var(--red);color:var(--bg);font-size:.65rem;font-weight:700;padding:.1rem .4rem;border-radius:10px;margin-left:.3rem;display:none;">0</span></button>
+      <button data-perm="dashboard" class="active" onclick="showPage('dashboard',this)"><span class="icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></span> Dashboard</button>
+      <button data-perm="alertas" onclick="showPage('alertas',this)"><span class="icon"><svg viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span> Alertas <span id="alertBadge" style="background:var(--red);color:var(--bg);font-size:.65rem;font-weight:700;padding:.1rem .4rem;border-radius:10px;margin-left:.3rem;display:none;">0</span></button>
 
       <div class="nav-section" data-perm-section="estoque,historico,cadastro">Estoque</div>
-      <button data-perm="estoque" onclick="showPage('estoque',this)"><span class="icon">🧵</span> Matéria-prima</button>
-      <button data-perm="historico" onclick="showPage('historico',this)"><span class="icon">📜</span> Histórico</button>
-      <button data-perm="cadastro" onclick="showPage('cadastro',this)"><span class="icon">📝</span> Cadastrar Produto</button>
+      <button data-perm="estoque" onclick="showPage('estoque',this)"><span class="icon"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span> Matéria-prima</button>
+      <button data-perm="historico" onclick="showPage('historico',this)"><span class="icon"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg></span> Histórico</button>
+      <button data-perm="cadastro" onclick="showPage('cadastro',this)"><span class="icon"><svg viewBox="0 0 24 24"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M21 14V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7"/><line x1="9" y1="15" x2="15" y2="15"/><line x1="12" y1="12" x2="12" y2="18"/></svg></span> Cadastrar Produto</button>
 
       <div class="nav-section" data-perm-section="entrada,saida">Movimentar</div>
-      <button data-perm="entrada" onclick="showPage('entrada',this)"><span class="icon">📥</span> Registrar Entrada</button>
-      <button data-perm="saida" onclick="showPage('saida',this)"><span class="icon">📤</span> Registrar Saída</button>
+      <button data-perm="entrada" onclick="showPage('entrada',this)"><span class="icon"><svg viewBox="0 0 24 24"><path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/></svg></span> Registrar Entrada</button>
+      <button data-perm="saida" onclick="showPage('saida',this)"><span class="icon"><svg viewBox="0 0 24 24"><path d="M12 7v14"/><path d="m6 13 6-6 6 6"/><path d="M19 3H5"/></svg></span> Registrar Saída</button>
 
       <div class="nav-section" data-perm-section="compras,fornecedores">Compras</div>
-      <button data-perm="compras" onclick="showPage('compras',this)"><span class="icon">💰</span> Histórico Compras</button>
-      <button data-perm="fornecedores" onclick="showPage('fornecedores',this)"><span class="icon">🏭</span> Fornecedores</button>
-      <button data-perm-admin onclick="showPage('previsoes',this)"><span class="icon">🔮</span> Previsões Futuras</button>
+      <button data-perm="compras" onclick="showPage('compras',this)"><span class="icon"><svg viewBox="0 0 24 24"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v-11"/></svg></span> Histórico Compras</button>
+      <button data-perm="fornecedores" onclick="showPage('fornecedores',this)"><span class="icon"><svg viewBox="0 0 24 24"><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M17 18h1"/><path d="M12 18h1"/><path d="M7 18h1"/></svg></span> Fornecedores</button>
+      <button data-perm-admin onclick="showPage('previsoes',this)"><span class="icon"><svg viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></span> Previsões Futuras</button>
 
       <div class="nav-section" data-perm-section="ficha,bling">Produção</div>
-      <button data-perm="ficha" onclick="showPage('ficha',this)"><span class="icon">🧬</span> Ficha Técnica</button>
-      <button data-perm="bling" onclick="showPage('bling',this)"><span class="icon">📈</span> Vendas (Bling)</button>
+      <button data-perm="ficha" onclick="showPage('ficha',this)"><span class="icon"><svg viewBox="0 0 24 24"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/><line x1="9" y1="9" x2="10" y2="9"/></svg></span> Ficha Técnica</button>
+      <button data-perm="bling" onclick="showPage('bling',this)"><span class="icon"><svg viewBox="0 0 24 24"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg></span> Vendas (Bling)</button>
 
       <div class="nav-section" data-perm-admin>Administração</div>
-      <button data-perm-admin onclick="showPage('usuarios',this)"><span class="icon">👥</span> Gerenciar Usuários</button>
+      <button data-perm-admin onclick="showPage('usuarios',this)"><span class="icon"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> Gerenciar Usuários</button>
 
       <div class="nav-section">Conta</div>
-      <button onclick="showPage('perfil',this)"><span class="icon">👤</span> Meu Perfil</button>
+      <button onclick="showPage('perfil',this)"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="10" r="3"/><path d="M7 20.66 A6 6 0 0 1 17 20.66"/></svg></span> Meu Perfil</button>
     </nav>
     <div class="sidebar-footer">
       <button onclick="exportData()">↓ Exportar Backup</button>
@@ -451,7 +453,7 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
 
     <!-- ENTRADA (admin only) -->
     <div id="page-entrada" class="page hidden">
-      <div class="topbar"><h2>Registrar Entrada</h2><div class="topbar-actions"><button class="btn btn-primary" onclick="showNFImport()">📄 Importar Nota Fiscal</button></div></div>
+      <div class="topbar"><h2>Registrar Entrada</h2><div class="topbar-actions"><button class="btn btn-primary" onclick="showNFImport()">Importar Nota Fiscal</button></div></div>
       <div class="content">
         <!-- NF IMPORT SECTION -->
         <div id="nfSection" style="display:none;margin-bottom:1.5rem;">
@@ -521,8 +523,8 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
 
         <!-- Seletor de modo -->
         <div style="display:flex;gap:.4rem;margin-bottom:1rem;background:var(--bg-card);padding:.4rem;border-radius:8px;border:1px solid var(--border);">
-          <button class="btn" id="exitModeBtnProd" onclick="exitSetMode('producao')" style="flex:1;font-weight:600;">🧬 Por Produção</button>
-          <button class="btn" id="exitModeBtnLivre" onclick="exitSetMode('livre')" style="flex:1;font-weight:600;">📤 Saída Livre</button>
+          <button class="btn" id="exitModeBtnProd" onclick="exitSetMode('producao')" style="flex:1;font-weight:600;">Por Produção</button>
+          <button class="btn" id="exitModeBtnLivre" onclick="exitSetMode('livre')" style="flex:1;font-weight:600;">Saída Livre</button>
         </div>
 
         <!-- MODO: Por Produção -->
@@ -586,7 +588,7 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
 
     <!-- ESTOQUE -->
     <div id="page-estoque" class="page hidden">
-      <div class="topbar"><h2>Matéria-prima em Estoque</h2><div class="topbar-actions"><button class="btn" data-perm-btn="entrada" onclick="showPage('entrada',navBtn('entrada'))">📥 Registrar Entrada</button><button class="btn btn-primary" data-perm-btn="cadastro" onclick="showPage('cadastro',navBtn('cadastro'))">+ Novo Produto</button></div></div>
+      <div class="topbar"><h2>Matéria-prima em Estoque</h2><div class="topbar-actions"><button class="btn" data-perm-btn="entrada" onclick="showPage('entrada',navBtn('entrada'))">Registrar Entrada</button><button class="btn btn-primary" data-perm-btn="cadastro" onclick="showPage('cadastro',navBtn('cadastro'))">+ Novo Produto</button></div></div>
       <div class="content">
         <div class="filter-bar">
           <input id="sSearch" placeholder="Buscar..." oninput="renderStock()">
@@ -601,8 +603,8 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
       <div class="topbar">
         <h2>Alertas de Estoque</h2>
         <div class="topbar-actions">
-          <button class="btn" onclick="abrirPedidoCompra()" title="Gerar PDF + WhatsApp por fornecedor">📄 Pedido de Compra</button>
-          <button class="btn btn-primary" onclick="exportPDF()">↓ Exportar PDF</button>
+          <button class="btn" onclick="abrirPedidoCompra()" title="Gerar PDF + WhatsApp por fornecedor">Pedido de Compra</button>
+          <button class="btn btn-primary" onclick="exportPDF()">Exportar PDF</button>
         </div>
       </div>
       <div class="content">
@@ -614,7 +616,7 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
 
     <!-- HISTÓRICO -->
     <div id="page-historico" class="page hidden">
-      <div class="topbar"><h2>Histórico</h2><div class="topbar-actions"><button class="btn btn-primary" onclick="exportHistPDF()">↓ Exportar PDF</button></div></div>
+      <div class="topbar"><h2>Histórico</h2><div class="topbar-actions"><button class="btn btn-primary" onclick="exportHistPDF()">Exportar PDF</button></div></div>
       <div class="content">
         <div class="filter-bar">
           <select id="hFab" onchange="renderHist()"><option value="all">Todos os produtos</option></select>
@@ -629,8 +631,8 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
     <!-- COMPRAS -->
     <div id="page-compras" class="page hidden">
       <div class="topbar"><h2>Histórico de Compras</h2><div class="topbar-actions">
-        <button class="btn" onclick="abrirComparadorPrecos()" title="Compara preços do mesmo produto entre fornecedores">⚖️ Comparar Preços</button>
-        <button class="btn btn-primary" onclick="exportPurchasesPDF()">↓ Exportar PDF</button>
+        <button class="btn" onclick="abrirComparadorPrecos()" title="Compara preços do mesmo produto entre fornecedores">Comparar Preços</button>
+        <button class="btn btn-primary" onclick="exportPurchasesPDF()">Exportar PDF</button>
       </div></div>
       <div class="content">
         <div class="stats-grid" id="purchaseStats"></div>
@@ -782,7 +784,7 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
       <div class="topbar">
         <h2>Vendas (Bling) — Matriz</h2>
         <div class="topbar-actions">
-          <button class="btn" onclick="refreshBlingFromDMS()" title="Puxar dados atualizados do DMS · sync automático rola a cada 6h">🔄 Atualizar do Bling</button>
+          <button class="btn" onclick="refreshBlingFromDMS()" title="Puxar dados atualizados do DMS · sync automático rola a cada 6h">Atualizar do Bling</button>
         </div>
       </div>
       <div class="content">
@@ -805,9 +807,9 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
 
         <!-- Tabs: top produtos / velocidade / catalogo -->
         <div style="display:flex;gap:.3rem;border-bottom:1px solid var(--border);margin-bottom:1rem;flex-wrap:wrap;">
-          <button class="btn btn-sm bling-tab active" onclick="switchBlingTab('top',this)">🏆 Top produtos</button>
-          <button class="btn btn-sm bling-tab" onclick="switchBlingTab('vel',this)">⚡ Velocidade 90d</button>
-          <button class="btn btn-sm bling-tab" onclick="switchBlingTab('cat',this)">📦 Catálogo (2205)</button>
+          <button class="btn btn-sm bling-tab active" onclick="switchBlingTab('top',this)">Top produtos</button>
+          <button class="btn btn-sm bling-tab" onclick="switchBlingTab('vel',this)">Velocidade 90d</button>
+          <button class="btn btn-sm bling-tab" onclick="switchBlingTab('cat',this)">Catálogo (2205)</button>
         </div>
 
         <!-- TOP PRODUTOS -->
@@ -862,7 +864,7 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
       <div class="topbar">
         <h2>Ficha Técnica — Composição dos Produtos</h2>
         <div class="topbar-actions">
-          <button class="btn" onclick="loadFichas()">🔄 Atualizar</button>
+          <button class="btn" onclick="loadFichas()">Atualizar</button>
         </div>
       </div>
       <div class="content">
@@ -1019,7 +1021,7 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
 <div id="aiChatPanel" style="position:fixed;bottom:20px;right:20px;width:420px;max-width:calc(100vw - 40px);height:600px;max-height:calc(100vh - 40px);background:var(--bg-card);border:1px solid var(--border);border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.5);z-index:9001;display:none;flex-direction:column;overflow:hidden;">
   <div style="padding:.9rem 1rem;background:linear-gradient(135deg,rgba(167,139,250,.15),rgba(96,165,250,.1));border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
     <div>
-      <div style="font-weight:700;font-size:.95rem;">💬 Assistente IA</div>
+      <div style="font-weight:700;font-size:.95rem;">Assistente IA</div>
       <div style="font-size:.7rem;color:var(--text-muted);">Pergunta sobre estoque, fornecedores, fichas</div>
     </div>
     <button onclick="aiToggleChat()" style="background:none;border:none;color:var(--text-muted);font-size:1.4rem;cursor:pointer;line-height:1;padding:0 .3rem;">×</button>
@@ -1033,9 +1035,9 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
       </div>
     </form>
     <div style="display:flex;gap:.3rem;margin-top:.6rem;flex-wrap:wrap;">
-      <button class="btn btn-sm" onclick="aiQuickAsk('o que precisa comprar?')" style="font-size:.7rem;">⚠️ Alertas</button>
-      <button class="btn btn-sm" onclick="aiQuickAsk('o que vai acabar em 14 dias?')" style="font-size:.7rem;">📊 Projeção</button>
-      <button class="btn btn-sm" onclick="aiQuickAsk('estatísticas gerais')" style="font-size:.7rem;">📈 Geral</button>
+      <button class="btn btn-sm" onclick="aiQuickAsk('o que precisa comprar?')" style="font-size:.7rem;">Alertas</button>
+      <button class="btn btn-sm" onclick="aiQuickAsk('o que vai acabar em 14 dias?')" style="font-size:.7rem;">Projeção</button>
+      <button class="btn btn-sm" onclick="aiQuickAsk('estatísticas gerais')" style="font-size:.7rem;">Visão geral</button>
     </div>
   </div>
 </div>
@@ -1707,7 +1709,7 @@ function renderDashProducao(){
     <div style="background:linear-gradient(135deg,rgba(96,165,250,.08),rgba(74,222,128,.05));border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem 1.4rem;">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1rem;">
         <div>
-          <div style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:.3rem;">🏭 Produção do Mês</div>
+          <div style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:.3rem;">Produção do Mês</div>
           <div style="font-size:1.6rem;font-weight:700;">${cMes.totalPecas} peça${cMes.totalPecas!==1?'s':''}</div>
           <div style="font-size:.78rem;color:${cor};margin-top:.2rem;">
             ${ico} ${Math.abs(variacao)}% vs mês anterior (${cAnt.totalPecas} peças)
@@ -1755,7 +1757,7 @@ function renderDashFichaAlertas(){
   let html=`<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.2rem;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem;flex-wrap:wrap;gap:.6rem;">
       <h3 style="font-size:.85rem;font-weight:700;display:flex;align-items:center;gap:.4rem;">
-        🔮 Projeção de Produção (próximo mês)
+        Projeção de Produção (próximo mês)
       </h3>
       <button class="btn btn-sm" onclick="showPage('ficha',navBtn('ficha'))">Ver fichas →</button>
     </div>`;
@@ -3365,7 +3367,7 @@ function renderDashBlingStrip(){
   el.innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
       <div>
-        <div style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:.3rem;">📊 Vendas (Bling) — Matriz</div>
+        <div style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:.3rem;">Vendas (Bling) — Matriz</div>
         <div style="font-size:.82rem;display:flex;gap:1.2rem;flex-wrap:wrap;">
           <div><strong style="font-size:1.1rem;">${fmtN(t30.pedidos)}</strong> pedidos <span style="color:var(--text-muted);">(30d)</span></div>
           <div><strong style="font-size:1.1rem;">${fmtR(t30.faturamento)}</strong> <span style="color:var(--text-muted);">(30d)</span></div>
@@ -3409,11 +3411,11 @@ function renderDash(){
   const fmtR=n=>'R$ '+Number(n||0).toLocaleString('pt-BR',{maximumFractionDigits:0});
   $('dashStats').innerHTML=`
     <div class="stat-card"><div class="stat-label">Produtos</div><div class="stat-value">${fabrics.length}</div></div>
-    <div class="stat-card"><div class="stat-label">💰 Valor em Estoque</div><div class="stat-value" style="font-size:1.4rem;">${fmtR(valorEstoque)}</div></div>
+    <div class="stat-card"><div class="stat-label">Valor em Estoque</div><div class="stat-value" style="font-size:1.4rem;">${fmtR(valorEstoque)}</div></div>
     <div class="stat-card"><div class="stat-label">Estoque Baixo</div><div class="stat-value" style="color:${low?'var(--orange)':'var(--green)'}">${low}</div></div>
     <div class="stat-card"><div class="stat-label">Sem Estoque</div><div class="stat-value" style="color:${crit?'var(--red)':'var(--green)'}">${crit}</div></div>
     <div class="stat-card"><div class="stat-label">Entradas (30 dias)</div><div class="stat-value">${entriesMonth}</div></div>
-    <div class="stat-card"><div class="stat-label">🔮 Acabam em 14 dias</div><div class="stat-value" style="color:${urgentCount?'var(--red)':'var(--green)'}">${urgentCount}</div></div>
+    <div class="stat-card"><div class="stat-label">Acabam em 14 dias</div><div class="stat-value" style="color:${urgentCount?'var(--red)':'var(--green)'}">${urgentCount}</div></div>
   `;
 
   renderDashProducao();
