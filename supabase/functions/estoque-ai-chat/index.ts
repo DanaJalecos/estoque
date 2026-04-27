@@ -7,23 +7,47 @@ const ANON = Deno.env.get('SB_ANON_KEY') ?? Deno.env.get('SUPABASE_ANON_KEY') ??
 const GROQ_KEY = Deno.env.get('GROQ_API_KEY') ?? '';
 const GEMINI_KEY = Deno.env.get('GEMINI_API_KEY') ?? '';
 
-// Providers: Groq (primary) e Gemini (fallback). Ambos com endpoint OpenAI-compatible.
+// Providers em ordem de tentativa (todos OpenAI-compatible)
 const PROVIDERS = [
   {
-    name: 'groq',
+    name: 'groq-llama-3.3-70b',
     enabled: !!GROQ_KEY,
     url: 'https://api.groq.com/openai/v1/chat/completions',
     key: GROQ_KEY,
     model: 'llama-3.3-70b-versatile',
   },
   {
-    name: 'gemini',
+    name: 'gemini-2.5-flash',
     enabled: !!GEMINI_KEY,
     url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
     key: GEMINI_KEY,
     model: 'gemini-2.5-flash',
   },
+  {
+    name: 'groq-llama-3.1-8b',  // fallback final: Groq modelo menor (mais quota)
+    enabled: !!GROQ_KEY,
+    url: 'https://api.groq.com/openai/v1/chat/completions',
+    key: GROQ_KEY,
+    model: 'llama-3.1-8b-instant',
+  },
 ];
+
+// Retry com backoff exponencial pra erros transitórios
+async function fetchWithRetry(url: string, init: RequestInit, retries = 2): Promise<Response> {
+  for (let i = 0; i <= retries; i++) {
+    const r = await fetch(url, init);
+    // 429/503/502 = transitório → backoff e tenta de novo
+    if (r.ok) return r;
+    if ([429, 502, 503, 504].includes(r.status) && i < retries) {
+      const wait = 1000 * Math.pow(2, i); // 1s, 2s
+      await new Promise(res => setTimeout(res, wait));
+      continue;
+    }
+    return r; // erro não-transitório ou esgotou retries
+  }
+  // Inalcançável
+  return await fetch(url, init);
+}
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -382,7 +406,7 @@ Deno.serve(async (req) => {
     try {
       // Até 5 rodadas de tool-calling
       for (let round = 0; round < 5; round++) {
-        const resp = await fetch(provider.url, {
+        const resp = await fetchWithRetry(provider.url, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${provider.key}`,
@@ -438,5 +462,16 @@ Deno.serve(async (req) => {
     }
   }
 
-  return json({ error: 'todos providers falharam', details: lastError }, 500);
+  // Resposta amigável: detecta tipo do erro pra mensagem certa
+  const isOverload = /503|high demand|overloaded/i.test(lastError);
+  const isRateLimit = /429|rate.?limit|quota/i.test(lastError);
+  const friendly = isOverload
+    ? 'Todos os modelos de IA estão com alta demanda agora. Tenta de novo em uns 30 segundos.'
+    : isRateLimit
+    ? 'Limite de uso da IA atingido. Aguarda 1 minuto e tenta de novo.'
+    : 'Os serviços de IA estão indisponíveis no momento. Tenta novamente em alguns segundos.';
+  return json({
+    reply: `⚠️ ${friendly}`,
+    error_internal: lastError,
+  }, 200); // 200 pra UI mostrar a mensagem amigável em vez de erro técnico
 });
