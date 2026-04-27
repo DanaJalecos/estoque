@@ -330,9 +330,9 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
 <!-- ═══ APP ═══ -->
 <div class="app" id="app">
   <aside class="sidebar">
-    <div class="sidebar-brand" style="text-align:center;">
-      <img src="assets/logo-horizontal.png" alt="Dana Jalecos" style="height:32px;max-width:100%;display:block;margin:0 auto;opacity:.95;">
-      <p style="font-size:.62rem;margin-top:.35rem;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;">Controle de Estoque</p>
+    <div class="sidebar-brand" style="text-align:left;">
+      <img src="assets/logo-horizontal.png" alt="Dana Jalecos" style="height:30px;display:block;margin:0;opacity:.95;">
+      <p style="font-size:.62rem;margin-top:.4rem;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;">Controle de Estoque</p>
     </div>
     <div class="sidebar-user">
       <div class="sidebar-avatar" id="userAvatar">?</div>
@@ -1283,6 +1283,20 @@ async function loadAll(){
   blingTopProdutos=btop.data||[];blingVelocidade=bvel.data||[];blingSyncMeta=bmeta.data||null;
   fichaProdutos=fp.data||[];fichaItens=ft.data||[];vendasPorCodigo=vpc.data||[];consumoProjetado=cp.data||[];
 }
+// Helpers de reload individual (usados pelo realtime)
+async function loadPurchases(){
+  const{data}=await sb.from('purchases').select('*').order('date',{ascending:false});
+  purchases=data||[];
+}
+async function loadFichaProdutos(){
+  const{data}=await sb.from('ficha_produtos').select('*').order('custo_total',{ascending:false});
+  fichaProdutos=data||[];
+}
+async function loadFichaTecnica(){
+  const{data}=await sb.from('ficha_tecnica').select('*').order('produto_codigo,ordem');
+  fichaItens=data||[];
+}
+
 // bling_produtos (catalogo) carrega lazy — 2205 linhas, so carrega ao abrir a aba
 async function loadBlingCatalogo(){
   if(blingCatalogo.length)return;
@@ -1290,20 +1304,41 @@ async function loadBlingCatalogo(){
   blingCatalogo=data||[];
 }
 function setupRealtime(){
+  // Debounce pra evitar 10 re-renders por segundo se vier batch
+  let rerenderTimer=null;
+  const queueRerender=()=>{clearTimeout(rerenderTimer);rerenderTimer=setTimeout(()=>renderCurrent(),250);};
+
   sb.channel('changes')
     .on('postgres_changes',{event:'*',schema:'public',table:'fabrics'},async()=>{
       const{data}=await sb.from('fabrics').select('*').order('created_at',{ascending:false});
-      fabrics=data||[];renderCurrent();
+      fabrics=data||[];queueRerender();
     })
     .on('postgres_changes',{event:'*',schema:'public',table:'movements'},async()=>{
       const{data}=await sb.from('movements').select('*').order('created_at',{ascending:false});
-      movements=data||[];renderCurrent();
+      movements=data||[];queueRerender();
     })
     .on('postgres_changes',{event:'*',schema:'public',table:'fornecedores'},async()=>{
       const{data}=await sb.from('fornecedores').select('*').order('nome',{ascending:true});
-      fornecedores=data||[];renderCurrent();
+      fornecedores=data||[];queueRerender();
     })
-    .subscribe();
+    .on('postgres_changes',{event:'*',schema:'public',table:'purchases'},async()=>{
+      if(typeof loadPurchases==='function')await loadPurchases();
+      queueRerender();
+    })
+    .on('postgres_changes',{event:'*',schema:'public',table:'ficha_produtos'},async()=>{
+      if(typeof loadFichaProdutos==='function')await loadFichaProdutos();
+      queueRerender();
+    })
+    .on('postgres_changes',{event:'*',schema:'public',table:'ficha_tecnica'},async()=>{
+      if(typeof loadFichaTecnica==='function')await loadFichaTecnica();
+      queueRerender();
+    })
+    .subscribe((status)=>{
+      if(status==='SUBSCRIBED')console.log('[realtime] conectado — dashboard reage a mudanças automaticamente');
+    });
+
+  // Re-render no foco da janela (pega mudanças de outras abas/dispositivos)
+  window.addEventListener('focus',()=>renderCurrent());
 }
 function renderCurrent(){
   const p=document.querySelector('.page:not(.hidden)');
@@ -3100,11 +3135,22 @@ function renderDashBlingStrip(){
 function renderDash(){
   renderDashBlingStrip();
   updateAlertBadge();
-  const total=fabrics.reduce((s,f)=>s+(f.stock||0),0);
-  const low=fabrics.filter(f=>f.stock>0&&f.stock<=f.min_stock).length;
-  const crit=fabrics.filter(f=>f.stock<=0).length;
-  const thisMonth=movements.filter(m=>m.date>=today().slice(0,7));
-  const entriesMonth=thisMonth.filter(m=>m.type==='entrada').length;
+  // KPIs derivados de fabrics
+  const low=fabrics.filter(f=>f.stock>0&&(f.min_stock||0)>0&&f.stock<=f.min_stock).length;
+  const crit=fabrics.filter(f=>(f.stock||0)<=0).length;
+
+  // Valor em estoque (R$) — cruza fabric × último custo unitário das purchases
+  const lastPrice={}; // fabric_id → último unit_price
+  if(typeof purchases!=='undefined'&&purchases.length){
+    const sortedP=[...purchases].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+    sortedP.forEach(p=>{ if(p.fabric_id&&!lastPrice[p.fabric_id]&&p.unit_price)lastPrice[p.fabric_id]=Number(p.unit_price); });
+  }
+  const valorEstoque=fabrics.reduce((s,f)=>s+(Number(f.stock||0)*Number(lastPrice[f.id]||0)),0);
+
+  // Entradas: últimos 30 dias rolling
+  const d30agoEntry=new Date();d30agoEntry.setDate(d30agoEntry.getDate()-30);
+  const d30entryStr=d30agoEntry.toISOString().slice(0,10);
+  const entriesMonth=movements.filter(m=>m.type==='entrada'&&m.date>=d30entryStr).length;
 
   // Count products running out in 14 days
   const d30ago=new Date();d30ago.setDate(d30ago.getDate()-30);
@@ -3116,12 +3162,13 @@ function renderDash(){
     if(totalOut>0){const daily=totalOut/30;const days=f.stock>0?Math.floor(f.stock/daily):0;if(days<=14)urgentCount++;}
   });
 
+  const fmtR=n=>'R$ '+Number(n||0).toLocaleString('pt-BR',{maximumFractionDigits:0});
   $('dashStats').innerHTML=`
     <div class="stat-card"><div class="stat-label">Produtos</div><div class="stat-value">${fabrics.length}</div></div>
-    <div class="stat-card"><div class="stat-label">Total em Estoque</div><div class="stat-value">${fmt(total)}</div></div>
+    <div class="stat-card"><div class="stat-label">💰 Valor em Estoque</div><div class="stat-value" style="font-size:1.4rem;">${fmtR(valorEstoque)}</div></div>
     <div class="stat-card"><div class="stat-label">Estoque Baixo</div><div class="stat-value" style="color:${low?'var(--orange)':'var(--green)'}">${low}</div></div>
     <div class="stat-card"><div class="stat-label">Sem Estoque</div><div class="stat-value" style="color:${crit?'var(--red)':'var(--green)'}">${crit}</div></div>
-    <div class="stat-card"><div class="stat-label">Entradas este Mês</div><div class="stat-value">${entriesMonth}</div></div>
+    <div class="stat-card"><div class="stat-label">Entradas (30 dias)</div><div class="stat-value">${entriesMonth}</div></div>
     <div class="stat-card"><div class="stat-label">🔮 Acabam em 14 dias</div><div class="stat-value" style="color:${urgentCount?'var(--red)':'var(--green)'}">${urgentCount}</div></div>
   `;
 
