@@ -1359,6 +1359,11 @@ function renderCurrent(){
   else if(id==='cadastro')renderFabList();
   else if(id==='fornecedores')renderSuppliers();
   else if(id==='bling')renderBling();
+  else if(id==='compras')renderPurchases();
+  else if(id==='alertas')renderAlerts();
+  else if(id==='ficha')renderFichas();
+  else if(id==='previsoes')renderForecast();
+  else if(id==='usuarios')renderUsers();
 }
 
 // ═══ NAV ═══
@@ -3131,6 +3136,15 @@ function popHistFilter(){
 }
 function getFab(id){return fabrics.find(x=>x.id===id);}
 function getFabLabel(id){const f=getFab(id);return f?`${f.name} — ${f.color}`:'(removido)';}
+// Resolve nome do fornecedor: prefere FK fornecedor_id, fallback pro campo legado supplier
+function getSupplierName(p){
+  if(!p)return'';
+  if(p.fornecedor_id){
+    const f=fornecedores.find(x=>x.id===p.fornecedor_id);
+    if(f)return f.nome;
+  }
+  return p.supplier||'';
+}
 function getFabUnit(id){const f=getFab(id);return f?f.unit:'';}
 function getWho(m){return m.who||profName(m.user_id)||'—';}
 function profName(uid){const p=profiles.find(x=>x.id===uid);return p?p.display_name:'';}
@@ -3681,7 +3695,7 @@ function renderPurchases(){
         return`<div style="background:var(--bg-card);border:1px solid var(--border);border-left:3px solid ${isUp?'var(--red)':'var(--green)'};border-radius:var(--radius);padding:.8rem 1rem;margin-bottom:.4rem;display:flex;justify-content:space-between;align-items:center;">
           <div>
             <strong style="font-size:.85rem;">${esc(nome)}</strong>
-            <span style="font-size:.78rem;color:var(--text-muted);margin-left:.5rem;">${esc(a.supplier)}</span>
+            <span style="font-size:.78rem;color:var(--text-muted);margin-left:.5rem;">${esc(getSupplierName(a))}</span>
           </div>
           <div style="text-align:right;">
             <span style="font-size:.78rem;color:var(--text-muted);">R$ ${fmtMoney(a.prev)} → R$ ${fmtMoney(a.unit_price)}</span>
@@ -3717,7 +3731,7 @@ function renderPurchases(){
       <td>${fmtDateTime(p.created_at)}</td>
       <td><strong>${esc(nome)}</strong></td>
       <td>${esc(variacao)}</td>
-      <td>${esc(p.supplier)}</td>
+      <td>${esc(getSupplierName(p))}</td>
       <td>${fmt(p.qty)} ${unit}</td>
       <td>R$ ${fmtMoney(p.unit_price)}</td>
       <td>R$ ${fmtMoney(p.total_price)}</td>
@@ -3729,10 +3743,10 @@ function renderPurchases(){
 function renderPurchaseCharts(list){
   if(typeof Chart==='undefined')return;
 
-  // 1. Doughnut — Gasto por Fornecedor
+  // 1. Doughnut — Gasto por Fornecedor (usa FK fornecedor_id, fallback p/ supplier)
   const bySupplier={};
   list.forEach(p=>{
-    const s=p.supplier||'Sem fornecedor';
+    const s=getSupplierName(p)||'Sem fornecedor';
     bySupplier[s]=(bySupplier[s]||0)+p.total_price;
   });
   const supNames=Object.keys(bySupplier).sort((a,b)=>bySupplier[b]-bySupplier[a]);
@@ -3856,7 +3870,7 @@ function exportPurchasesPDF(){
       const prev=getLastPrice(p.fabric_id,p.id);
       let varText='—';
       if(prev!==null){const pct=prev>0?((p.unit_price-prev)/prev*100):0;if(Math.abs(pct)>=0.5)varText=(pct>0?'+':'')+pct.toFixed(1)+'%';}
-      return[fmtDateTime(p.created_at),nome,variacao,p.supplier||'—',fmt(p.qty),`R$ ${fmtMoney(p.unit_price)}`,`R$ ${fmtMoney(p.total_price)}`,varText];
+      return[fmtDateTime(p.created_at),nome,variacao,getSupplierName(p)||'—',fmt(p.qty),`R$ ${fmtMoney(p.unit_price)}`,`R$ ${fmtMoney(p.total_price)}`,varText];
     }),
     styles:{fontSize:7,cellPadding:2},
     headStyles:{fillColor:[30,30,30],textColor:255,fontStyle:'bold'},
