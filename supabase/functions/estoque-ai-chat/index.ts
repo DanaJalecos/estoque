@@ -21,7 +21,7 @@ const PROVIDERS = [
     enabled: !!GEMINI_KEY,
     url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
     key: GEMINI_KEY,
-    model: 'gemini-2.0-flash',
+    model: 'gemini-2.5-flash',
   },
 ];
 
