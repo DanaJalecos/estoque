@@ -3765,8 +3765,16 @@ function renderPurchaseCharts(list){
       options:{
         responsive:true,cutout:'60%',
         plugins:{
-          legend:{position:'bottom',labels:{padding:10,usePointStyle:true,pointStyle:'circle',font:{size:10},color:'#999'}},
-          tooltip:{callbacks:{label:function(c){return c.label+': R$ '+fmtMoney(c.raw);}}}
+          legend:{display:false},
+          tooltip:{
+            callbacks:{
+              label:function(c){
+                const total=c.dataset.data.reduce((a,b)=>a+b,0);
+                const pct=total?(c.raw/total*100).toFixed(1):0;
+                return c.label+': R$ '+fmtMoney(c.raw)+' ('+pct+'%)';
+              }
+            }
+          }
         }
       }
     });
