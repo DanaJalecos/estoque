@@ -3744,14 +3744,28 @@ function renderPurchaseCharts(list){
   if(typeof Chart==='undefined')return;
 
   // 1. Doughnut — Gasto por Fornecedor (usa FK fornecedor_id, fallback p/ supplier)
+  // Agrupa fatias <3% em "Outros" pra evitar slices minúsculos
   const bySupplier={};
   list.forEach(p=>{
     const s=getSupplierName(p)||'Sem fornecedor';
     bySupplier[s]=(bySupplier[s]||0)+p.total_price;
   });
-  const supNames=Object.keys(bySupplier).sort((a,b)=>bySupplier[b]-bySupplier[a]);
-  const supValues=supNames.map(s=>bySupplier[s]);
-  const supColors=['#60a5fa','#4ade80','#fbbf24','#f87171','#a78bfa','#fb923c','#2dd4bf','#e879f9'];
+  const totalSup=Object.values(bySupplier).reduce((a,b)=>a+b,0);
+  const MIN_PCT=0.03; // 3%
+  const grandes=[],pequenos=[];
+  Object.entries(bySupplier).sort((a,b)=>b[1]-a[1]).forEach(([nome,val])=>{
+    if(val/totalSup>=MIN_PCT)grandes.push([nome,val]); else pequenos.push([nome,val]);
+  });
+  if(pequenos.length){
+    const outrosTotal=pequenos.reduce((s,[,v])=>s+v,0);
+    grandes.push([`Outros (${pequenos.length} fornecedor${pequenos.length>1?'es':''})`,outrosTotal]);
+    // guarda lista detalhada pra mostrar no tooltip
+    grandes._outrosDetalhes=pequenos.sort((a,b)=>b[1]-a[1]);
+  }
+  const supNames=grandes.map(([n])=>n);
+  const supValues=grandes.map(([,v])=>v);
+  const supColors=['#60a5fa','#4ade80','#fbbf24','#f87171','#a78bfa','#fb923c','#2dd4bf','#e879f9','#94a3b8'];
+  const outrosDetalhes=grandes._outrosDetalhes||[];
 
   destroyChart('supplier');
   const ctx1=$('chartSupplier');
@@ -3772,6 +3786,13 @@ function renderPurchaseCharts(list){
                 const total=c.dataset.data.reduce((a,b)=>a+b,0);
                 const pct=total?(c.raw/total*100).toFixed(1):0;
                 return c.label+': R$ '+fmtMoney(c.raw)+' ('+pct+'%)';
+              },
+              afterLabel:function(c){
+                // Se for o slice "Outros", mostra detalhamento
+                if(c.label.startsWith('Outros')&&outrosDetalhes.length){
+                  return outrosDetalhes.slice(0,8).map(([n,v])=>'  · '+n.substring(0,30)+': R$ '+fmtMoney(v)).join('\n');
+                }
+                return '';
               }
             }
           }
