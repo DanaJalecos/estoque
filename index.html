@@ -331,22 +331,33 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
       </div>
     </div>
     <nav class="sidebar-nav">
-      <div class="nav-section">Principal</div>
+      <div class="nav-section">Visão geral</div>
       <button data-perm="dashboard" class="active" onclick="showPage('dashboard',this)"><span class="icon">📊</span> Dashboard</button>
-      <button data-perm="estoque" onclick="showPage('estoque',this)"><span class="icon">🧵</span> Matéria-prima</button>
       <button data-perm="alertas" onclick="showPage('alertas',this)"><span class="icon">⚠️</span> Alertas <span id="alertBadge" style="background:var(--red);color:var(--bg);font-size:.65rem;font-weight:700;padding:.1rem .4rem;border-radius:10px;margin-left:.3rem;display:none;">0</span></button>
+
+      <div class="nav-section" data-perm-section="estoque,historico">Estoque</div>
+      <button data-perm="estoque" onclick="showPage('estoque',this)"><span class="icon">🧵</span> Matéria-prima</button>
       <button data-perm="historico" onclick="showPage('historico',this)"><span class="icon">📜</span> Histórico</button>
-      <div class="nav-section" data-perm-section="cadastro,entrada">Estoque</div>
-      <button data-perm="cadastro" onclick="showPage('cadastro',this)"><span class="icon">📝</span> Cadastrar Produto</button>
+
+      <div class="nav-section" data-perm-section="entrada,saida">Movimentar</div>
       <button data-perm="entrada" onclick="showPage('entrada',this)"><span class="icon">📥</span> Registrar Entrada</button>
       <button data-perm="saida" onclick="showPage('saida',this)"><span class="icon">📤</span> Registrar Saída</button>
-      <button data-perm="compras" onclick="showPage('compras',this)"><span class="icon">💰</span> Compras</button>
+
+      <div class="nav-section" data-perm-section="compras,fornecedores">Compras</div>
+      <button data-perm="compras" onclick="showPage('compras',this)"><span class="icon">💰</span> Histórico Compras</button>
       <button data-perm="fornecedores" onclick="showPage('fornecedores',this)"><span class="icon">🏭</span> Fornecedores</button>
-      <button data-perm="ficha" onclick="showPage('ficha',this)"><span class="icon">🧵</span> Ficha Técnica</button>
-      <button data-perm="bling" onclick="showPage('bling',this)"><span class="icon">📊</span> Vendas (Bling)</button>
+
+      <div class="nav-section" data-perm-section="ficha,bling">Produção</div>
+      <button data-perm="ficha" onclick="showPage('ficha',this)"><span class="icon">🧬</span> Ficha Técnica</button>
+      <button data-perm="bling" onclick="showPage('bling',this)"><span class="icon">📈</span> Vendas (Bling)</button>
+
+      <div class="nav-section" data-perm-section="cadastro">Cadastros</div>
+      <button data-perm="cadastro" onclick="showPage('cadastro',this)"><span class="icon">📝</span> Cadastrar Produto</button>
+      <button data-perm-admin onclick="showPage('usuarios',this)"><span class="icon">👥</span> Usuários</button>
+
       <div class="nav-section" data-perm-admin>Administração</div>
       <button data-perm-admin onclick="showPage('previsoes',this)"><span class="icon">🔮</span> Previsões Futuras</button>
-      <button data-perm-admin onclick="showPage('usuarios',this)"><span class="icon">👥</span> Gerenciar Usuários</button>
+
       <div class="nav-section">Conta</div>
       <button onclick="showPage('perfil',this)"><span class="icon">👤</span> Meu Perfil</button>
     </nav>
@@ -496,7 +507,56 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
     <div id="page-saida" class="page hidden">
       <div class="topbar"><h2>Registrar Saída</h2></div>
       <div class="content">
-        <div class="form-card">
+
+        <!-- Seletor de modo -->
+        <div style="display:flex;gap:.4rem;margin-bottom:1rem;background:var(--bg-card);padding:.4rem;border-radius:8px;border:1px solid var(--border);">
+          <button class="btn" id="exitModeBtnProd" onclick="exitSetMode('producao')" style="flex:1;font-weight:600;">🧬 Por Produção</button>
+          <button class="btn" id="exitModeBtnLivre" onclick="exitSetMode('livre')" style="flex:1;font-weight:600;">📤 Saída Livre</button>
+        </div>
+
+        <!-- MODO: Por Produção -->
+        <div class="form-card" id="exitFormProducao">
+          <h3 style="font-size:.9rem;font-weight:700;margin-bottom:.3rem;">🧬 Saída por Produção</h3>
+          <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:1rem;">
+            Selecione o produto que vai produzir e a quantidade. O sistema desconta automaticamente toda a matéria-prima da ficha técnica.
+          </p>
+          <form onsubmit="return saveExitProducao(event)">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Produto a produzir</label>
+                <select id="exitProdCodigo" required onchange="renderExitProdPreview()">
+                  <option value="">Selecionar...</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Quantidade (peças)</label>
+                <input id="exitProdQty" type="number" min="1" step="1" value="1" required oninput="renderExitProdPreview()" placeholder="Ex: 10">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>Data</label><input id="exitProdDate" type="date" required></div>
+              <div class="form-group"><label>Responsável</label><input id="exitProdWho" placeholder="Quem está produzindo"></div>
+            </div>
+            <div class="form-group"><label>Observação (opcional)</label><input id="exitProdObs" placeholder="Lote, pedido, observação..."></div>
+
+            <!-- Preview do consumo -->
+            <div id="exitProdPreview" style="margin:.8rem 0;padding:1rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;display:none;">
+              <h4 style="font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem;">📦 Vai consumir do estoque</h4>
+              <div id="exitProdPreviewBody"></div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary" id="exitProdBtn">Confirmar produção</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- MODO: Saída Livre (legado) -->
+        <div class="form-card" id="exitFormLivre" style="display:none;">
+          <h3 style="font-size:.9rem;font-weight:700;margin-bottom:.3rem;">📤 Saída Livre</h3>
+          <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:1rem;">
+            Saída avulsa de matéria-prima (uso interno, descarte, empréstimo, etc).
+          </p>
           <form onsubmit="return saveExit(event)">
             <div class="form-group"><label>Produto</label><select id="exitFab" required></select></div>
             <div id="exitAvail" style="font-size:.78rem;color:var(--text-muted);margin-top:-.6rem;margin-bottom:.8rem;"></div>
@@ -505,10 +565,11 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
               <div class="form-group"><label>Data</label><input id="exitDate" type="date" required></div>
             </div>
             <div class="form-group"><label>Responsável</label><input id="exitWho" placeholder="Nome de quem está retirando"></div>
-            <div class="form-group"><label>Destino / Pedido</label><input id="exitDest" placeholder="Ex: Pedido #142 — 10 jalecos"></div>
+            <div class="form-group"><label>Destino / Motivo</label><input id="exitDest" placeholder="Ex: Descartado / Emprestado / Amostra"></div>
             <div class="form-actions"><button type="submit" class="btn btn-primary">Registrar Saída</button></div>
           </form>
         </div>
+
       </div>
     </div>
 
@@ -1258,7 +1319,12 @@ function showPage(name,btn){
   if(name==='dashboard')renderDash();
   if(name==='cadastro'){renderFabList();popSupSelect('fabFornecedorId',$('fabFornecedorId')?.value||'');}
   if(name==='entrada'){popSel('entryFab');$('entryDate').value=td;popSupSelect('entryFornecedorId');}
-  if(name==='saida'){popSel('exitFab');$('exitDate').value=td;$('exitWho').value=profile.display_name;updAvail();}
+  if(name==='saida'){
+    popSel('exitFab');$('exitDate').value=td;$('exitWho').value=profile.display_name;updAvail();
+    popExitProdSelect();$('exitProdDate').value=td;$('exitProdWho').value=profile.display_name;
+    exitSetMode('producao');
+    $('exitProdPreview').style.display='none';
+  }
   if(name==='estoque')renderStock();
   if(name==='historico'){popHistFilter();renderHist();}
   if(name==='alertas')renderAlerts();
@@ -1271,9 +1337,13 @@ function showPage(name,btn){
   if(name==='usuarios')renderUsers();
 }
 function navBtn(page){
-  const btns=document.querySelectorAll('.sidebar-nav button:not(.nav-section)');
-  const map={dashboard:0,estoque:1,alertas:2,historico:3,cadastro:4,entrada:5,saida:6,compras:7,fornecedores:8,ficha:9,bling:10,previsoes:11,usuarios:12,perfil:13};
-  return btns[map[page]];
+  // Busca pelo onclick — independente da ordem
+  const btns=document.querySelectorAll('.sidebar-nav button');
+  for(const b of btns){
+    const oc=b.getAttribute('onclick')||'';
+    if(oc.includes(`showPage('${page}'`))return b;
+  }
+  return null;
 }
 // ═══ FICHA TÉCNICA ═══
 const TIPO_ICON={Jaleco:'🧥',Scrub:'👨‍⚕️',Avental:'👗',Dolma:'🥋',Macacão:'🧰',Gorro:'🎩','Acessório':'📌',Home:'🏠',Outro:'📦'};
@@ -2623,6 +2693,153 @@ async function saveExit(e){
 function updAvail(){
   const f=fabrics.find(x=>x.id===$('exitFab').value);
   $('exitAvail').textContent=f?`Disponível: ${f.stock} ${f.unit}`:'';
+}
+
+// ═══ SAÍDA POR PRODUÇÃO (consome ficha técnica) ═══
+function exitSetMode(modo){
+  const isProd=modo==='producao';
+  $('exitFormProducao').style.display=isProd?'':'none';
+  $('exitFormLivre').style.display=isProd?'none':'';
+  $('exitModeBtnProd').className=isProd?'btn btn-primary':'btn';
+  $('exitModeBtnLivre').className=isProd?'btn':'btn btn-primary';
+}
+
+function popExitProdSelect(){
+  const sel=$('exitProdCodigo');
+  if(!sel)return;
+  const ativos=(fichaProdutos||[]).filter(p=>p.ativo!==false&&p.total_itens>0)
+    .sort((a,b)=>a.nome.localeCompare(b.nome));
+  sel.innerHTML='<option value="">Selecionar produto...</option>'+
+    ativos.map(p=>`<option value="${p.codigo}">${esc(p.codigo)} — ${esc(p.nome)} (${p.total_itens} itens · R$ ${(p.custo_total||0).toFixed(2)})</option>`).join('');
+}
+
+function renderExitProdPreview(){
+  const codigo=$('exitProdCodigo').value;
+  const qtd=parseFloat($('exitProdQty').value)||0;
+  const box=$('exitProdPreview');
+  if(!codigo||qtd<=0){box.style.display='none';return;}
+
+  const itens=(fichaItens||[]).filter(i=>i.produto_codigo===codigo).sort((a,b)=>(a.ordem||0)-(b.ordem||0));
+  if(!itens.length){
+    box.style.display='block';
+    $('exitProdPreviewBody').innerHTML=`<p style="color:var(--orange);font-size:.8rem;">⚠️ Esse produto não tem ficha técnica cadastrada. Adicione itens primeiro.</p>`;
+    return;
+  }
+
+  let temFalta=false;
+  const linhas=itens.map(it=>{
+    const consumo=(parseFloat(it.quantidade)||0)*qtd;
+    const fab=fabrics.find(f=>f.id===it.fabric_id);
+    let status='—';
+    let cor='var(--text-muted)';
+    if(fab){
+      const stock=parseFloat(fab.stock)||0;
+      if(stock<consumo){
+        status=`❌ FALTA ${fmtNum(consumo-stock)} ${fab.unit||''}`;
+        cor='var(--red)';
+        temFalta=true;
+      }else if(stock-consumo<(parseFloat(fab.min_stock)||0)){
+        status=`⚠️ Vai ficar abaixo do mínimo`;
+        cor='var(--orange)';
+      }else{
+        status=`✓ Estoque ok (sobra ${fmtNum(stock-consumo)})`;
+        cor='var(--green)';
+      }
+    }else{
+      status='⚠️ Sem fabric vinculado';
+      cor='var(--orange)';
+      temFalta=true;
+    }
+    return `<tr>
+      <td style="padding:.3rem 0;font-size:.78rem;">${esc(it.item_descricao)}</td>
+      <td style="padding:.3rem 0;text-align:right;font-size:.78rem;">${fmtNum(consumo)} ${esc(it.unidade)}</td>
+      <td style="padding:.3rem 0;font-size:.75rem;color:${cor};">${status}</td>
+    </tr>`;
+  }).join('');
+
+  const custoTotal=itens.reduce((s,it)=>s+(parseFloat(it.custo_total)||0),0)*qtd;
+
+  $('exitProdPreviewBody').innerHTML=`
+    <table style="width:100%;border-collapse:collapse;">
+      <thead><tr style="border-bottom:1px solid var(--border);">
+        <th style="text-align:left;font-size:.7rem;padding:.3rem 0;color:var(--text-muted);text-transform:uppercase;">Item</th>
+        <th style="text-align:right;font-size:.7rem;padding:.3rem 0;color:var(--text-muted);text-transform:uppercase;">Qtd</th>
+        <th style="font-size:.7rem;padding:.3rem 0;color:var(--text-muted);text-transform:uppercase;">Status</th>
+      </tr></thead>
+      <tbody>${linhas}</tbody>
+      <tfoot><tr style="border-top:2px solid var(--border);font-weight:700;">
+        <td style="padding:.5rem 0;">Custo total</td>
+        <td colspan="2" style="padding:.5rem 0;text-align:right;color:var(--green);">R$ ${custoTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+      </tr></tfoot>
+    </table>
+    ${temFalta?`<div style="margin-top:.6rem;padding:.6rem;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.3);border-radius:6px;color:var(--red);font-size:.78rem;">⚠️ Há itens com estoque insuficiente. Não dá pra produzir essa quantidade.</div>`:''}
+  `;
+  $('exitProdBtn').disabled=temFalta;
+  box.style.display='block';
+}
+
+async function saveExitProducao(e){
+  e.preventDefault();
+  const codigo=$('exitProdCodigo').value;
+  const qtd=parseInt($('exitProdQty').value)||0;
+  const data=$('exitProdDate').value||today();
+  const who=$('exitProdWho').value.trim()||profile.display_name||'';
+  const obs=$('exitProdObs').value.trim();
+
+  if(!codigo||qtd<=0){toast('Selecione produto e quantidade');return;}
+
+  const itens=fichaItens.filter(i=>i.produto_codigo===codigo);
+  if(!itens.length){toast('Produto sem ficha técnica');return;}
+
+  const produto=fichaProdutos.find(p=>p.codigo===codigo);
+  const detalhe=`Produção: ${qtd}× ${codigo}${obs?` · ${obs}`:''}`;
+
+  // Valida estoque pra todos
+  const movimentacoes=[];
+  const updates=[];
+  for(const it of itens){
+    if(!it.fabric_id){toast(`Item "${it.item_descricao}" sem matéria-prima vinculada`);return;}
+    const fab=fabrics.find(f=>f.id===it.fabric_id);
+    if(!fab){toast(`Fabric não encontrado pra "${it.item_descricao}"`);return;}
+    const consumo=(parseFloat(it.quantidade)||0)*qtd;
+    const stock=parseFloat(fab.stock)||0;
+    if(stock<consumo){toast(`Estoque insuficiente: ${fab.name} (tem ${stock}, precisa ${consumo})`);return;}
+    movimentacoes.push({
+      user_id:user.id,
+      fabric_id:fab.id,
+      type:'saida',
+      qty:consumo,
+      date:data,
+      detail:detalhe,
+      who,
+    });
+    updates.push({id:fab.id,stock_novo:stock-consumo});
+  }
+
+  $('exitProdBtn').disabled=true;
+  $('exitProdBtn').textContent='Salvando...';
+  try{
+    // Insert em lote
+    const{error:errMov}=await sb.from('movements').insert(movimentacoes);
+    if(errMov)throw errMov;
+    // Update stocks (1 por 1, supabase nao tem bulk update simples)
+    for(const u of updates){
+      await sb.from('fabrics').update({stock:u.stock_novo}).eq('id',u.id);
+    }
+    toast(`✓ Produção registrada: ${qtd}× ${codigo} (${itens.length} itens descontados)`);
+    $('exitProdCodigo').value='';
+    $('exitProdQty').value=1;
+    $('exitProdObs').value='';
+    $('exitProdPreview').style.display='none';
+    await loadAll();
+    popExitProdSelect();
+  }catch(err){
+    console.error(err);
+    toast('Erro: '+err.message);
+  }finally{
+    $('exitProdBtn').disabled=false;
+    $('exitProdBtn').textContent='Confirmar produção';
+  }
 }
 
 // ═══ PROFILE ═══
