@@ -9,6 +9,7 @@ setup-supabase.sql
 *TOKEN*.md
 *token*.txt
 *token*.json
+TOKENS/
 
 # Backups locais
 *.backup-*
