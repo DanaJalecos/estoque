@@ -43,3 +43,31 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 ~$*
+
+# Notas internas / instrucoes pra LLMs
+INSTRUCOES-*.txt
+IDEIAS*.txt
+NOTAS-*.txt
+
+# Anexos avulsos (DANFEs, NFes, fotos jogadas no projeto)
+*.danfe.pdf
+*danfe*.pdf
+nf-*.xml
+nota-fiscal*.xml
+*.NF-e.xml
+[0-9]*.pdf
+[0-9]*-danfe.pdf
+
+# Pasta ITENS legada (continha xlsx de custos + logos duplicados)
+ITENS/
+
+# Copia legacy nao usada
+sistema-estoque.html
+
+# Imagens/audios avulsos (fora de assets/)
+/*.jpeg
+/*.jpg
+*.ogg
+
+# .vercel folder (cache do Vercel CLI local)
+.vercel/

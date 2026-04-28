@@ -1,5 +1,0 @@
-🎁 Nice-to-have (skip se não tiver tempo)
-Bot IA estoque ("quanto tenho de oxford?")
-Código de barras + leitor mobile
-Timeline unificada (entrada → produção → venda)
-Foto + assinatura na saída de produção
