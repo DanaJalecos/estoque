@@ -1,6 +1,6 @@
 # DOCUMENTAÇÃO COMPLETA — Sistema de Estoque Dana Jalecos
 
-> **Última atualização:** 27/04/2026 noite — ciclo 17 (Bot IA + UX profissional + auditorias)
+> **Última atualização:** 28/04/2026 noite — ciclo 18 (nota sobre quota Gemini compartilhada com DMS)
 > **Repo GitHub (oficial):** https://github.com/DanaJalecos/estoque
 > **Site público:** https://danajalecos.github.io/estoque/
 > **Repo antigo (arquivado/privado):** ~~zJu4nnIA/dana-jalecos-estoque~~
@@ -1167,4 +1167,60 @@ Validação contra banco:
 
 ---
 
-**Fim · v2.0 · 27/04/2026 noite — ciclo 17 (Bot IA + UX profissional + auditorias completas)**
+## 18. CICLO 28/04/2026 — NOTA SOBRE QUOTA GEMINI (sem mudanças no código)
+
+A sessão 28/04 foi 100% no **DMS** (Estúdio IA Fase 1+2, rotação de keys, polimentos). O sistema de Estoque NÃO foi alterado.
+
+**Porém — efeito colateral importante:**
+
+A `GEMINI_API_KEY` (JL1Y free) é compartilhada entre DMS e Estoque (mesma key Google). Com uso intenso no DMS hoje (Construtor IA + Estúdio IA + ai-chat + Mockups), **a quota free de 1500 req/dia foi atingida**.
+
+Resultado: o `estoque-ai-chat` pode falhar com "sobrecarregado" quando Gemini for chamado como fallback (Groq Llama 3.3 70B continua sendo o primary e está saudável). Quando Groq dá rate limit transiente + Gemini sem quota → bot Estoque retorna erro.
+
+### 18.1 Solução implementada NO DMS (replicar aqui depois)
+
+Criada edge function **`gemini-proxy`** no DMS que rotaciona entre 4 keys:
+- `GEMINI_API_KEY` (JL1Y free)
+- `GEMINI_API_KEY_2` (AC49Bi free — adicionada hoje)
+- `GEMINI_API_KEY_3` (C1qoM free — adicionada hoje)
+- `GEMINI_API_KEY_PAID` (NTwk paga, fallback final)
+
+Quando uma key bate quota (429), tenta a próxima automaticamente. Headers `X-Gemini-Key` e `X-Gemini-Attempts` indicam qual respondeu.
+
+Edge functions DMS migradas: `construtor-ai`, `gerar-peca-ia`, `gerar-prompt-visual`.
+
+### 18.2 PENDENTE pro Estoque (próxima sessão)
+
+**Opção A — replicar `gemini-proxy` no projeto Estoque** (`jkvoqqqiwtpsruwoioxl`):
+- Criar mesma edge function lá
+- Adicionar secrets `GEMINI_API_KEY_2` e `_3` no Estoque também
+- Refatorar `estoque-ai-chat` pra chamar o proxy local
+
+**Opção B — apontar `estoque-ai-chat` pro `gemini-proxy` do DMS** (cross-project):
+- Mais simples (1 edge function pra manter)
+- Adicionar `DMS_URL` (já existe!) + `DMS_ANON_KEY` como secret
+- `estoque-ai-chat` chama `https://wltmiqbhziefusnzmmkt.supabase.co/functions/v1/gemini-proxy` direto
+
+Opção B é melhor pra manutenção. ~10 min de trabalho.
+
+### 18.3 Mitigação atual (sem código)
+
+Enquanto não migrar, o `estoque-ai-chat` segue:
+- **Groq Llama 3.3 70B** primary — saudável, sem rate limit hoje
+- **Gemini fallback** raro — só cai quando Groq dá 429 transiente
+- Quando ambos falham simultaneamente (raro), o bot retorna mensagem amigável
+
+**Não precisa de ação imediata** se o bot estiver funcionando ok pra equipe.
+
+### 18.4 Edge Functions Estoque (estado atual — inalterado)
+
+| Função | Versão | Status |
+|---|---|---|
+| `admin-users` | v8 | ACTIVE |
+| `sync-bling-cache` | v11 | ACTIVE — cron 6h + manual |
+| `bling-webhook` | v5 | ACTIVE |
+| `estoque-ai-chat` | v7 | ACTIVE — Groq + Gemini fallback (Gemini pode falhar com quota free zerada) |
+
+---
+
+**Fim · v2.1 · 28/04/2026 noite — ciclo 18 nota (sem mudanças, só registro de quota Gemini compartilhada)**
