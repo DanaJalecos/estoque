@@ -1,6 +1,6 @@
 # DOCUMENTAÇÃO COMPLETA — Sistema de Estoque Dana Jalecos
 
-> **Última atualização:** 28/04/2026 noite — ciclo 18 (nota sobre quota Gemini compartilhada com DMS)
+> **Última atualização:** 28/04/2026 madrugada — ciclo 19 (limpeza repo pra Vercel)
 > **Repo GitHub (oficial):** https://github.com/DanaJalecos/estoque
 > **Site público:** https://danajalecos.github.io/estoque/
 > **Repo antigo (arquivado/privado):** ~~zJu4nnIA/dana-jalecos-estoque~~
@@ -1224,3 +1224,75 @@ Enquanto não migrar, o `estoque-ai-chat` segue:
 ---
 
 **Fim · v2.1 · 28/04/2026 noite — ciclo 18 nota (sem mudanças, só registro de quota Gemini compartilhada)**
+
+---
+
+## 19. CICLO 28/04/2026 NOITE-LATE — LIMPEZA REPO + DEPLOY VERCEL
+
+### 19.1 Limpeza do repo `DanaJalecos/estoque` pra Vercel
+
+Deploy migrando de GH Pages → Vercel. Repo precisava ser saneado pra produção.
+
+**Removidos** (12 arquivos · commit `a7146ad`):
+- `32260302...pdf`, `42260435...pdf`, `danfe_teste_layout.pdf` — DANFEs de teste
+- `nf-gorro-azul.xml`, `nota-fiscal-teste.xml` — NFe XML de teste
+- `INSTRUCOES-PROXIMA-SESSAO.txt` — notes pra LLM próxima sessão
+- `MANUELA DENTE AZUL MARINHO.jpeg` — foto avulsa
+- `sistema-estoque.html` — cópia legacy não usada
+- **Pasta `ITENS/` toda**:
+  - `CUSTO PRODUTOS GERAL ATUALIZADO 13.08.xlsx` ⚠️ — dados financeiros estratégicos (custos de produção dos 50 produtos). Já tinha sido usado pra importar a ficha técnica, função cumprida.
+  - `IDEIAS DEPOIS.txt`, logos duplicados (já estavam em assets/)
+
+**Mantido** (18 itens):
+- `index.html`, `proposta.html`, `assets/`
+- `DOCUMENTACAO-COMPLETA-ESTOQUE.md`, `ROADMAP-ESTOQUE-DANA.md`, `README.md` (novo)
+- `setup-v2.sql` ... `v8-ficha-tecnica.sql` (DDL)
+- `supabase/functions/` (4 edge functions: admin-users, bling-webhook, estoque-ai-chat, sync-bling-cache)
+- `scripts/backup/backup-supabase.py` + `.github/workflows/main.yml` (backup semanal — usa env vars, sem token hardcoded)
+- `vercel.json` (commit `33ef933` adicionado antes da limpeza)
+- `.gitignore` reforçado
+
+### 19.2 `vercel.json` configurado
+
+Espelha o do DMS:
+- buildCommand null (HTML estático)
+- outputDirectory raiz
+- Headers de segurança: X-Content-Type-Options, Referrer-Policy, Permissions-Policy
+- Cache forte em `assets/*` (1 ano, immutable)
+
+### 19.3 `.gitignore` reforçado pra prevenir lixo no futuro
+
+Adicionado:
+- DANFEs e NFe (`*danfe*.pdf`, `nf-*.xml`, `nota-fiscal*.xml`, `[0-9]*.pdf`)
+- Notes pra LLM (`INSTRUCOES-*.txt`, `IDEIAS*.txt`, `NOTAS-*.txt`)
+- Pasta `ITENS/`
+- Imagens/áudios soltos no root (`/*.jpeg`, `*.ogg`)
+- `.vercel/` (cache do Vercel CLI local)
+
+### 19.4 README.md adicionado
+
+Novo arquivo com:
+- Stack (SPA estática + Supabase + Bling v3 + IA Groq/Gemini)
+- Estrutura de pastas
+- Funcionalidades principais (cadastro MP, movimentação, fornecedores, ficha técnica, etc.)
+- Instruções deploy local + Vercel
+- Link pro repo irmão (DanaJalecos/dana-marketing — DMS)
+
+### 19.5 Token scan
+
+Antes do push: zero leaks confirmado em todos os arquivos mantidos. Edge functions usam só `Deno.env.get(...)`. Backup Python lê do ambiente (GitHub Actions secrets).
+
+### 19.6 Estado atual
+
+- Repo limpo, pronto pra Vercel
+- User precisa importar em https://vercel.com/new → DanaJalecos/estoque
+- Vercel detecta automaticamente: framework "Other", build vazio, output `.`
+
+### 19.7 Pendência
+
+- 🟡 Importar repo no Vercel (5min, manual UI)
+- 🟢 Domínio custom (`estoque.danajalecos.com.br`?) só depois de validar URL `*.vercel.app`
+
+---
+
+**Fim · v2.2 · 28/04/2026 madrugada — ciclo 19 (limpeza pra Vercel)**
