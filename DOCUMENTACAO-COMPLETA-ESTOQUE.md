@@ -1,6 +1,6 @@
 # DOCUMENTAÇÃO COMPLETA — Sistema de Estoque Dana Jalecos
 
-> **Última atualização:** 28/04/2026 madrugada — ciclo 19 (limpeza repo pra Vercel)
+> **Última atualização:** 29/04/2026 — ciclo 20 (análise ABC MP+PA, lazy-load, materialized view, bot IA, mobile, paginação)
 > **Repo GitHub (oficial):** https://github.com/DanaJalecos/estoque
 > **Site público:** https://danajalecos.github.io/estoque/
 > **Repo antigo (arquivado/privado):** ~~zJu4nnIA/dana-jalecos-estoque~~
@@ -1296,3 +1296,295 @@ Antes do push: zero leaks confirmado em todos os arquivos mantidos. Edge functio
 ---
 
 **Fim · v2.2 · 28/04/2026 madrugada — ciclo 19 (limpeza pra Vercel)**
+
+---
+
+## 20. CICLO 29/04/2026 — ANÁLISE DE ESTOQUE COMPLETA + MOBILE + LAZY-LOAD + IA
+
+Foi o ciclo mais denso do Estoque — entregou 8 frentes grandes em um dia.
+
+### 20.1 Análise ABC + Capital Imobilizado (Matéria-Prima)
+
+**SQL aplicado:**
+```sql
+CREATE OR REPLACE VIEW mp_curva_abc AS ...
+-- Pareto sobre VALOR comprado nos últimos 90 dias (proxy de giro,
+-- porque movements.saida está zerado). A=80% B=15% C=5%
+
+CREATE OR REPLACE VIEW mp_dashboard_resumo AS
+-- Combina mp_curva_abc + fabric_custo_medio (capital imobilizado)
+```
+
+**UI Dashboard:**
+- Card grande: R$ 478.192,88 total imobilizado + alerta "% parado em curva C"
+- 3 mini-cards A/B/C (qtd · imobilizado · valor 90d)
+- Top 10 Curva A ("não pode faltar") + Top 10 Curva C ("alvos de queima")
+
+**Resultado real:**
+- A: 29 itens (16,5%) — R$ 327k movimentados ✅
+- B: 19 itens (10,9%) — R$ 62k ✅
+- C: 127 itens (72,6%) — R$ 21k ✅ (Pareto perfeito)
+- R$ 69k parado em C → red flag
+
+### 20.2 Página dedicada "📊 Análise & Queima" com 5 abas
+
+Criada nova página no menu (data-perm=dashboard).
+
+**Abas finais (após renomeação ciclo 20.5):**
+1. 🧵 **ABC Matéria-Prima** — tabela completa com filtros busca/curva
+2. 🔍 **Sem Demanda (MP)** — view `mp_sem_demanda` (orfa/produto_morto/demanda_baixa/ok)
+3. 🔥 **Queima C (MP)** — alvos cruzados ABC × Sem Demanda + 4 filtros (busca/status/valor mín/sort)
+4. 👕 **ABC Produto Acabado** — view `pa_curva_abc` (NOVA, ciclo 20.4)
+5. 📦 **Produtos Parados** — PA com estoque > 0 e zero venda 90d
+
+**Aviso UX importante:** descobrimos que **148 das 175 fabrics são "órfãs"** (88%) — não estão em ficha técnica nenhuma. UI mostra alerta amarelo: *"ficha técnica está só 18% completa, esses 148 itens provavelmente são usados na produção real, mas o sistema não consegue saber"*.
+
+### 20.3 Página "🔗 Vínculos MP→Ficha" — CRIADA E DEPOIS REMOVIDA
+
+Tentativa de automatizar match de órfãs com itens da ficha via IA. Implementei completo:
+- Tabela `mp_vinculos_sugestoes`
+- Edge function `sugerir-vinculos-mp` v3 ACTIVE (3 métodos: keyword + categoria fornecedor + Gemini IA com rotation 2 keys free)
+- Página admin com 5 KPIs, filtros, paginação
+- 2 keys Gemini free copiadas do DMS pro Estoque
+
+**Manu disse que não precisa.** Removi tudo: página, JS, tabela, edge function, secrets Gemini extras. Voltou ao estado original. Commit `3357efa`.
+
+Aprendizado: sempre validar feature com stakeholder antes de implementar.
+
+### 20.4 Curva ABC Produto Acabado — separação MP de PA
+
+Manu pediu separar: *"ali tá meio confuso o que é estoque de matéria-prima e o que é estoque de produto acabado. Quero a curva ABC dos produtos acabados"*.
+
+**SQL aplicado:**
+```sql
+CREATE OR REPLACE VIEW pa_curva_abc AS  -- Pareto sobre venda 90d (Bling)
+-- Cruza bling_produtos (catálogo + estoque + custo) com bling_velocidade_90d
+-- Match fuzzy 3-níveis: exato, prefix, contains
+-- GREATEST(estoque_virtual, 0) pra excluir estoque negativo (Serviço de Bordado etc)
+-- Fallback custo: 40% do preço quando preco_custo for 0/null
+
+CREATE VIEW pa_curva_abc_stats AS  -- Agregados por curva (3 rows)
+SELECT curva, COUNT(*), SUM(valor_vendido_90d), SUM(capital_imobilizado)
+GROUP BY curva
+```
+
+**Resultado:**
+| Curva | Produtos | Vendido 90d | Imobilizado |
+|---|---|---|---|
+| A | 33 | R$ 274.563 | R$ 211 |
+| B | 18 | R$ 53.764 | R$ 1.671 |
+| C | 2.154 | R$ 18.861 | R$ 88.953 |
+
+**Aba Produtos Parados:** 313 produtos com estoque + zero venda → R$ 85.380 parados. Alvos: Turbantes (Verde Turquesa, Lurex Bordo), Perfume de Ambiente.
+
+**Notas explicativas (opção C do user):** card C mostra Pareto completo (R$ 72k inclui produtos com baixa venda), aba Parados mostra só zero venda (R$ 68k). Diferença = R$ 3.6k de produtos curva C que vendem pouco.
+
+### 20.5 Mobile fixes (várias iterações)
+
+User reportou problemas de mobile: hambúrguer cobrindo título, scroll horizontal global, inputs de data como caixas pretas vazias.
+
+**Causas e fixes:**
+
+1. **Body sem overflow-x:hidden + .main sem min-width:0** → qualquer elemento com `min-width:Xpx` estourava viewport
+   - Fix: `* { box-sizing:border-box }`, `body { overflow-x:hidden }`, `.main { min-width:0; max-width:100%; overflow-x:hidden }`
+   - + breakpoint @media(max-width:480px) que neutraliza min-width inline
+
+2. **Hambúrguer sobre título** → `padding-left:3rem` (48px) tinha só 2.4px de folga do botão de 36px
+   - Fix: aumentou pra `3.5rem` (56px)
+
+3. **Inputs date vazios aparecem como caixa preta no mobile** (sem placeholder/ícone)
+   - Fix: wrap em `<label class="date-field"><span>De</span><input type=date></label>` com `color-scheme:dark`
+   - Aplicado em Histórico (hFrom/hTo) e Histórico de Compras (pFrom/pTo)
+
+4. **Mini-cards 3-cols (ABC/Sem Demanda/Queima/PA/Parados)** esmagavam em telas pequenas
+   - Fix: media query mobile força grid-template-columns:1fr
+
+### 20.6 Bug filtros de data em Compras + Histórico
+
+User: *"o filtro de data não pega o último dia"*.
+
+**Causa:** `p.date` vinha como ISO timestamp (`'2026-04-15T00:00:00+00'`) do Postgres. Inputs `<input type=date>` retornam só `'YYYY-MM-DD'`. Comparação `'2026-04-15T00:00:00+00' > '2026-04-15'` retornava TRUE (T > vazio na ordem ASCII), excluía o dia final do filtro "Até".
+
+**Fix:**
+```javascript
+const pDate = String(p.date || '').slice(0, 10);
+if (from && pDate < from) return false;
+if (to && pDate > to) return false;  // string YYYY-MM-DD comparada com YYYY-MM-DD
+```
+
+Aplicado em `renderPurchases` e `renderHist`.
+
+### 20.7 Paginação 15/pág em 4 telas
+
+User: várias telas viraram listas infinitas conforme cresceu base.
+
+Helper genérico `_renderPagBar(state, totalItens, label)` reutilizado:
+- 15/30/50/Todos por página
+- Botões anterior/números/próxima
+- Janelinha `1...4 5 6...12` quando passa de 7 páginas
+- Indicador "Exibindo X-Y de Z"
+
+**Aplicado em:**
+- Ficha Técnica (10 default)
+- Matéria-prima (15 default — agrupa produtos)
+- Histórico (15)
+- Cadastrar Produto → Produtos Cadastrados (15)
+- Análise & Queima → Produtos Parados (10)
+- Análise & Queima → Vínculos MP (10) [removido depois]
+
+### 20.8 Bot IA (`estoque-ai-chat`) — 4 tools novas — v13 ACTIVE
+
+Manu/user usaram o bot e ele não sabia das funcionalidades novas.
+
+**Tools antigas (10):** consultar_estoque, consultar_alertas, consultar_fornecedor, fornecedor_de_produto, consultar_compras_recentes, consultar_ficha_tecnica, estatisticas_gerais, projecao_consumo, ranking_fornecedores, ranking_produtos.
+
+**Tools novas (4):**
+- `produtos_parados` — PA estoque > 0 e zero venda 90d
+- `materia_prima_curva_abc` — top giradores ou parados em MP
+- `produto_acabado_curva_abc` — top giradores PA
+- `capital_imobilizado` — total MP + PA + breakdown por curva
+
+**Bug v12 BOOT_ERROR:** primeira tentativa de adicionar tools quebrou syntax. Reconstrui o `index.ts` completo do zero (28k chars) com TODAS as 14 tools + system prompt atualizado. v13 deployada limpa.
+
+System prompt agora menciona explicitamente:
+- 📊 Curva ABC matéria-prima
+- 👕 Curva ABC produto acabado
+- 📦 Produtos parados
+- 💰 Capital imobilizado
+
+Source TS preservado em `.claude/scripts/estoque-ai-chat/index.ts` pra futuras edições.
+
+### 20.9 Lazy-load por seção (boot 5s → <1s)
+
+User: *"por que demora 5 segundos pra carregar"*.
+
+**Causa:** `loadAll()` original carregava 21 tabelas em paralelo. Gargalo era `pa_curva_abc` (view com 2.205 produtos × 3 subqueries = 4-5s só ela).
+
+**Refatoração em 5 loaders especializados com cache flags:**
+
+```javascript
+const _sectionLoaded = { ficha: false, bling: false, analise: false, comparador: false };
+
+loadEssentials()       // boot: fabrics, movements, profiles, purchases, role_permissions,
+                       //       fornecedores, fabric_custo_medio, ficha_produtos, consumo_projetado
+loadFichaSection()     // lazy: ficha_tecnica, vendas_por_codigo_ficha
+loadBlingSection()     // lazy: 6 tabelas bling_*
+loadAnaliseSection()   // lazy: mp_dashboard_resumo, mp_sem_demanda, pa_curva_abc, pa_curva_abc_stats
+loadComparadorSection()// lazy: comparador_precos
+loadAll()              // wrapper que invalida caches e carrega tudo (saves)
+```
+
+**Integração:**
+- `enterApp()` chama `loadEssentials` (rápido)
+- `showPage()` async dispara loader correto antes do render
+- Dashboard renderiza imediato; alertas ficha + strip Bling em background
+- Saves continuam usando `loadAll()` (re-carrega tudo)
+
+### 20.10 F5 não mostra mais Dashboard vazio
+
+User: *"se eu to em #analise e dou F5, ele me joga pro dashboard vazio por 5s"*.
+
+**Causa:** HTML inicia com `page-dashboard` sem class hidden (única visível). `enterApp()` esperava `await loadAll()` (5s) ANTES de chamar `showPage(hashUrl)`.
+
+**Fix em enterApp():** ler hash da URL ANTES do `loadEssentials()` e trocar visualmente pra page certa imediatamente. Placeholders já existem em cada page no HTML.
+
+### 20.11 MATERIALIZED VIEW + auto-refresh
+
+Mesmo com lazy-load, `pa_curva_abc` sozinha demorava 4s pra computar a cada SELECT.
+
+**Solução em 3 camadas:**
+
+1. **MATERIALIZED VIEW** (cache pré-computado):
+   ```sql
+   DROP VIEW pa_curva_abc CASCADE;
+   CREATE MATERIALIZED VIEW pa_curva_abc AS ...;
+   CREATE UNIQUE INDEX pa_curva_abc_id_idx ON pa_curva_abc(id);
+   CREATE INDEX pa_curva_abc_curva_idx, pa_curva_abc_valor_idx, pa_curva_abc_parado_idx (parcial);
+   ```
+   SELECT vira read direto da tabela cache (<200ms).
+
+2. **Função smart-refresh** (só refresh se bling_sync_meta mudou):
+   ```sql
+   CREATE FUNCTION refresh_pa_curva_abc_smart() RETURNS TEXT AS $$
+   DECLARE ultimo_sync TIMESTAMPTZ; ultimo_refresh TIMESTAMPTZ;
+   BEGIN
+     SELECT last_sync_at INTO ultimo_sync FROM bling_sync_meta;
+     SELECT MAX(refreshed_at) INTO ultimo_refresh FROM pa_refresh_log;
+     IF ultimo_refresh IS NOT NULL AND ultimo_sync <= ultimo_refresh THEN
+       RETURN 'skip';
+     END IF;
+     REFRESH MATERIALIZED VIEW CONCURRENTLY pa_curva_abc;
+     INSERT INTO pa_refresh_log...
+     RETURN 'refreshed in Xms';
+   END $$;
+   ```
+
+3. **Cron pg_cron a cada 1min** (custo zero quando não tem refresh a fazer):
+   ```sql
+   SELECT cron.schedule('pa-curva-abc-auto-refresh', '* * * * *',
+     $$ SELECT refresh_pa_curva_abc_smart(); $$);
+   ```
+
+**Frontend filtra dados:** `paCurvaAbc` carrega só ~365 rows relevantes (curva A/B + parados com capital), não 2.205. Mini-cards usam `pa_curva_abc_stats` (3 rows agregadas) pra mostrar contagem real de TODOS os C.
+
+**Resultado:** boot Análise & Queima 5s → <1s. Dados sempre atualizados em até 1min após sync Bling.
+
+### 20.12 Edge Functions estado atual
+
+| Função | Versão | Status |
+|---|---|---|
+| **estoque-ai-chat** | **v13** | **ACTIVE (4 tools novas + system prompt)** |
+| sync-bling-cache | v15 | ACTIVE (sem mudança) |
+| bling-webhook | v9 | ACTIVE (sem mudança) |
+| admin-users | v12 | ACTIVE (sem mudança) |
+
+### 20.13 Cron jobs ativos (pg_cron)
+
+| Jobid | Schedule | Comando |
+|---|---|---|
+| 1 | `7 */6 * * *` | sync-bling-cache (a cada 6h às :07) |
+| 2 | `* * * * *` | refresh_pa_curva_abc_smart (a cada 1min, skip se não precisa) |
+
+### 20.14 Análise RD Station (mesma do DMS)
+
+User pediu pra ler doc RD Station — gaps mapeados na seção 42.5 da doc DMS. Ondas 1-3 ficam quase 100% no Estoque tem fundação (boot rápido, lazy-load, materialized views).
+
+### 20.15 Pendências
+
+| Item | Status |
+|---|---|
+| Mais paginação em outras telas se virarem listas longas | 🟢 Baixa |
+| Atualizações automáticas em outras views pesadas (modelo do pa_curva_abc) | 🟢 Quando outras virarem gargalo |
+| Domínio custom (estoque.danajalecos.com.br) | 🟢 Após validação |
+
+### 20.16 Onde paramos
+
+User pediu `/compact` pra continuar. Sistema do Estoque maduro, com:
+- 5 abas de análise (ABC MP+PA, Sem Demanda MP, Queima C MP, Produtos Parados PA)
+- Mobile-friendly + paginação em todas as telas longas
+- Boot <1s com lazy-load
+- Materialized view com auto-refresh
+- Bot IA conhecendo TUDO (14 tools)
+
+**Commits notáveis:**
+- `9d45cb8` ABC + Capital Imobilizado
+- `06e9ec1` Página Análise & Queima (3 abas MP)
+- `d1e979a` Filtros aba Queima C
+- `18dd58e` Ficha Técnica paginação + fontes
+- `ac60b10` Vínculos MP→Ficha (criada)
+- `3357efa` Vínculos removida (Manu não quis)
+- `b2ee023` Análise PA (2 abas novas)
+- `b136e88` Notas + paginação Parados
+- `f049fd7` Fix F5 Dashboard vazio
+- `8e700bf` Lazy-load por seção
+- `b9192e7` Materialized view + filtros frontend
+- `ba4c339` Paginação Matéria-prima/Histórico/Cadastro
+- `5de1856` Inputs de data com label
+- `1714cc4` Elimina scroll horizontal global
+- `f532b5c` Filtros data + folga hambúrguer
+- `853cd3d` Mobile fixes primários
+- `594ce1b` Docs scores na mensagem azul
+
+---
+
+**Fim · v3.0 · 29/04/2026 — ciclo 20 (análise estoque + lazy-load + IA + mobile)**
