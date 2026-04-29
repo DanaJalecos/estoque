@@ -1006,18 +1006,18 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
 
         <!-- Filtros -->
         <div class="filter-bar" style="margin-bottom:1rem;">
-          <input id="vincSearch" placeholder="Buscar matéria-prima..." oninput="renderVinculos()" style="flex:1;min-width:220px;font-size:.92rem;padding:.55rem .8rem;">
-          <select id="vincScoreFilter" onchange="renderVinculos()" style="font-size:.92rem;padding:.55rem .8rem;">
+          <input id="vincSearch" placeholder="Buscar matéria-prima..." oninput="vincPagina=1;renderVinculos()" style="flex:1;min-width:220px;font-size:.92rem;padding:.55rem .8rem;">
+          <select id="vincScoreFilter" onchange="vincPagina=1;renderVinculos()" style="font-size:.92rem;padding:.55rem .8rem;">
             <option value="all">Todas (qualquer score)</option>
             <option value="forte">🟢 Forte (≥70)</option>
             <option value="media">🟡 Média (40-69)</option>
             <option value="fraca">🔴 Fraca (<40)</option>
             <option value="sem">⚪ Sem sugestão</option>
           </select>
-          <select id="vincFornecedorFilter" onchange="renderVinculos()" style="font-size:.92rem;padding:.55rem .8rem;">
+          <select id="vincFornecedorFilter" onchange="vincPagina=1;renderVinculos()" style="font-size:.92rem;padding:.55rem .8rem;">
             <option value="all">Todos fornecedores</option>
           </select>
-          <select id="vincMetodoFilter" onchange="renderVinculos()" style="font-size:.92rem;padding:.55rem .8rem;">
+          <select id="vincMetodoFilter" onchange="vincPagina=1;renderVinculos()" style="font-size:.92rem;padding:.55rem .8rem;">
             <option value="all">Todos métodos</option>
             <option value="ia">🧠 IA</option>
             <option value="categoria">📦 Categoria</option>
@@ -3963,6 +3963,11 @@ function filterQueimaTable(){
 // Lista de fabrics órfãs com sugestões de match (keyword + categoria + IA Gemini).
 // SÓ VISUALIZAÇÃO — não cria vínculos no banco. Manu/Dana valida primeiro.
 
+let vincPagina=1;
+let vincPorPagina=10;
+function gotoVincPage(n){vincPagina=Math.max(1,n);renderVinculos();window.scrollTo({top:0,behavior:'smooth'});}
+function setVincPorPagina(n){vincPorPagina=Number(n)||10;vincPagina=1;renderVinculos();}
+
 function renderVinculosPage(){
   // Stats no topo
   const orfas=(mpSemDemanda||[]).filter(r=>r.status_demanda==='orfa');
@@ -4098,7 +4103,46 @@ function renderVinculos(){
     </div>`;
   };
 
-  host.innerHTML=`<div style="font-size:.78rem;color:var(--text-muted);margin-bottom:.6rem;">Exibindo <strong>${lista.length}</strong> matéria${lista.length===1?'':'s'}-prima${lista.length===1?'':'s'} órfã${lista.length===1?'':'s'}</div>${lista.map(card).join('')}`;
+  // Paginação client-side
+  const totalItens=lista.length;
+  const totalPaginas=vincPorPagina>=9999?1:Math.max(1,Math.ceil(totalItens/vincPorPagina));
+  if(vincPagina>totalPaginas)vincPagina=totalPaginas;
+  const inicio=(vincPagina-1)*vincPorPagina;
+  const fim=vincPorPagina>=9999?totalItens:Math.min(inicio+vincPorPagina,totalItens);
+  const pageList=lista.slice(inicio,fim);
+
+  // Renderiza cards + barra de paginação
+  const btn=(n,label,disabled,ativo)=>`<button class="btn ${ativo?'btn-primary':''}" ${disabled?'disabled':''} onclick="gotoVincPage(${n})" style="padding:.45rem .8rem;font-size:.85rem;min-width:38px;${disabled?'opacity:.4;cursor:not-allowed;':''}">${label}</button>`;
+  let pages=[];
+  if(totalPaginas<=7){for(let i=1;i<=totalPaginas;i++)pages.push(i);}
+  else{
+    pages.push(1);
+    if(vincPagina>3)pages.push('...');
+    const start=Math.max(2,vincPagina-1),end=Math.min(totalPaginas-1,vincPagina+1);
+    for(let i=start;i<=end;i++)pages.push(i);
+    if(vincPagina<totalPaginas-2)pages.push('...');
+    pages.push(totalPaginas);
+  }
+  const pageBtns=pages.map(p=>p==='...'?'<span style="padding:.45rem .4rem;color:var(--text-muted);">...</span>':btn(p,p,false,p===vincPagina)).join('');
+  const paginacaoBar=totalPaginas>1||totalItens>10?`<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.8rem;margin-top:1rem;padding:.6rem .2rem;border-top:1px solid var(--border);padding-top:1rem;">
+    <div style="font-size:.85rem;color:var(--text-secondary);">
+      Exibindo <strong>${inicio+1}-${fim}</strong> de <strong>${totalItens}</strong> órfã${totalItens===1?'':'s'}
+    </div>
+    <div style="display:flex;gap:.3rem;align-items:center;flex-wrap:wrap;">
+      ${btn(vincPagina-1,'← Anterior',vincPagina<=1,false)}
+      ${pageBtns}
+      ${btn(vincPagina+1,'Próxima →',vincPagina>=totalPaginas,false)}
+      <span style="font-size:.85rem;color:var(--text-muted);margin-left:.6rem;">por página:</span>
+      <select onchange="setVincPorPagina(this.value)" style="padding:.4rem .6rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:.85rem;">
+        <option value="10" ${vincPorPagina===10?'selected':''}>10</option>
+        <option value="25" ${vincPorPagina===25?'selected':''}>25</option>
+        <option value="50" ${vincPorPagina===50?'selected':''}>50</option>
+        <option value="9999" ${vincPorPagina>=9999?'selected':''}>Todas</option>
+      </select>
+    </div>
+  </div>`:'';
+
+  host.innerHTML=`<div style="font-size:.78rem;color:var(--text-muted);margin-bottom:.6rem;">Total: <strong>${totalItens}</strong> matéria${totalItens===1?'':'s'}-prima${totalItens===1?'':'s'} órfã${totalItens===1?'':'s'} ${totalItens!==orfas.length?`(filtradas de ${orfas.length})`:''}</div>${pageList.map(card).join('')}${paginacaoBar}`;
 }
 
 async function gerarSugestoesVinculos(){
