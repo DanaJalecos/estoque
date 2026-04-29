@@ -1352,13 +1352,30 @@ async function enterApp(){
   $('userRole').textContent=ROLE_LABELS[profile.role]||profile.role;
   $('userAvatar').textContent=profile.display_name.charAt(0).toUpperCase();
   $('aiBotBtn').style.display='flex'; // mostra botão IA pós-login
-  await loadAll();
-  applyPermissions();
-  // Prioridade: 1) hash da URL (#alertas), 2) sessionStorage, 3) default 'dashboard'
+
+  // Le a pagina-alvo ANTES de loadAll() pra evitar o flash de Dashboard vazio durante
+  // os 5s de carregamento (bug: ao dar F5 em qualquer pagina, o user via Dashboard
+  // sem dados ate loadAll terminar e showPage redirecionar pra pagina certa).
   const hashPage=(location.hash||'').replace('#','').trim();
   const stored=sessionStorage.getItem('dana_page');
-  const candidate=hashPage||stored||'dashboard';
-  const page=canAccess(candidate)?candidate:'dashboard';
+  const candidateInicial=hashPage||stored||'dashboard';
+  // Troca visualmente pra pagina certa ANTES dos dados (placeholders ja estao no HTML)
+  const initialDiv=document.getElementById('page-'+candidateInicial);
+  if(initialDiv){
+    document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));
+    initialDiv.classList.remove('hidden');
+    // Atualiza estado do nav (mesmo sem ter feito applyPermissions ainda)
+    const btn=navBtn(candidateInicial);
+    if(btn){
+      document.querySelectorAll('.sidebar-nav button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+  }
+
+  await loadAll();
+  applyPermissions();
+  // Re-checa permissao agora que sabemos o cargo. Se nao tiver acesso, fallback dashboard.
+  const page=canAccess(candidateInicial)?candidateInicial:'dashboard';
   showPage(page,navBtn(page));
   setupRealtime();
   // Reage a Voltar/Avançar do navegador e a edição manual do hash
