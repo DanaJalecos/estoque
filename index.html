@@ -369,6 +369,7 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
 
       <div class="nav-section" data-perm-admin>Administração</div>
       <button data-perm-admin onclick="showPage('usuarios',this)"><span class="icon"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> Gerenciar Usuários</button>
+      <button data-perm-admin onclick="showPage('vinculos',this)"><span class="icon"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span> Vínculos MP→Ficha</button>
 
       <div class="nav-section">Conta</div>
       <button onclick="showPage('perfil',this)"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="10" r="3"/><path d="M7 20.66 A6 6 0 0 1 17 20.66"/></svg></span> Meu Perfil</button>
@@ -981,6 +982,54 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
       </div>
     </div>
 
+    <!-- VÍNCULOS MP → FICHA (admin only) -->
+    <div id="page-vinculos" class="page hidden">
+      <div class="topbar">
+        <h2>🔗 Vínculos MP → Ficha Técnica</h2>
+        <div class="topbar-actions">
+          <button class="btn btn-primary" id="btnGerarSugestoes" onclick="gerarSugestoesVinculos()">🔄 Gerar/Atualizar sugestões</button>
+        </div>
+      </div>
+      <div class="content">
+        <!-- Aviso/contexto -->
+        <div style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.3);border-radius:8px;padding:.9rem 1.1rem;margin-bottom:1rem;font-size:.88rem;color:var(--text-secondary);line-height:1.5;">
+          <strong>O que é isso?</strong> 148 das 175 matérias-primas em estoque (88%) estão "órfãs" — não estão vinculadas a nenhum produto na ficha técnica. Isso reduz a precisão da análise de Queima e do Capital Imobilizado.<br><br>
+          <strong>Como funciona:</strong> o sistema gera sugestões de vínculo combinando 3 métodos:
+          (1) <strong>palavras-chave</strong> entre nome da MP e item da ficha,
+          (2) <strong>categoria do fornecedor</strong> (EXCIM=tecido, etc),
+          (3) <strong>IA Gemini</strong> refina os casos mais difíceis.<br><br>
+          <strong>Importante:</strong> nada é vinculado automaticamente. Use essa tela só pra inspeção visual — depois que validar com a Manu/Dana, a gente cria o botão de "Aceitar".
+        </div>
+
+        <!-- KPIs -->
+        <div class="stats-grid" id="vinculosStats" style="margin-bottom:1rem;"></div>
+
+        <!-- Filtros -->
+        <div class="filter-bar" style="margin-bottom:1rem;">
+          <input id="vincSearch" placeholder="Buscar matéria-prima..." oninput="renderVinculos()" style="flex:1;min-width:220px;font-size:.92rem;padding:.55rem .8rem;">
+          <select id="vincScoreFilter" onchange="renderVinculos()" style="font-size:.92rem;padding:.55rem .8rem;">
+            <option value="all">Todas (qualquer score)</option>
+            <option value="forte">🟢 Forte (≥70)</option>
+            <option value="media">🟡 Média (40-69)</option>
+            <option value="fraca">🔴 Fraca (<40)</option>
+            <option value="sem">⚪ Sem sugestão</option>
+          </select>
+          <select id="vincFornecedorFilter" onchange="renderVinculos()" style="font-size:.92rem;padding:.55rem .8rem;">
+            <option value="all">Todos fornecedores</option>
+          </select>
+          <select id="vincMetodoFilter" onchange="renderVinculos()" style="font-size:.92rem;padding:.55rem .8rem;">
+            <option value="all">Todos métodos</option>
+            <option value="ia">🧠 IA</option>
+            <option value="categoria">📦 Categoria</option>
+            <option value="keyword">🔤 Keyword</option>
+          </select>
+        </div>
+
+        <!-- Tabela -->
+        <div id="vinculosList"></div>
+      </div>
+    </div>
+
     <div id="page-usuarios" class="page hidden">
       <div class="topbar"><h2>Gerenciar Usuários</h2><div class="topbar-actions"><button class="btn btn-primary" onclick="toggleNewUser()">+ Novo Usuário</button></div></div>
       <div class="content">
@@ -1341,10 +1390,11 @@ let fabricCustoMedio=[]; // [{fabric_id, custo_medio_ponderado, ultimo_custo, va
 let comparadorPrecos=[]; // [{fabric_id, produto, fornecedor_id, fornecedor_nome, preco_medio, ultimo_preco, ...}]
 let mpDashboard=[]; // view mp_dashboard_resumo — curva ABC + capital imobilizado consolidados
 let mpSemDemanda=[]; // view mp_sem_demanda — orfas/produto_morto/demanda_baixa/ok
+let mpVinculosSugestoes=[]; // tabela mp_vinculos_sugestoes — top 3 sugestoes por fabric orfa
 // Bling caches
 let blingTrendPeriodo=[],blingVendasMes=[],blingDiaSemana=[],blingTopProdutos=[],blingVelocidade=[],blingCatalogo=[],blingSyncMeta=null;
 async function loadAll(){
-  const[f,m,p,pu,rp,fo,btp,bvm,bds,btop,bvel,bmeta,fp,ft,vpc,cp,fcm,cmp,mp,msd]=await Promise.all([
+  const[f,m,p,pu,rp,fo,btp,bvm,bds,btop,bvel,bmeta,fp,ft,vpc,cp,fcm,cmp,mp,msd,mvs]=await Promise.all([
     sb.from('fabrics').select('*').order('created_at',{ascending:false}),
     sb.from('movements').select('*').order('created_at',{ascending:false}),
     sb.from('profiles').select('*'),
@@ -1364,7 +1414,8 @@ async function loadAll(){
     sb.from('fabric_custo_medio').select('*'),
     sb.from('comparador_precos').select('*'),
     sb.from('mp_dashboard_resumo').select('*'),
-    sb.from('mp_sem_demanda').select('*')
+    sb.from('mp_sem_demanda').select('*'),
+    sb.from('mp_vinculos_sugestoes').select('*').order('fabric_id').order('rank')
   ]);
   fabrics=f.data||[];movements=m.data||[];profiles=p.data||[];purchases=pu.data||[];
   rolePerms=(rp.data?.permissions)||{};
@@ -1376,6 +1427,7 @@ async function loadAll(){
   comparadorPrecos=cmp.data||[];
   mpDashboard=mp.data||[];
   mpSemDemanda=msd.data||[];
+  mpVinculosSugestoes=mvs.data||[];
 }
 // Helper: pega custo médio ponderado do fabric (com fallback pro último preço)
 function getCustoMedio(fabricId){
@@ -1489,6 +1541,7 @@ function showPage(name,btn){
   if(name==='ficha')renderFichas();
   if(name==='bling')renderBling();
   if(name==='analise')renderAnalisePage();
+  if(name==='vinculos')renderVinculosPage();
   if(name==='previsoes')renderForecast();
   if(name==='perfil'){$('profEmail').value=user.email;$('profName').value=profile.display_name;$('profRole').value=ROLE_LABELS[profile.role]||profile.role;}
   if(name==='usuarios')renderUsers();
@@ -3903,6 +3956,184 @@ function filterQueimaTable(){
   if(cnt){
     const fmtRkLocal=n=>'R$ '+Number(n||0).toLocaleString('pt-BR',{maximumFractionDigits:0});
     cnt.textContent=`${visiveis} alvos · ${fmtRkLocal(somaVis)}`;
+  }
+}
+
+// ═══ VÍNCULOS MP→FICHA (admin only) ═══
+// Lista de fabrics órfãs com sugestões de match (keyword + categoria + IA Gemini).
+// SÓ VISUALIZAÇÃO — não cria vínculos no banco. Manu/Dana valida primeiro.
+
+function renderVinculosPage(){
+  // Stats no topo
+  const orfas=(mpSemDemanda||[]).filter(r=>r.status_demanda==='orfa');
+  const totalOrfas=orfas.length;
+  const sugest=mpVinculosSugestoes||[];
+  const fabricIdsComSugestao=new Set(sugest.map(s=>s.fabric_id));
+  const orfasComSug=orfas.filter(r=>fabricIdsComSugestao.has(r.fabric_id)).length;
+  const orfasSemSug=totalOrfas-orfasComSug;
+
+  // Conta sugestões por força (rank=1, melhor)
+  const top1=sugest.filter(s=>s.rank===1);
+  const fortes=top1.filter(s=>s.score>=70).length;
+  const medias=top1.filter(s=>s.score>=40&&s.score<70).length;
+  const fracas=top1.filter(s=>s.score>0&&s.score<40).length;
+
+  $('vinculosStats').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Órfãs total</div><div class="stat-value">${totalOrfas}</div></div>
+    <div class="stat-card"><div class="stat-label">Com sugestão forte</div><div class="stat-value" style="color:#4ade80;">${fortes}</div></div>
+    <div class="stat-card"><div class="stat-label">Sugestão média</div><div class="stat-value" style="color:#fbbf24;">${medias}</div></div>
+    <div class="stat-card"><div class="stat-label">Sugestão fraca</div><div class="stat-value" style="color:#f87171;">${fracas}</div></div>
+    <div class="stat-card"><div class="stat-label">Sem sugestão</div><div class="stat-value" style="color:var(--text-muted);">${orfasSemSug}</div></div>
+  `;
+
+  // Popular dropdown de fornecedores (only those with órfãs)
+  const fornsUnicos=Array.from(new Set(orfas.map(r=>{
+    const f=fornecedores.find(x=>x.id===r.fornecedor_id);
+    return f?.nome||null;
+  }).filter(Boolean))).sort();
+  const fornSel=$('vincFornecedorFilter');
+  if(fornSel){
+    const cur=fornSel.value;
+    fornSel.innerHTML='<option value="all">Todos fornecedores</option>'+fornsUnicos.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');
+    fornSel.value=cur||'all';
+  }
+
+  renderVinculos();
+}
+
+function renderVinculos(){
+  const host=$('vinculosList');
+  if(!host)return;
+
+  const search=($('vincSearch')?.value||'').toLowerCase();
+  const scoreFiltro=$('vincScoreFilter')?.value||'all';
+  const fornFiltro=$('vincFornecedorFilter')?.value||'all';
+  const metodoFiltro=$('vincMetodoFilter')?.value||'all';
+
+  const orfas=(mpSemDemanda||[]).filter(r=>r.status_demanda==='orfa');
+  // Agrupa sugestoes por fabric_id
+  const sugByFab={};
+  (mpVinculosSugestoes||[]).forEach(s=>{
+    if(!sugByFab[s.fabric_id])sugByFab[s.fabric_id]=[];
+    sugByFab[s.fabric_id].push(s);
+  });
+  Object.values(sugByFab).forEach(arr=>arr.sort((a,b)=>(a.rank||99)-(b.rank||99)));
+
+  // Aplica filtros
+  let lista=orfas.map(o=>{
+    const forn=fornecedores.find(x=>x.id===o.fornecedor_id);
+    return {
+      ...o,
+      fornecedor_nome: forn?.nome||null,
+      fornecedor_categorias: forn?.categorias||[],
+      sugestoes: sugByFab[o.fabric_id]||[]
+    };
+  }).filter(r=>{
+    if(search&&!(r.name||'').toLowerCase().includes(search))return false;
+    if(fornFiltro!=='all'&&r.fornecedor_nome!==fornFiltro)return false;
+    const top=r.sugestoes[0];
+    const topScore=top?Number(top.score||0):0;
+    if(scoreFiltro==='forte'&&topScore<70)return false;
+    if(scoreFiltro==='media'&&(topScore<40||topScore>=70))return false;
+    if(scoreFiltro==='fraca'&&(topScore===0||topScore>=40))return false;
+    if(scoreFiltro==='sem'&&r.sugestoes.length>0)return false;
+    if(metodoFiltro!=='all'){
+      const m=top?String(top.metodo||''):'';
+      if(!m.includes(metodoFiltro))return false;
+    }
+    return true;
+  });
+
+  // Ordena pelos com maior score primeiro, depois sem sugestao
+  lista.sort((a,b)=>{
+    const sa=a.sugestoes[0]?Number(a.sugestoes[0].score||0):-1;
+    const sb=b.sugestoes[0]?Number(b.sugestoes[0].score||0):-1;
+    return sb-sa;
+  });
+
+  if(!lista.length){
+    host.innerHTML=`<div class="empty-state" style="padding:2rem;text-align:center;color:var(--text-muted);">Nenhuma matéria-prima com esses filtros.</div>`;
+    return;
+  }
+
+  const card=r=>{
+    const sug=r.sugestoes||[];
+    const fmtR=n=>'R$ '+Number(n||0).toLocaleString('pt-BR',{maximumFractionDigits:0});
+    let sugBlock;
+    if(!sug.length){
+      sugBlock=`<div style="padding:.6rem .8rem;color:var(--text-muted);font-size:.85rem;font-style:italic;">Sem sugestão. Clique em "Gerar sugestões" no topo.</div>`;
+    }else{
+      sugBlock=sug.map((s,i)=>{
+        const score=Number(s.score||0);
+        const cor=score>=70?'#4ade80':score>=40?'#fbbf24':'#f87171';
+        const metodoIco=String(s.metodo||'').includes('ia')?'🧠':String(s.metodo||'').includes('categoria')?'📦':'🔤';
+        return `<div style="display:grid;grid-template-columns:24px 1fr 56px;gap:.7rem;padding:.5rem .8rem;border-top:1px solid var(--border);align-items:center;">
+          <div style="font-size:.7rem;color:var(--text-muted);font-weight:700;text-align:center;">#${s.rank}</div>
+          <div>
+            <div style="font-size:.92rem;font-weight:600;color:var(--text);">${metodoIco} ${esc(s.item_descricao||'—')}</div>
+            <div style="font-size:.78rem;color:var(--text-muted);margin-top:.15rem;">
+              ${s.produto_nome?'Usado em: '+esc(s.produto_nome):'—'}${s.produto_tipo?' ('+esc(s.produto_tipo)+')':''}
+            </div>
+            <div style="font-size:.72rem;color:var(--text-muted);margin-top:.15rem;font-style:italic;">${esc(s.razao||'')}</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="background:${cor};color:#000;font-weight:800;font-size:.9rem;padding:.2rem .55rem;border-radius:6px;display:inline-block;">${score}</div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    return `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:.6rem;overflow:hidden;">
+      <div style="padding:.75rem 1rem;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.6rem;background:var(--bg);">
+        <div style="flex:1;min-width:240px;">
+          <div style="font-size:.95rem;font-weight:700;">${esc(r.name||'—')}</div>
+          <div style="font-size:.78rem;color:var(--text-muted);margin-top:.2rem;">
+            📦 ${fmt(Number(r.stock||0))} ${esc(r.unit||'')} · 💰 ${fmtR(r.capital_imobilizado)} parados
+            ${r.fornecedor_nome?' · 🏭 '+esc(r.fornecedor_nome):''}
+            ${(r.fornecedor_categorias||[]).length?' <span style="font-size:.7rem;padding:1px 6px;background:rgba(99,102,241,0.15);color:#818cf8;border-radius:4px;">'+(r.fornecedor_categorias||[]).join(', ')+'</span>':''}
+          </div>
+        </div>
+      </div>
+      ${sugBlock}
+    </div>`;
+  };
+
+  host.innerHTML=`<div style="font-size:.78rem;color:var(--text-muted);margin-bottom:.6rem;">Exibindo <strong>${lista.length}</strong> matéria${lista.length===1?'':'s'}-prima${lista.length===1?'':'s'} órfã${lista.length===1?'':'s'}</div>${lista.map(card).join('')}`;
+}
+
+async function gerarSugestoesVinculos(){
+  const btn=$('btnGerarSugestoes');
+  if(!btn)return;
+  const orig=btn.innerHTML;
+  btn.disabled=true;
+  btn.innerHTML='⏳ Gerando... pode levar 30-60s';
+  try{
+    const{data:{session}}=await sb.auth.getSession();
+    const jwt=session?.access_token;
+    if(!jwt){toast('Sessão expirada, faz login de novo');btn.disabled=false;btn.innerHTML=orig;return;}
+
+    const SUPA_URL='https://jkvoqqqiwtpsruwoioxl.supabase.co';
+    const r=await fetch(`${SUPA_URL}/functions/v1/sugerir-vinculos-mp`,{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+jwt,'Content-Type':'application/json'},
+      body:JSON.stringify({})
+    });
+    const j=await r.json();
+    if(!r.ok){
+      toast('Erro: '+(j.error||r.status));
+    }else{
+      const s=j.stats||{};
+      toast(`✅ ${s.orfas_processadas} órfãs · ${s.com_sugestao_forte} fortes · ${s.batches_ia} batches IA`);
+      // Recarrega sugestões
+      const{data}=await sb.from('mp_vinculos_sugestoes').select('*').order('fabric_id').order('rank');
+      mpVinculosSugestoes=data||[];
+      renderVinculosPage();
+    }
+  }catch(e){
+    toast('Erro: '+e.message);
+  }finally{
+    btn.disabled=false;
+    btn.innerHTML=orig;
   }
 }
 
