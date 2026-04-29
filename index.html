@@ -269,7 +269,7 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
   .sidebar.open{transform:translateX(0);}
   .main{margin-left:0;}
   .menu-toggle{display:flex;align-items:center;justify-content:center;}
-  .topbar{padding-left:3rem;flex-wrap:wrap;gap:.4rem;}
+  .topbar{padding-left:3.5rem;flex-wrap:wrap;gap:.4rem;}
   .topbar h2{font-size:.92rem;}
   .topbar-actions{flex-wrap:wrap;}
   .content{padding:1rem;}
@@ -4833,8 +4833,11 @@ function renderPurchases(){
   const ff=$('pFab').value,from=$('pFrom').value,to=$('pTo').value;
   let list=purchases.filter(p=>{
     if(ff!=='all'&&p.fabric_id!==ff)return false;
-    if(from&&p.date<from)return false;
-    if(to&&p.date>to)return false;
+    // Normaliza p.date pra YYYY-MM-DD (pode vir como ISO timestamp do Postgres)
+    const pDate=String(p.date||'').slice(0,10);
+    if(!pDate)return false;
+    if(from&&pDate<from)return false;
+    if(to&&pDate>to)return false; // <= aqui to inclui o proprio dia (string YYYY-MM-DD)
     return true;
   });
 
