@@ -365,6 +365,7 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
       <div class="nav-section" data-perm-section="ficha,bling">Produção</div>
       <button data-perm="ficha" onclick="showPage('ficha',this)"><span class="icon"><svg viewBox="0 0 24 24"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/><line x1="9" y1="9" x2="10" y2="9"/></svg></span> Ficha Técnica</button>
       <button data-perm="bling" onclick="showPage('bling',this)"><span class="icon"><svg viewBox="0 0 24 24"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg></span> Vendas (Bling)</button>
+      <button data-perm="dashboard" onclick="showPage('analise',this)"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2 a10 10 0 0 1 10 10 h-10 z"/></svg></span> Análise & Queima</button>
 
       <div class="nav-section" data-perm-admin>Administração</div>
       <button data-perm-admin onclick="showPage('usuarios',this)"><span class="icon"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> Gerenciar Usuários</button>
@@ -916,6 +917,23 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
       </div>
     </div>
 
+    <!-- ANÁLISE & QUEIMA (ABC + Sem Demanda + Queima de Estoque) -->
+    <div id="page-analise" class="page hidden" data-perm="dashboard">
+      <div class="topbar"><h2>📊 Análise & Queima de Estoque</h2></div>
+      <div class="content">
+        <!-- Abas internas -->
+        <div style="display:flex;gap:.4rem;margin-bottom:1rem;background:var(--bg-card);padding:.4rem;border-radius:8px;border:1px solid var(--border);">
+          <button class="btn" id="anTabBtn1" onclick="anSetTab('abc')" style="flex:1;font-weight:600;">📊 Curva ABC</button>
+          <button class="btn" id="anTabBtn2" onclick="anSetTab('semd')" style="flex:1;font-weight:600;">🔍 Sem Demanda</button>
+          <button class="btn" id="anTabBtn3" onclick="anSetTab('queima')" style="flex:1;font-weight:600;">🔥 Queima C</button>
+        </div>
+
+        <div id="anTabAbc"></div>
+        <div id="anTabSemd" style="display:none;"></div>
+        <div id="anTabQueima" style="display:none;"></div>
+      </div>
+    </div>
+
     <!-- DRAWER FICHA TÉCNICA (Detalhe BOM) -->
     <div class="modal-overlay" id="fichaDrawerOverlay" onclick="if(event.target===this)closeFichaDrawer()">
       <div class="modal" style="max-width:900px;max-height:92vh;overflow-y:auto;width:94%;">
@@ -1320,10 +1338,11 @@ let fichaProdutos=[],fichaItens=[],vendasPorCodigo=[],consumoProjetado=[];
 let fabricCustoMedio=[]; // [{fabric_id, custo_medio_ponderado, ultimo_custo, valor_em_estoque, ...}]
 let comparadorPrecos=[]; // [{fabric_id, produto, fornecedor_id, fornecedor_nome, preco_medio, ultimo_preco, ...}]
 let mpDashboard=[]; // view mp_dashboard_resumo — curva ABC + capital imobilizado consolidados
+let mpSemDemanda=[]; // view mp_sem_demanda — orfas/produto_morto/demanda_baixa/ok
 // Bling caches
 let blingTrendPeriodo=[],blingVendasMes=[],blingDiaSemana=[],blingTopProdutos=[],blingVelocidade=[],blingCatalogo=[],blingSyncMeta=null;
 async function loadAll(){
-  const[f,m,p,pu,rp,fo,btp,bvm,bds,btop,bvel,bmeta,fp,ft,vpc,cp,fcm,cmp,mp]=await Promise.all([
+  const[f,m,p,pu,rp,fo,btp,bvm,bds,btop,bvel,bmeta,fp,ft,vpc,cp,fcm,cmp,mp,msd]=await Promise.all([
     sb.from('fabrics').select('*').order('created_at',{ascending:false}),
     sb.from('movements').select('*').order('created_at',{ascending:false}),
     sb.from('profiles').select('*'),
@@ -1342,7 +1361,8 @@ async function loadAll(){
     sb.from('consumo_projetado').select('*').order('dias_de_cobertura',{ascending:true,nullsFirst:false}),
     sb.from('fabric_custo_medio').select('*'),
     sb.from('comparador_precos').select('*'),
-    sb.from('mp_dashboard_resumo').select('*')
+    sb.from('mp_dashboard_resumo').select('*'),
+    sb.from('mp_sem_demanda').select('*')
   ]);
   fabrics=f.data||[];movements=m.data||[];profiles=p.data||[];purchases=pu.data||[];
   rolePerms=(rp.data?.permissions)||{};
@@ -1353,6 +1373,7 @@ async function loadAll(){
   fabricCustoMedio=fcm.data||[];
   comparadorPrecos=cmp.data||[];
   mpDashboard=mp.data||[];
+  mpSemDemanda=msd.data||[];
 }
 // Helper: pega custo médio ponderado do fabric (com fallback pro último preço)
 function getCustoMedio(fabricId){
@@ -1465,6 +1486,7 @@ function showPage(name,btn){
   if(name==='fornecedores')renderSuppliers();
   if(name==='ficha')renderFichas();
   if(name==='bling')renderBling();
+  if(name==='analise')renderAnalisePage();
   if(name==='previsoes')renderForecast();
   if(name==='perfil'){$('profEmail').value=user.email;$('profName').value=profile.display_name;$('profRole').value=ROLE_LABELS[profile.role]||profile.role;}
   if(name==='usuarios')renderUsers();
@@ -3540,6 +3562,229 @@ function renderDashAbc(){
         </div>
       </div>
     </div>`;
+}
+
+// ═══ PÁGINA "ANÁLISE & QUEIMA" ═══
+// 3 abas: Curva ABC (detalhada), Sem Demanda (órfãs/produto morto/demanda baixa), Queima C (ações).
+// Re-usa mpDashboard (mp_dashboard_resumo) + mpSemDemanda (mp_sem_demanda).
+
+function anSetTab(tab){
+  const tabs=['abc','semd','queima'];
+  const labels={abc:'anTabBtn1',semd:'anTabBtn2',queima:'anTabBtn3'};
+  const panels={abc:'anTabAbc',semd:'anTabSemd',queima:'anTabQueima'};
+  for(const t of tabs){
+    const btn=$(labels[t]);
+    const pn=$(panels[t]);
+    const ativo=t===tab;
+    if(btn){btn.style.background=ativo?'var(--bg)':'';btn.style.color=ativo?'var(--text)':'var(--text-secondary)';}
+    if(pn)pn.style.display=ativo?'':'none';
+  }
+}
+
+function renderAnalisePage(){
+  if(!mpDashboard||!mpDashboard.length){
+    $('anTabAbc').innerHTML='<div class="empty-state"><p>Sem dados de análise. Verifique se as views mp_curva_abc e mp_dashboard_resumo existem.</p></div>';
+    return;
+  }
+  renderAnTabAbc();
+  renderAnTabSemDemanda();
+  renderAnTabQueima();
+  anSetTab('abc');
+}
+
+const _fmtR2=n=>'R$ '+Number(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const _fmtRk=n=>'R$ '+Number(n||0).toLocaleString('pt-BR',{maximumFractionDigits:0});
+
+function renderAnTabAbc(){
+  const host=$('anTabAbc');
+  // Tabela completa de TODAS as MPs com classificação ABC
+  const sorted=mpDashboard.slice().sort((a,b)=>{
+    const ord={A:0,B:1,C:2};
+    if(ord[a.curva]!==ord[b.curva])return ord[a.curva]-ord[b.curva];
+    return Number(b.valor_movimentado_90d||0)-Number(a.valor_movimentado_90d||0);
+  });
+  const filtros=`<div style="display:flex;gap:.6rem;margin-bottom:.8rem;flex-wrap:wrap;align-items:center;">
+    <input id="abcSearch" placeholder="Buscar item..." style="flex:1;min-width:200px;padding:.5rem .7rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:.85rem;" oninput="filterAbcTable()">
+    <select id="abcCurvaFilter" onchange="filterAbcTable()" style="padding:.5rem .7rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:.85rem;">
+      <option value="">Todas curvas</option>
+      <option value="A">Só A</option>
+      <option value="B">Só B</option>
+      <option value="C">Só C</option>
+    </select>
+    <span style="font-size:.75rem;color:var(--text-muted);" id="abcCount">${sorted.length} itens</span>
+  </div>`;
+
+  const linhas=sorted.map(r=>{
+    const cor=r.curva==='A'?'#4ade80':r.curva==='B'?'#fbbf24':'#f87171';
+    const dias=r.dias_desde_ultima_compra;
+    const diasLbl=dias===null||dias===undefined?'<span style="color:var(--red);">>90d</span>':`${dias}d`;
+    return `<tr data-name="${esc((r.name||'').toLowerCase())}" data-curva="${r.curva}">
+      <td><span style="background:${cor};color:#000;font-weight:800;font-size:.7rem;padding:.1rem .4rem;border-radius:4px;">${r.curva}</span></td>
+      <td>${esc(r.name||'—')}</td>
+      <td style="text-align:right;">${fmt(Number(r.stock||0))} ${esc(r.unit||'')}</td>
+      <td style="text-align:right;">${_fmtRk(r.capital_imobilizado)}</td>
+      <td style="text-align:right;">${_fmtRk(r.valor_movimentado_90d)}</td>
+      <td style="text-align:right;font-size:.78rem;color:var(--text-muted);">${r.num_compras_90d||0}× / ${diasLbl}</td>
+    </tr>`;
+  }).join('');
+
+  host.innerHTML=`<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem;">
+      <div>
+        <h3 style="font-size:.95rem;font-weight:700;margin-bottom:.2rem;">Curva ABC completa</h3>
+        <p style="font-size:.72rem;color:var(--text-muted);">Todas as ${sorted.length} matérias-primas classificadas por giro (Pareto sobre compras 90d).</p>
+      </div>
+    </div>
+    ${filtros}
+    <div class="table-wrap"><table>
+      <thead><tr><th>Curva</th><th>Item</th><th style="text-align:right;">Estoque</th><th style="text-align:right;">Imobilizado</th><th style="text-align:right;">Comprado 90d</th><th style="text-align:right;">Compras / Última</th></tr></thead>
+      <tbody id="abcTbody">${linhas}</tbody>
+    </table></div>
+  </div>`;
+}
+
+function filterAbcTable(){
+  const q=($('abcSearch')?.value||'').trim().toLowerCase();
+  const c=$('abcCurvaFilter')?.value||'';
+  const rows=document.querySelectorAll('#abcTbody tr');
+  let visiveis=0;
+  rows.forEach(tr=>{
+    const okQ=!q||(tr.dataset.name||'').includes(q);
+    const okC=!c||tr.dataset.curva===c;
+    const show=okQ&&okC;
+    tr.style.display=show?'':'none';
+    if(show)visiveis++;
+  });
+  const cnt=$('abcCount');
+  if(cnt)cnt.textContent=visiveis+' itens';
+}
+
+function renderAnTabSemDemanda(){
+  const host=$('anTabSemd');
+  if(!mpSemDemanda||!mpSemDemanda.length){host.innerHTML='<div class="empty-state"><p>Sem dados.</p></div>';return;}
+
+  const orfas=mpSemDemanda.filter(r=>r.status_demanda==='orfa').sort((a,b)=>Number(b.capital_imobilizado||0)-Number(a.capital_imobilizado||0));
+  const mortos=mpSemDemanda.filter(r=>r.status_demanda==='produto_morto').sort((a,b)=>Number(b.capital_imobilizado||0)-Number(a.capital_imobilizado||0));
+  const baixa=mpSemDemanda.filter(r=>r.status_demanda==='demanda_baixa').sort((a,b)=>Number(b.capital_imobilizado||0)-Number(a.capital_imobilizado||0));
+  const ok=mpSemDemanda.filter(r=>r.status_demanda==='ok');
+
+  const totalOrfas=orfas.reduce((s,r)=>s+Number(r.capital_imobilizado||0),0);
+  const totalMortos=mortos.reduce((s,r)=>s+Number(r.capital_imobilizado||0),0);
+  const totalBaixa=baixa.reduce((s,r)=>s+Number(r.capital_imobilizado||0),0);
+
+  // Aviso especial: ficha técnica incompleta
+  const totalFabricsComStock=mpSemDemanda.length;
+  const percOrfas=totalFabricsComStock?Math.round((orfas.length/totalFabricsComStock)*100):0;
+  const aviso=percOrfas>50?`<div style="background:rgba(251,191,36,0.1);border:1px solid var(--orange);border-left:4px solid var(--orange);border-radius:8px;padding:.9rem 1.1rem;margin-bottom:1rem;">
+    <div style="font-weight:700;font-size:.85rem;margin-bottom:.3rem;">⚠️ Ficha técnica incompleta — ${percOrfas}% das MPs estão "órfãs"</div>
+    <div style="font-size:.78rem;color:var(--text-secondary);line-height:1.5;">
+      ${orfas.length} de ${totalFabricsComStock} matérias-primas em estoque NÃO estão vinculadas a nenhum produto na ficha técnica.<br>
+      Provavelmente são usadas na produção real, mas o sistema não consegue saber disso. Conforme as fichas forem completadas, esse número cai e os outros 2 status ficam mais precisos.
+    </div>
+  </div>`:'';
+
+  const tabela=(arr,corId)=>arr.length?`<div class="table-wrap"><table>
+    <thead><tr><th>Item</th><th style="text-align:right;">Estoque</th><th style="text-align:right;">Imobilizado</th>${corId==='produto_morto'?'<th style="text-align:right;">Produtos</th>':''}${corId==='demanda_baixa'?'<th style="text-align:right;">Cobertura</th>':''}</tr></thead>
+    <tbody>${arr.slice(0,30).map(r=>`<tr>
+      <td>${esc(r.name||'—')}</td>
+      <td style="text-align:right;">${fmt(Number(r.stock||0))} ${esc(r.unit||'')}</td>
+      <td style="text-align:right;font-weight:600;">${_fmtRk(r.capital_imobilizado)}</td>
+      ${corId==='produto_morto'?`<td style="text-align:right;font-size:.78rem;color:var(--text-muted);">${r.produtos_que_usam||0} prod</td>`:''}
+      ${corId==='demanda_baixa'?`<td style="text-align:right;font-size:.78rem;color:var(--orange);">${r.meses_cobertura||'—'} meses</td>`:''}
+    </tr>`).join('')}</tbody></table>${arr.length>30?`<div style="padding:.5rem;color:var(--text-muted);font-size:.75rem;text-align:center;">+${arr.length-30} itens não exibidos</div>`:''}</div>`:`<div style="padding:.8rem;color:var(--text-muted);font-size:.8rem;">Nenhum item nesta categoria.</div>`;
+
+  host.innerHTML=`${aviso}
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;margin-bottom:1.2rem;">
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-left:4px solid #fbbf24;border-radius:var(--radius);padding:1rem;">
+        <div style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.3rem;">🟠 Órfãs</div>
+        <div style="font-size:1.4rem;font-weight:700;">${orfas.length}<span style="font-size:.7rem;color:var(--text-muted);font-weight:500;"> itens</span></div>
+        <div style="font-size:.78rem;color:var(--text-secondary);margin-top:.4rem;">${_fmtRk(totalOrfas)} parados<br><span style="color:var(--text-muted);font-size:.72rem;">Sem ficha técnica</span></div>
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-left:4px solid #f87171;border-radius:var(--radius);padding:1rem;">
+        <div style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.3rem;">🔴 Produto Morto</div>
+        <div style="font-size:1.4rem;font-weight:700;">${mortos.length}<span style="font-size:.7rem;color:var(--text-muted);font-weight:500;"> itens</span></div>
+        <div style="font-size:.78rem;color:var(--text-secondary);margin-top:.4rem;">${_fmtRk(totalMortos)} parados<br><span style="color:var(--text-muted);font-size:.72rem;">Produto sem venda 90d</span></div>
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-left:4px solid #fbbf24;border-radius:var(--radius);padding:1rem;">
+        <div style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.3rem;">🟡 Demanda Baixa</div>
+        <div style="font-size:1.4rem;font-weight:700;">${baixa.length}<span style="font-size:.7rem;color:var(--text-muted);font-weight:500;"> itens</span></div>
+        <div style="font-size:.78rem;color:var(--text-secondary);margin-top:.4rem;">${_fmtRk(totalBaixa)} parados<br><span style="color:var(--text-muted);font-size:.72rem;">>12 meses cobertura</span></div>
+      </div>
+    </div>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:1rem;">
+      <h4 style="font-size:.82rem;font-weight:700;margin-bottom:.6rem;">🔴 Produto Morto (em ficha de produto sem venda 90d)</h4>
+      <p style="font-size:.72rem;color:var(--text-muted);margin-bottom:.6rem;">Esses são os mais confiáveis pra ação — a ficha existe e o produto realmente parou de vender.</p>
+      ${tabela(mortos,'produto_morto')}
+    </div>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:1rem;">
+      <h4 style="font-size:.82rem;font-weight:700;margin-bottom:.6rem;">🟡 Demanda Baixa (>12 meses cobertura)</h4>
+      ${tabela(baixa,'demanda_baixa')}
+    </div>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;">
+      <h4 style="font-size:.82rem;font-weight:700;margin-bottom:.6rem;">🟠 Órfãs (sem ficha técnica vinculada)</h4>
+      <p style="font-size:.72rem;color:var(--text-muted);margin-bottom:.6rem;">Top 30 por capital imobilizado. Quem tiver tempo: cadastrar a ficha técnica desses itens daria precisão pra todo o resto.</p>
+      ${tabela(orfas,'orfa')}
+    </div>`;
+}
+
+function renderAnTabQueima(){
+  const host=$('anTabQueima');
+  if(!mpDashboard.length||!mpSemDemanda.length){host.innerHTML='<div class="empty-state"><p>Sem dados.</p></div>';return;}
+
+  // Cruza ABC×SemDemanda: alvos de queima são items em curva C E sem demanda confirmada (não-OK)
+  const semDemandaMap={};
+  mpSemDemanda.forEach(r=>semDemandaMap[r.fabric_id]=r);
+  const alvos=mpDashboard.filter(r=>r.curva==='C'&&Number(r.capital_imobilizado||0)>0).map(r=>{
+    const sd=semDemandaMap[r.fabric_id];
+    return {...r, status_demanda: sd?.status_demanda||'sem_estoque', meses_cobertura: sd?.meses_cobertura, produtos_que_usam: sd?.produtos_que_usam||0};
+  }).sort((a,b)=>Number(b.capital_imobilizado||0)-Number(a.capital_imobilizado||0));
+
+  const totalLiberar=alvos.reduce((s,r)=>s+Number(r.capital_imobilizado||0),0);
+  const totalConfiavel=alvos.filter(r=>r.status_demanda==='produto_morto'||r.status_demanda==='demanda_baixa').reduce((s,r)=>s+Number(r.capital_imobilizado||0),0);
+
+  const linha=r=>{
+    const dias=r.dias_desde_ultima_compra;
+    const diasLbl=dias===null||dias===undefined?'<span style="color:var(--red);">nunca em 90d</span>':`${dias}d atrás`;
+    let badge='', sugestao='';
+    if(r.status_demanda==='produto_morto'){badge='<span style="background:rgba(248,113,113,.2);color:#f87171;padding:.1rem .4rem;border-radius:4px;font-size:.7rem;font-weight:600;">PROD MORTO</span>';sugestao=`Produto que usa parou de vender. Avaliar descarte ou batch B-grade.`;}
+    else if(r.status_demanda==='demanda_baixa'){badge='<span style="background:rgba(251,191,36,.2);color:#fbbf24;padding:.1rem .4rem;border-radius:4px;font-size:.7rem;font-weight:600;">DEMANDA BAIXA</span>';sugestao=`${r.meses_cobertura}m de cobertura. Pausar compra e escoar antes.`;}
+    else if(r.status_demanda==='orfa'){badge='<span style="background:rgba(251,191,36,.15);color:#fbbf24;padding:.1rem .4rem;border-radius:4px;font-size:.7rem;font-weight:600;">SEM FICHA</span>';sugestao=`Cadastrar ficha técnica antes de decidir queima.`;}
+    else{badge='<span style="background:rgba(100,116,139,.2);color:var(--text-muted);padding:.1rem .4rem;border-radius:4px;font-size:.7rem;">—</span>';sugestao='';}
+    return `<tr>
+      <td>${esc(r.name||'—')}</td>
+      <td>${badge}</td>
+      <td style="text-align:right;">${fmt(Number(r.stock||0))} ${esc(r.unit||'')}</td>
+      <td style="text-align:right;font-weight:700;color:var(--red);">${_fmtRk(r.capital_imobilizado)}</td>
+      <td style="text-align:right;font-size:.78rem;color:var(--text-muted);">${diasLbl}</td>
+      <td style="font-size:.75rem;color:var(--text-secondary);max-width:280px;">${sugestao}</td>
+    </tr>`;
+  };
+
+  host.innerHTML=`<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem;">
+      <div>
+        <h3 style="font-size:.95rem;font-weight:700;margin-bottom:.2rem;">🔥 Queima de Estoque — alvos prioritários</h3>
+        <p style="font-size:.72rem;color:var(--text-muted);">Itens em curva C com capital imobilizado. Cruzados com status de demanda pra dar contexto.</p>
+      </div>
+      <div style="display:flex;gap:1.2rem;align-items:flex-start;">
+        <div style="text-align:right;">
+          <div style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">Pode liberar (total)</div>
+          <div style="font-size:1.4rem;font-weight:800;color:var(--red);line-height:1;">${_fmtR2(totalLiberar)}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">Confiável (sem ficha incompleta)</div>
+          <div style="font-size:1.4rem;font-weight:800;color:var(--orange);line-height:1;">${_fmtR2(totalConfiavel)}</div>
+        </div>
+      </div>
+    </div>
+    <div style="background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.3);border-radius:8px;padding:.8rem 1rem;margin-bottom:1rem;font-size:.78rem;color:var(--text-secondary);">
+      <strong>💡 Como usar:</strong> ordene por capital imobilizado, foque nos badges <strong style="color:#f87171;">PROD MORTO</strong> e <strong style="color:#fbbf24;">DEMANDA BAIXA</strong> primeiro (são os mais confiáveis). SEM FICHA precisa cadastrar a ficha técnica antes pra confirmar se é queima ou não.
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Item</th><th>Status</th><th style="text-align:right;">Estoque</th><th style="text-align:right;">Imobilizado</th><th style="text-align:right;">Última compra</th><th>Sugestão</th></tr></thead>
+      <tbody>${alvos.length?alvos.map(linha).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:1rem;">Nenhum alvo identificado.</td></tr>'}</tbody>
+    </table></div>
+  </div>`;
 }
 
 // ═══ CHARTS ═══
