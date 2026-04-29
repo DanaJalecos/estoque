@@ -233,6 +233,10 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
   border-radius:6px;font-size:.78rem;font-family:var(--body);color:var(--text);
 }
 .filter-bar input:focus,.filter-bar select:focus{outline:none;border-color:var(--border-focus);}
+.date-field{display:inline-flex;align-items:center;gap:.45rem;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:.1rem .55rem .1rem .7rem;font-size:.82rem;color:var(--text-muted);min-width:0;}
+.date-field span{flex:0 0 auto;font-weight:600;letter-spacing:.02em;}
+.date-field input{background:transparent!important;border:none!important;color:var(--text)!important;padding:.45rem .2rem!important;font-size:.85rem!important;color-scheme:dark;flex:1;min-width:0;}
+.date-field input::-webkit-calendar-picker-indicator{filter:invert(.7);cursor:pointer;}
 
 /* ═══ MISC ═══ */
 .empty-state{text-align:center;padding:2.5rem;color:var(--text-muted);}
@@ -663,8 +667,8 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
         <div class="filter-bar">
           <select id="hFab" onchange="renderHist()"><option value="all">Todos os produtos</option></select>
           <select id="hType" onchange="renderHist()"><option value="all">Todas</option><option value="entrada">Entradas</option><option value="saida">Saídas</option></select>
-          <input id="hFrom" type="date" onchange="renderHist()">
-          <input id="hTo" type="date" onchange="renderHist()">
+          <label class="date-field"><span>De</span><input id="hFrom" type="date" onchange="renderHist()"></label>
+          <label class="date-field"><span>Até</span><input id="hTo" type="date" onchange="renderHist()"></label>
         </div>
         <div class="table-wrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Produto</th><th>Qtd</th><th>Quem</th><th>Detalhe</th><th class="role-admin">Ações</th></tr></thead><tbody id="histList"></tbody></table></div>
       </div>
@@ -694,8 +698,8 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
         <!-- Purchase history table -->
         <div class="filter-bar">
           <select id="pFab" onchange="renderPurchases()"><option value="all">Todos os produtos</option></select>
-          <input id="pFrom" type="date" onchange="renderPurchases()">
-          <input id="pTo" type="date" onchange="renderPurchases()">
+          <label class="date-field"><span>De</span><input id="pFrom" type="date" onchange="renderPurchases()"></label>
+          <label class="date-field"><span>Até</span><input id="pTo" type="date" onchange="renderPurchases()"></label>
         </div>
         <div class="table-wrap">
           <table>
