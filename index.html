@@ -1397,6 +1397,9 @@ let comparadorPrecos=[]; // [{fabric_id, produto, fornecedor_id, fornecedor_nome
 let mpDashboard=[]; // view mp_dashboard_resumo — curva ABC + capital imobilizado consolidados
 let mpSemDemanda=[]; // view mp_sem_demanda — orfas/produto_morto/demanda_baixa/ok
 let paCurvaAbc=[]; // view pa_curva_abc — Curva ABC dos PRODUTOS ACABADOS (Bling)
+                    // CARREGA SO os relevantes pra UI: A + B + parados c/ capital. ~365 rows
+                    // (ao inves de 2205) pra reduzir tempo de boot da Analise.
+let paCurvaAbcStats=[]; // view pa_curva_abc_stats — agregados por curva (3 rows)
 // Bling caches
 let blingTrendPeriodo=[],blingVendasMes=[],blingDiaSemana=[],blingTopProdutos=[],blingVelocidade=[],blingCatalogo=[],blingSyncMeta=null;
 // Cache flags por secao (lazy-load) — evita recarregar dados ja em memoria
@@ -1452,18 +1455,25 @@ async function loadBlingSection(force){
   _sectionLoaded.bling=true;
 }
 
-// loadAnaliseSection: mp_* + pa_curva_abc. Usado em Analise & Queima (a view pa_curva_abc
-// e a mais pesada — 2.205 rows com subqueries — e era responsavel por uns 4-5s do boot).
+// loadAnaliseSection: mp_* + pa_curva_abc (filtrada pra UI) + pa_curva_abc_stats
+// pa_curva_abc agora e MATERIALIZED VIEW (read instantaneo). Mas a tabela tem 2205 rows
+// — pra economizar transferencia, carregamos so o subset mostrado na UI:
+//   - curva A ou B (51 rows) — top giradores e medios
+//   - parado=true c/ capital_imobilizado>0 (313 rows) — alvos de queima
+// Os totais agregados (mini-cards) vem da view pa_curva_abc_stats (3 rows).
 async function loadAnaliseSection(force){
   if(_sectionLoaded.analise&&!force)return;
-  const[mp,msd,paa]=await Promise.all([
+  const[mp,msd,paa,paaStats]=await Promise.all([
     sb.from('mp_dashboard_resumo').select('*'),
     sb.from('mp_sem_demanda').select('*'),
-    sb.from('pa_curva_abc').select('*').order('valor_vendido_90d',{ascending:false})
+    // OR com filtro: curva A/B (51) OU parado com capital (313). ~365 rows total
+    sb.from('pa_curva_abc').select('*').or('curva.in.(A,B),and(parado.eq.true,capital_imobilizado.gt.0)').order('valor_vendido_90d',{ascending:false}),
+    sb.from('pa_curva_abc_stats').select('*')
   ]);
   mpDashboard=mp.data||[];
   mpSemDemanda=msd.data||[];
   paCurvaAbc=paa.data||[];
+  paCurvaAbcStats=paaStats.data||[];
   _sectionLoaded.analise=true;
 }
 
@@ -4055,27 +4065,33 @@ function renderAnTabPaAbc(){
   const fmtR=n=>'R$ '+Number(n||0).toLocaleString('pt-BR',{maximumFractionDigits:0});
   const fmtR2=n=>'R$ '+Number(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 
+  // Agrupa rows carregadas (paCurvaAbc filtrada — A+B+parados) por curva
   const grupos={A:[],B:[],C:[]};
-  let totalImobilizado=0,totalVendido=0;
   paCurvaAbc.forEach(r=>{
     const c=r.curva||'C';
     if(grupos[c])grupos[c].push(r);
-    totalImobilizado+=Number(r.capital_imobilizado||0);
-    totalVendido+=Number(r.valor_vendido_90d||0);
+  });
+  // Pros mini-cards usamos os AGREGADOS COMPLETOS (paCurvaAbcStats) que tem
+  // a contagem real de cada curva (incluindo os C que nao estao em paCurvaAbc).
+  const statsBy={};
+  (paCurvaAbcStats||[]).forEach(s=>{statsBy[s.curva]=s;});
+  let totalImobilizado=0,totalVendido=0;
+  (paCurvaAbcStats||[]).forEach(s=>{
+    totalImobilizado+=Number(s.imobilizado_total||0);
+    totalVendido+=Number(s.vendido_total||0);
   });
 
-  const miniCard=(letra,cor,desc,arr)=>{
-    const imob=arr.reduce((s,r)=>s+Number(r.capital_imobilizado||0),0);
-    const vend=arr.reduce((s,r)=>s+Number(r.valor_vendido_90d||0),0);
+  const miniCard=(letra,cor,desc)=>{
+    const s=statsBy[letra]||{qtd:0,vendido_total:0,imobilizado_total:0};
     return `<div style="background:var(--bg-card);border:1px solid var(--border);border-left:4px solid ${cor};border-radius:var(--radius);padding:1rem 1.1rem;">
       <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.4rem;">
         <span style="background:${cor};color:#000;font-weight:800;font-size:.85rem;padding:.15rem .5rem;border-radius:6px;">${letra}</span>
         <span style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">${desc}</span>
       </div>
-      <div style="font-size:1.4rem;font-weight:700;line-height:1.1;">${arr.length}<span style="font-size:.7rem;color:var(--text-muted);font-weight:500;"> produtos</span></div>
+      <div style="font-size:1.4rem;font-weight:700;line-height:1.1;">${s.qtd||0}<span style="font-size:.7rem;color:var(--text-muted);font-weight:500;"> produtos</span></div>
       <div style="font-size:.78rem;color:var(--text-secondary);margin-top:.4rem;">
-        💰 ${fmtR(imob)} parados<br>
-        📈 ${fmtR(vend)} vendidos 90d
+        💰 ${fmtR(s.imobilizado_total)} parados<br>
+        📈 ${fmtR(s.vendido_total)} vendidos 90d
       </div>
     </div>`;
   };
@@ -4112,9 +4128,9 @@ function renderAnTabPaAbc(){
     </div>
 
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;margin-bottom:.4rem;">
-      ${miniCard('A','#4ade80','Giradores (80%)',grupos.A)}
-      ${miniCard('B','#fbbf24','Médios (15%)',grupos.B)}
-      ${miniCard('C','#f87171','Parados (5%)',grupos.C)}
+      ${miniCard('A','#4ade80','Giradores (80%)')}
+      ${miniCard('B','#fbbf24','Médios (15%)')}
+      ${miniCard('C','#f87171','Parados (5%)')}
     </div>
     <p style="font-size:.7rem;color:var(--text-muted);margin-bottom:1.2rem;font-style:italic;">
       ℹ️ <strong>Curva C</strong> inclui produtos sem venda <em>e</em> produtos com baixíssima saída
