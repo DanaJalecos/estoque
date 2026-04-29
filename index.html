@@ -998,6 +998,11 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
           (1) <strong>palavras-chave</strong> entre nome da MP e item da ficha,
           (2) <strong>categoria do fornecedor</strong> (EXCIM=tecido, etc),
           (3) <strong>IA Gemini</strong> refina os casos mais difíceis.<br><br>
+          <strong>Os números (0-100) são o índice de confiança</strong> do palpite — não é exatamente "% de palavras que batem", é uma combinação de match de palavras + boost se o fornecedor bate com a categoria do item + score da IA quando ela é chamada. Faixas:
+          <span style="display:inline-block;background:#4ade80;color:#000;font-weight:800;font-size:.78rem;padding:1px 8px;border-radius:4px;margin:0 2px;">70+</span> <strong>Forte</strong> — alta chance de ser match real ·
+          <span style="display:inline-block;background:#fbbf24;color:#000;font-weight:800;font-size:.78rem;padding:1px 8px;border-radius:4px;margin:0 2px;">40-69</span> <strong>Médio</strong> — provável, vale conferir ·
+          <span style="display:inline-block;background:#f87171;color:#000;font-weight:800;font-size:.78rem;padding:1px 8px;border-radius:4px;margin:0 2px;">&lt;40</span> <strong>Fraco</strong> — palpite frouxo, suspeitar.<br>
+          Embaixo do score tem uma frase em itálico explicando o motivo (ex: <em>"+15 boost categoria fornecedor"</em>, <em>"match 65% palavras"</em>, <em>"sugestão IA: tecido elastano premium..."</em>).<br><br>
           <strong>Importante:</strong> nada é vinculado automaticamente. Use essa tela só pra inspeção visual — depois que validar com a Manu/Dana, a gente cria o botão de "Aceitar".
         </div>
 
