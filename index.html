@@ -486,6 +486,7 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
         </div>
         <h3 style="font-size:.85rem;font-weight:700;margin:1.5rem 0 .3rem;">Produtos Cadastrados</h3>
         <div class="table-wrap"><table><thead><tr><th>Nome</th><th>Variação</th><th>Fornecedor</th><th>Unidade</th><th>Mínimo</th><th>Ações</th></tr></thead><tbody id="fabList"></tbody></table></div>
+        <div id="fabListPag"></div>
       </div>
     </div>
 
@@ -629,10 +630,11 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
       <div class="topbar"><h2>Matéria-prima em Estoque</h2><div class="topbar-actions"><button class="btn" data-perm-btn="entrada" onclick="showPage('entrada',navBtn('entrada'))">Registrar Entrada</button><button class="btn btn-primary" data-perm-btn="cadastro" onclick="showPage('cadastro',navBtn('cadastro'))">+ Novo Produto</button></div></div>
       <div class="content">
         <div class="filter-bar">
-          <input id="sSearch" placeholder="Buscar..." oninput="renderStock()">
-          <select id="sFilter" onchange="renderStock()"><option value="all">Todos</option><option value="ok">OK</option><option value="low">Baixo</option><option value="critical">Crítico</option></select>
+          <input id="sSearch" placeholder="Buscar..." oninput="stockPag.pagina=1;renderStock()">
+          <select id="sFilter" onchange="stockPag.pagina=1;renderStock()"><option value="all">Todos</option><option value="ok">OK</option><option value="low">Baixo</option><option value="critical">Crítico</option></select>
         </div>
         <div id="stockGrouped"></div>
+        <div id="stockGroupedPag"></div>
       </div>
     </div>
 
@@ -657,12 +659,13 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
       <div class="topbar"><h2>Histórico</h2><div class="topbar-actions"><button class="btn btn-primary" onclick="exportHistPDF()">Exportar PDF</button></div></div>
       <div class="content">
         <div class="filter-bar">
-          <select id="hFab" onchange="renderHist()"><option value="all">Todos os produtos</option></select>
-          <select id="hType" onchange="renderHist()"><option value="all">Todas</option><option value="entrada">Entradas</option><option value="saida">Saídas</option></select>
-          <label class="date-field"><span>De</span><input id="hFrom" type="date" onchange="renderHist()"></label>
-          <label class="date-field"><span>Até</span><input id="hTo" type="date" onchange="renderHist()"></label>
+          <select id="hFab" onchange="histPag.pagina=1;renderHist()"><option value="all">Todos os produtos</option></select>
+          <select id="hType" onchange="histPag.pagina=1;renderHist()"><option value="all">Todas</option><option value="entrada">Entradas</option><option value="saida">Saídas</option></select>
+          <label class="date-field"><span>De</span><input id="hFrom" type="date" onchange="histPag.pagina=1;renderHist()"></label>
+          <label class="date-field"><span>Até</span><input id="hTo" type="date" onchange="histPag.pagina=1;renderHist()"></label>
         </div>
         <div class="table-wrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Produto</th><th>Qtd</th><th>Quem</th><th>Detalhe</th><th class="role-admin">Ações</th></tr></thead><tbody id="histList"></tbody></table></div>
+        <div id="histListPag"></div>
       </div>
     </div>
 
@@ -2079,10 +2082,64 @@ function delFab(id){
     await loadAll();renderFabList();toast('Excluído.');
   });
 }
+// ═══ Helper generico de paginacao ═══
+// Retorna o HTML da barra de paginacao. State e um objeto com as funcoes goto/setPp.
+function _renderPagBar(state, totalItens, label){
+  const inicio=(state.pagina-1)*state.porPagina;
+  const fim=state.porPagina>=9999?totalItens:Math.min(inicio+state.porPagina,totalItens);
+  const totalPaginas=state.porPagina>=9999?1:Math.max(1,Math.ceil(totalItens/state.porPagina));
+  if(totalPaginas<=1&&totalItens<=state.porPagina){
+    return `<div style="font-size:.78rem;color:var(--text-muted);margin-top:.6rem;padding:.4rem .2rem;">${totalItens} ${label}</div>`;
+  }
+  const btn=(n,lbl,disabled,ativo)=>`<button class="btn ${ativo?'btn-primary':''}" ${disabled?'disabled':''} onclick="${state.gotoFn}(${n})" style="padding:.45rem .8rem;font-size:.85rem;min-width:38px;${disabled?'opacity:.4;cursor:not-allowed;':''}">${lbl}</button>`;
+  let pages=[];
+  if(totalPaginas<=7){for(let i=1;i<=totalPaginas;i++)pages.push(i);}
+  else{
+    pages.push(1);
+    if(state.pagina>3)pages.push('...');
+    const start=Math.max(2,state.pagina-1),end=Math.min(totalPaginas-1,state.pagina+1);
+    for(let i=start;i<=end;i++)pages.push(i);
+    if(state.pagina<totalPaginas-2)pages.push('...');
+    pages.push(totalPaginas);
+  }
+  const pageBtns=pages.map(p=>p==='...'?'<span style="padding:.45rem .4rem;color:var(--text-muted);">...</span>':btn(p,p,false,p===state.pagina)).join('');
+  return `<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.8rem;margin-top:1rem;padding-top:.8rem;border-top:1px solid var(--border);">
+    <div style="font-size:.85rem;color:var(--text-secondary);">Exibindo <strong>${totalItens?inicio+1:0}-${fim}</strong> de <strong>${totalItens}</strong> ${label}</div>
+    <div style="display:flex;gap:.3rem;align-items:center;flex-wrap:wrap;">
+      ${btn(state.pagina-1,'← Anterior',state.pagina<=1,false)}
+      ${pageBtns}
+      ${btn(state.pagina+1,'Próxima →',state.pagina>=totalPaginas,false)}
+      <span style="font-size:.85rem;color:var(--text-muted);margin-left:.6rem;">por página:</span>
+      <select onchange="${state.setPpFn}(this.value)" style="padding:.4rem .6rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:.85rem;">
+        <option value="15" ${state.porPagina===15?'selected':''}>15</option>
+        <option value="30" ${state.porPagina===30?'selected':''}>30</option>
+        <option value="50" ${state.porPagina===50?'selected':''}>50</option>
+        <option value="9999" ${state.porPagina>=9999?'selected':''}>Todos</option>
+      </select>
+    </div>
+  </div>`;
+}
+
+// Estado paginacao Cadastro -> Produtos Cadastrados
+let fabPag={pagina:1,porPagina:15,gotoFn:'gotoFabPage',setPpFn:'setFabPorPagina'};
+function gotoFabPage(n){fabPag.pagina=Math.max(1,n);renderFabList();}
+function setFabPorPagina(n){fabPag.porPagina=Number(n)||15;fabPag.pagina=1;renderFabList();}
+
 function renderFabList(){
   const tb=$('fabList');
-  if(!fabrics.length){tb.innerHTML='<tr><td colspan="6"><div class="empty-state"><span class="icon">📦</span><p>Nenhum produto cadastrado.</p></div></td></tr>';return;}
-  tb.innerHTML=fabrics.map(f=>`<tr><td><strong>${esc(f.name)}</strong></td><td>${esc(f.color)}</td><td>${esc(f.supplier||'')}</td><td>${f.unit}</td><td>${f.min_stock}</td><td><button class="btn btn-sm" onclick="editFab('${f.id}')">Editar</button> <button class="btn btn-sm btn-danger" onclick="delFab('${f.id}')">Excluir</button></td></tr>`).join('');
+  if(!fabrics.length){tb.innerHTML='<tr><td colspan="6"><div class="empty-state"><span class="icon">📦</span><p>Nenhum produto cadastrado.</p></div></td></tr>';
+    const host=$('fabListPag');if(host)host.innerHTML='';
+    return;
+  }
+  // Paginacao
+  const total=fabrics.length;
+  const totalPag=fabPag.porPagina>=9999?1:Math.max(1,Math.ceil(total/fabPag.porPagina));
+  if(fabPag.pagina>totalPag)fabPag.pagina=totalPag;
+  const ini=(fabPag.pagina-1)*fabPag.porPagina;
+  const fim=fabPag.porPagina>=9999?total:Math.min(ini+fabPag.porPagina,total);
+  const page=fabrics.slice(ini,fim);
+  tb.innerHTML=page.map(f=>`<tr><td><strong>${esc(f.name)}</strong></td><td>${esc(f.color)}</td><td>${esc(f.supplier||'')}</td><td>${f.unit}</td><td>${f.min_stock}</td><td><button class="btn btn-sm" onclick="editFab('${f.id}')">Editar</button> <button class="btn btn-sm btn-danger" onclick="delFab('${f.id}')">Excluir</button></td></tr>`).join('');
+  const host=$('fabListPag');if(host)host.innerHTML=_renderPagBar(fabPag,total,'produtos');
 }
 
 // ═══ NOTA FISCAL (AI) ═══
@@ -4383,6 +4440,11 @@ function renderCharts(){
 }
 
 // ═══ STOCK ═══
+// Estado paginacao Materia-prima (Estoque)
+let stockPag={pagina:1,porPagina:15,gotoFn:'gotoStockPage',setPpFn:'setStockPorPagina'};
+function gotoStockPage(n){stockPag.pagina=Math.max(1,n);renderStock();window.scrollTo({top:0,behavior:'smooth'});}
+function setStockPorPagina(n){stockPag.porPagina=Number(n)||15;stockPag.pagina=1;renderStock();}
+
 function renderStock(){
   const search=($('sSearch').value||'').toLowerCase();
   const filter=$('sFilter').value;
@@ -4396,7 +4458,11 @@ function renderStock(){
   });
 
   const container=$('stockGrouped');
-  if(!list.length){container.innerHTML='<div class="empty-state"><span class="icon">📦</span><p>Nenhum produto encontrado.</p></div>';return;}
+  if(!list.length){
+    container.innerHTML='<div class="empty-state"><span class="icon">📦</span><p>Nenhum produto encontrado.</p></div>';
+    const pgHost=$('stockGroupedPag');if(pgHost)pgHost.innerHTML='';
+    return;
+  }
 
   // Group by product name
   const groups={};
@@ -4406,8 +4472,17 @@ function renderStock(){
     groups[key].push(f);
   });
 
+  // Pagina os grupos (cada grupo = 1 item da paginacao)
+  const groupKeys=Object.keys(groups).sort();
+  const totalGroups=groupKeys.length;
+  const totalPag=stockPag.porPagina>=9999?1:Math.max(1,Math.ceil(totalGroups/stockPag.porPagina));
+  if(stockPag.pagina>totalPag)stockPag.pagina=totalPag;
+  const ini=(stockPag.pagina-1)*stockPag.porPagina;
+  const fim=stockPag.porPagina>=9999?totalGroups:Math.min(ini+stockPag.porPagina,totalGroups);
+  const pageKeys=groupKeys.slice(ini,fim);
+
   let html='';
-  Object.keys(groups).sort().forEach(name=>{
+  pageKeys.forEach(name=>{
     const items=groups[name];
     const totalStock=items.reduce((s,f)=>s+f.stock,0);
     const unit=items[0].unit;
@@ -4455,6 +4530,7 @@ function renderStock(){
   });
 
   container.innerHTML=html;
+  const pgHost=$('stockGroupedPag');if(pgHost)pgHost.innerHTML=_renderPagBar(stockPag,totalGroups,'produtos');
 }
 
 // ═══ ALERTS ═══
@@ -5417,19 +5493,37 @@ function exportHistPDF(){
 }
 
 // ═══ HISTORY ═══
+// Estado paginacao Historico
+let histPag={pagina:1,porPagina:15,gotoFn:'gotoHistPage',setPpFn:'setHistPorPagina'};
+function gotoHistPage(n){histPag.pagina=Math.max(1,n);renderHist();}
+function setHistPorPagina(n){histPag.porPagina=Number(n)||15;histPag.pagina=1;renderHist();}
+
 function renderHist(){
   const ff=$('hFab').value,tf=$('hType').value,from=$('hFrom').value,to=$('hTo').value;
   let list=movements.filter(m=>{
     if(ff!=='all'&&m.fabric_id!==ff)return false;
     if(tf!=='all'&&m.type!==tf)return false;
-    if(from&&m.date<from)return false;
-    if(to&&m.date>to)return false;
+    // Normaliza m.date pra YYYY-MM-DD (mesmo bug do renderPurchases)
+    const mDate=String(m.date||'').slice(0,10);
+    if(from&&mDate<from)return false;
+    if(to&&mDate>to)return false;
     return true;
   });
   const tb=$('histList');
   const canDel=canAccess('excluir_mov');
-  if(!list.length){tb.innerHTML=`<tr><td colspan="${canDel?7:6}"><div class="empty-state"><span class="icon">📜</span><p>Nenhuma movimentação.</p></div></td></tr>`;return;}
-  tb.innerHTML=list.map(m=>`<tr>
+  if(!list.length){
+    tb.innerHTML=`<tr><td colspan="${canDel?7:6}"><div class="empty-state"><span class="icon">📜</span><p>Nenhuma movimentação.</p></div></td></tr>`;
+    const host=$('histListPag');if(host)host.innerHTML='';
+    return;
+  }
+  // Paginacao
+  const total=list.length;
+  const totalPag=histPag.porPagina>=9999?1:Math.max(1,Math.ceil(total/histPag.porPagina));
+  if(histPag.pagina>totalPag)histPag.pagina=totalPag;
+  const ini=(histPag.pagina-1)*histPag.porPagina;
+  const fim=histPag.porPagina>=9999?total:Math.min(ini+histPag.porPagina,total);
+  const pageList=list.slice(ini,fim);
+  tb.innerHTML=pageList.map(m=>`<tr>
     <td>${fmtDate(m.date)}</td>
     <td><span class="badge ${m.type==='entrada'?'badge-in':'badge-out'}">${m.type==='entrada'?'↓ Entrada':'↑ Saída'}</span></td>
     <td>${esc(getFabLabel(m.fabric_id))}</td>
@@ -5438,6 +5532,7 @@ function renderHist(){
     <td>${esc(m.detail||'')}</td>
     ${canDel?`<td><button class="btn btn-sm btn-danger" onclick="delMov('${m.id}')">Excluir</button></td>`:''}
   </tr>`).join('');
+  const host=$('histListPag');if(host)host.innerHTML=_renderPagBar(histPag,total,'movimentações');
 }
 async function delMov(id){
   const m=movements.find(x=>x.id===id);
