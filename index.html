@@ -407,6 +407,9 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
           </div>
         </div>
 
+        <!-- ANÁLISE ABC + CAPITAL IMOBILIZADO -->
+        <div id="dashAbcSection" style="margin-bottom:1.5rem;"></div>
+
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem;">
           <h3 style="font-size:.85rem;font-weight:700;">Últimas Movimentações</h3>
         </div>
@@ -1316,10 +1319,11 @@ let fornecedores=[];
 let fichaProdutos=[],fichaItens=[],vendasPorCodigo=[],consumoProjetado=[];
 let fabricCustoMedio=[]; // [{fabric_id, custo_medio_ponderado, ultimo_custo, valor_em_estoque, ...}]
 let comparadorPrecos=[]; // [{fabric_id, produto, fornecedor_id, fornecedor_nome, preco_medio, ultimo_preco, ...}]
+let mpDashboard=[]; // view mp_dashboard_resumo — curva ABC + capital imobilizado consolidados
 // Bling caches
 let blingTrendPeriodo=[],blingVendasMes=[],blingDiaSemana=[],blingTopProdutos=[],blingVelocidade=[],blingCatalogo=[],blingSyncMeta=null;
 async function loadAll(){
-  const[f,m,p,pu,rp,fo,btp,bvm,bds,btop,bvel,bmeta,fp,ft,vpc,cp,fcm,cmp]=await Promise.all([
+  const[f,m,p,pu,rp,fo,btp,bvm,bds,btop,bvel,bmeta,fp,ft,vpc,cp,fcm,cmp,mp]=await Promise.all([
     sb.from('fabrics').select('*').order('created_at',{ascending:false}),
     sb.from('movements').select('*').order('created_at',{ascending:false}),
     sb.from('profiles').select('*'),
@@ -1337,7 +1341,8 @@ async function loadAll(){
     sb.from('vendas_por_codigo_ficha').select('*'),
     sb.from('consumo_projetado').select('*').order('dias_de_cobertura',{ascending:true,nullsFirst:false}),
     sb.from('fabric_custo_medio').select('*'),
-    sb.from('comparador_precos').select('*')
+    sb.from('comparador_precos').select('*'),
+    sb.from('mp_dashboard_resumo').select('*')
   ]);
   fabrics=f.data||[];movements=m.data||[];profiles=p.data||[];purchases=pu.data||[];
   rolePerms=(rp.data?.permissions)||{};
@@ -1347,6 +1352,7 @@ async function loadAll(){
   fichaProdutos=fp.data||[];fichaItens=ft.data||[];vendasPorCodigo=vpc.data||[];consumoProjetado=cp.data||[];
   fabricCustoMedio=fcm.data||[];
   comparadorPrecos=cmp.data||[];
+  mpDashboard=mp.data||[];
 }
 // Helper: pega custo médio ponderado do fabric (com fallback pro último preço)
 function getCustoMedio(fabricId){
@@ -3420,6 +3426,7 @@ function renderDash(){
 
   renderDashProducao();
   renderDashFichaAlertas();
+  renderDashAbc();
   renderCharts();
 
   const recent=movements.slice(0,12);
@@ -3433,6 +3440,106 @@ function renderDash(){
     <td>${esc(getWho(m))}</td>
     <td>${esc(m.detail||'')}</td>
   </tr>`).join('');
+}
+
+// ═══ ANÁLISE ABC + CAPITAL IMOBILIZADO ═══
+// Usa a view `mp_dashboard_resumo` que combina mp_curva_abc + fabric_custo_medio.
+// Curva ABC é Pareto sobre VALOR comprado nos últimos 90 dias (proxy de giro,
+// porque movements.saida está zerado). A=80% B=15% C=5%.
+function renderDashAbc(){
+  const host=$('dashAbcSection');
+  if(!host)return;
+  if(!mpDashboard||!mpDashboard.length){host.innerHTML='';return;}
+
+  const fmtR=n=>'R$ '+Number(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const fmtRcompact=n=>'R$ '+Number(n||0).toLocaleString('pt-BR',{maximumFractionDigits:0});
+
+  // Agregados por curva
+  const grupos={A:[],B:[],C:[]};
+  let totalImobilizado=0, totalMov90=0;
+  mpDashboard.forEach(r=>{
+    const c=r.curva||'C';
+    if(grupos[c])grupos[c].push(r);
+    totalImobilizado+=Number(r.capital_imobilizado||0);
+    totalMov90+=Number(r.valor_movimentado_90d||0);
+  });
+
+  // Mini-card por curva
+  const miniCard=(letra,cor,desc,arr)=>{
+    const imob=arr.reduce((s,r)=>s+Number(r.capital_imobilizado||0),0);
+    const mov=arr.reduce((s,r)=>s+Number(r.valor_movimentado_90d||0),0);
+    return `<div style="background:var(--bg-card);border:1px solid var(--border);border-left:4px solid ${cor};border-radius:var(--radius);padding:1rem 1.1rem;">
+      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.4rem;">
+        <span style="background:${cor};color:#000;font-weight:800;font-size:.85rem;padding:.15rem .5rem;border-radius:6px;">${letra}</span>
+        <span style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">${desc}</span>
+      </div>
+      <div style="font-size:1.4rem;font-weight:700;line-height:1.1;">${arr.length}<span style="font-size:.7rem;color:var(--text-muted);font-weight:500;"> itens</span></div>
+      <div style="font-size:.78rem;color:var(--text-secondary);margin-top:.4rem;">
+        💰 ${fmtRcompact(imob)} parados<br>
+        📦 ${fmtRcompact(mov)} comprado 90d
+      </div>
+    </div>`;
+  };
+
+  // Top da curva A (giradores fortes — não pode faltar)
+  const topA=grupos.A.slice().sort((a,b)=>Number(b.valor_movimentado_90d||0)-Number(a.valor_movimentado_90d||0)).slice(0,10);
+  // Top da curva C com mais $$ parado (alvos pra queima)
+  const topCqueima=grupos.C.slice().sort((a,b)=>Number(b.capital_imobilizado||0)-Number(a.capital_imobilizado||0)).slice(0,10).filter(r=>Number(r.capital_imobilizado||0)>0);
+
+  const tableA=topA.length?`<div class="table-wrap"><table>
+    <thead><tr><th>Item</th><th style="text-align:right;">Estoque</th><th style="text-align:right;">Comprado 90d</th></tr></thead>
+    <tbody>${topA.map(r=>`<tr>
+      <td>${esc(r.name||'—')}</td>
+      <td style="text-align:right;">${fmt(Number(r.stock||0))} ${esc(r.unit||'')}</td>
+      <td style="text-align:right;font-weight:600;">${fmtRcompact(r.valor_movimentado_90d)}</td>
+    </tr>`).join('')}</tbody></table></div>`:`<div style="padding:.8rem;color:var(--text-muted);font-size:.8rem;">Sem itens A.</div>`;
+
+  const tableC=topCqueima.length?`<div class="table-wrap"><table>
+    <thead><tr><th>Item</th><th style="text-align:right;">Estoque</th><th style="text-align:right;">Imobilizado</th><th style="text-align:right;">Última compra</th></tr></thead>
+    <tbody>${topCqueima.map(r=>{
+      const dias=r.dias_desde_ultima_compra;
+      const diasLabel=dias===null||dias===undefined?'<span style="color:var(--red);">nunca comprou em 90d</span>':`${dias} dias`;
+      return `<tr>
+        <td>${esc(r.name||'—')}</td>
+        <td style="text-align:right;">${fmt(Number(r.stock||0))} ${esc(r.unit||'')}</td>
+        <td style="text-align:right;font-weight:600;color:var(--red);">${fmtRcompact(r.capital_imobilizado)}</td>
+        <td style="text-align:right;font-size:.78rem;color:var(--text-muted);">${diasLabel}</td>
+      </tr>`;
+    }).join('')}</tbody></table></div>`:`<div style="padding:.8rem;color:var(--text-muted);font-size:.8rem;">Sem alvos pra queima.</div>`;
+
+  const percC=totalImobilizado>0?Math.round((grupos.C.reduce((s,r)=>s+Number(r.capital_imobilizado||0),0)/totalImobilizado)*100):0;
+
+  host.innerHTML=`
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;flex-wrap:wrap;gap:.8rem;">
+        <div>
+          <h3 style="font-size:.95rem;font-weight:700;margin-bottom:.2rem;">📊 Análise ABC + Capital Imobilizado</h3>
+          <p style="font-size:.72rem;color:var(--text-muted);">Pareto baseado em compras dos últimos 90 dias. A = giradores fortes (80% do valor). B = médios. C = parados (alvos de queima).</p>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">Total imobilizado</div>
+          <div style="font-size:1.6rem;font-weight:800;line-height:1;">${fmtR(totalImobilizado)}</div>
+          <div style="font-size:.72rem;color:${percC>20?'var(--red)':'var(--text-muted)'};margin-top:.2rem;">${percC}% parado em curva C</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;margin-bottom:1.2rem;">
+        ${miniCard('A','#4ade80','Giradores',grupos.A)}
+        ${miniCard('B','#fbbf24','Médios',grupos.B)}
+        ${miniCard('C','#f87171','Parados',grupos.C)}
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div>
+          <h4 style="font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem;">🟢 Top Curva A — não pode faltar</h4>
+          ${tableA}
+        </div>
+        <div>
+          <h4 style="font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem;">🔥 Curva C — alvos de queima</h4>
+          ${tableC}
+        </div>
+      </div>
+    </div>`;
 }
 
 // ═══ CHARTS ═══
