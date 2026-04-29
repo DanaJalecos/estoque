@@ -1372,7 +1372,7 @@ async function enterApp(){
     }
   }
 
-  await loadAll();
+  await loadEssentials();
   applyPermissions();
   // Re-checa permissao agora que sabemos o cargo. Se nao tiver acesso, fallback dashboard.
   const page=canAccess(candidateInicial)?candidateInicial:'dashboard';
@@ -1399,41 +1399,96 @@ let mpSemDemanda=[]; // view mp_sem_demanda — orfas/produto_morto/demanda_baix
 let paCurvaAbc=[]; // view pa_curva_abc — Curva ABC dos PRODUTOS ACABADOS (Bling)
 // Bling caches
 let blingTrendPeriodo=[],blingVendasMes=[],blingDiaSemana=[],blingTopProdutos=[],blingVelocidade=[],blingCatalogo=[],blingSyncMeta=null;
-async function loadAll(){
-  const[f,m,p,pu,rp,fo,btp,bvm,bds,btop,bvel,bmeta,fp,ft,vpc,cp,fcm,cmp,mp,msd,paa]=await Promise.all([
+// Cache flags por secao (lazy-load) — evita recarregar dados ja em memoria
+const _sectionLoaded={ficha:false,bling:false,analise:false,comparador:false};
+
+// loadEssentials: carrega so o minimo pro Dashboard + menu funcionarem (boot rapido).
+// Outras secoes carregam sob demanda via load*Section() quando o user abre a tela.
+async function loadEssentials(){
+  const[f,m,p,pu,rp,fo,fcm,fp,cp]=await Promise.all([
     sb.from('fabrics').select('*').order('created_at',{ascending:false}),
     sb.from('movements').select('*').order('created_at',{ascending:false}),
     sb.from('profiles').select('*'),
     sb.from('purchases').select('*').order('date',{ascending:false}),
     sb.from('role_permissions').select('*').eq('id',1).maybeSingle(),
     sb.from('fornecedores').select('*').order('nome',{ascending:true}),
+    sb.from('fabric_custo_medio').select('*'),
+    sb.from('ficha_produtos').select('*').order('custo_total',{ascending:false}),
+    sb.from('consumo_projetado').select('*').order('dias_de_cobertura',{ascending:true,nullsFirst:false})
+  ]);
+  fabrics=f.data||[];movements=m.data||[];profiles=p.data||[];purchases=pu.data||[];
+  rolePerms=(rp.data?.permissions)||{};
+  fornecedores=fo.data||[];
+  fabricCustoMedio=fcm.data||[];
+  fichaProdutos=fp.data||[];
+  consumoProjetado=cp.data||[];
+}
+
+// loadFichaSection: ficha_tecnica + vendas_por_codigo_ficha. Usado em Ficha Tecnica + Saida.
+async function loadFichaSection(force){
+  if(_sectionLoaded.ficha&&!force)return;
+  const[ft,vpc]=await Promise.all([
+    sb.from('ficha_tecnica').select('*').order('produto_codigo,ordem'),
+    sb.from('vendas_por_codigo_ficha').select('*')
+  ]);
+  fichaItens=ft.data||[];
+  vendasPorCodigo=vpc.data||[];
+  _sectionLoaded.ficha=true;
+}
+
+// loadBlingSection: todas tabelas bling_*. Usado em Vendas Bling.
+async function loadBlingSection(force){
+  if(_sectionLoaded.bling&&!force)return;
+  const[btp,bvm,bds,btop,bvel,bmeta]=await Promise.all([
     sb.from('bling_trend_periodo').select('*'),
     sb.from('bling_vendas_mes').select('*').order('mes',{ascending:true}),
     sb.from('bling_vendas_dia_semana').select('*').order('dia_semana',{ascending:true}),
     sb.from('bling_top_produtos').select('*').order('total_quantidade',{ascending:false}),
     sb.from('bling_velocidade_90d').select('*').order('qtd_90d',{ascending:false}),
-    sb.from('bling_sync_meta').select('*').eq('id',1).maybeSingle(),
-    sb.from('ficha_produtos').select('*').order('custo_total',{ascending:false}),
-    sb.from('ficha_tecnica').select('*').order('produto_codigo,ordem'),
-    sb.from('vendas_por_codigo_ficha').select('*'),
-    sb.from('consumo_projetado').select('*').order('dias_de_cobertura',{ascending:true,nullsFirst:false}),
-    sb.from('fabric_custo_medio').select('*'),
-    sb.from('comparador_precos').select('*'),
-    sb.from('mp_dashboard_resumo').select('*'),
-    sb.from('mp_sem_demanda').select('*'),
-    sb.from('pa_curva_abc').select('*').order('valor_vendido_90d', { ascending: false })
+    sb.from('bling_sync_meta').select('*').eq('id',1).maybeSingle()
   ]);
-  fabrics=f.data||[];movements=m.data||[];profiles=p.data||[];purchases=pu.data||[];
-  rolePerms=(rp.data?.permissions)||{};
-  fornecedores=fo.data||[];
   blingTrendPeriodo=btp.data||[];blingVendasMes=bvm.data||[];blingDiaSemana=bds.data||[];
   blingTopProdutos=btop.data||[];blingVelocidade=bvel.data||[];blingSyncMeta=bmeta.data||null;
-  fichaProdutos=fp.data||[];fichaItens=ft.data||[];vendasPorCodigo=vpc.data||[];consumoProjetado=cp.data||[];
-  fabricCustoMedio=fcm.data||[];
-  comparadorPrecos=cmp.data||[];
+  _sectionLoaded.bling=true;
+}
+
+// loadAnaliseSection: mp_* + pa_curva_abc. Usado em Analise & Queima (a view pa_curva_abc
+// e a mais pesada — 2.205 rows com subqueries — e era responsavel por uns 4-5s do boot).
+async function loadAnaliseSection(force){
+  if(_sectionLoaded.analise&&!force)return;
+  const[mp,msd,paa]=await Promise.all([
+    sb.from('mp_dashboard_resumo').select('*'),
+    sb.from('mp_sem_demanda').select('*'),
+    sb.from('pa_curva_abc').select('*').order('valor_vendido_90d',{ascending:false})
+  ]);
   mpDashboard=mp.data||[];
   mpSemDemanda=msd.data||[];
   paCurvaAbc=paa.data||[];
+  _sectionLoaded.analise=true;
+}
+
+// loadComparadorSection: comparador_precos (so usado no modal Comparar Precos)
+async function loadComparadorSection(force){
+  if(_sectionLoaded.comparador&&!force)return;
+  const{data}=await sb.from('comparador_precos').select('*');
+  comparadorPrecos=data||[];
+  _sectionLoaded.comparador=true;
+}
+
+// loadAll: re-carrega TUDO (essentials + todas secoes). Usado em saves/realtime
+// pra garantir consistencia. Invalida caches antes pra forcar fetch novo.
+async function loadAll(){
+  _sectionLoaded.ficha=false;
+  _sectionLoaded.bling=false;
+  _sectionLoaded.analise=false;
+  _sectionLoaded.comparador=false;
+  await Promise.all([
+    loadEssentials(),
+    loadFichaSection(true),
+    loadBlingSection(true),
+    loadAnaliseSection(true),
+    loadComparadorSection(true)
+  ]);
 }
 // Helper: pega custo médio ponderado do fabric (com fallback pro último preço)
 function getCustoMedio(fabricId){
@@ -1513,12 +1568,13 @@ function renderCurrent(){
   else if(id==='compras')renderPurchases();
   else if(id==='alertas')renderAlerts();
   else if(id==='ficha')renderFichas();
+  else if(id==='analise')renderAnalisePage();
   else if(id==='previsoes')renderForecast();
   else if(id==='usuarios')renderUsers();
 }
 
 // ═══ NAV ═══
-function showPage(name,btn){
+async function showPage(name,btn){
   sessionStorage.setItem('dana_page',name);
   // Atualiza URL hash (deep-linking) sem disparar evento hashchange recursivo
   if(location.hash!=='#'+name){
@@ -1530,6 +1586,24 @@ function showPage(name,btn){
   if(btn)btn.classList.add('active');
   document.querySelector('.sidebar').classList.remove('open');
   const td=today();
+
+  // ═══ Lazy-load por secao ═══
+  // Cada page que precisa de dados extras dispara o loader (com cache, so carrega 1 vez)
+  // Saida e Ficha precisam de ficha_tecnica + vendas_por_codigo
+  if(name==='saida'||name==='ficha'){await loadFichaSection();}
+  // Bling precisa de todas tabelas bling_*
+  if(name==='bling'){await loadBlingSection();}
+  // Analise & Queima precisa de mp_* + pa_curva_abc (mais pesada)
+  if(name==='analise'){await loadAnaliseSection();}
+  // Dashboard mostra alertas de ficha — carrega em background sem bloquear
+  if(name==='dashboard'&&!_sectionLoaded.ficha){
+    loadFichaSection().then(()=>{try{renderDashFichaAlertas();}catch(e){console.warn('[lazy] dash ficha:',e);}});
+  }
+  // Dashboard tambem mostra strip Bling (Vendas Matriz) se cargo tiver acesso
+  if(name==='dashboard'&&!_sectionLoaded.bling&&canAccess('bling')){
+    loadBlingSection().then(()=>{try{renderDashBlingStrip();}catch(e){console.warn('[lazy] dash bling:',e);}});
+  }
+
   if(name==='dashboard')renderDash();
   if(name==='cadastro'){renderFabList();popSupSelect('fabFornecedorId',$('fabFornecedorId')?.value||'');}
   if(name==='entrada'){popSel('entryFab');$('entryDate').value=td;popSupSelect('entryFornecedorId');}
@@ -4484,7 +4558,12 @@ function renderAlerts(){
 }
 
 // ═══ COMPARADOR DE PREÇOS ═══
-function abrirComparadorPrecos(){
+async function abrirComparadorPrecos(){
+  // Lazy-load do comparador (so carrega na primeira vez que abrir o modal)
+  if(!_sectionLoaded.comparador){
+    toast('Carregando comparador...');
+    await loadComparadorSection();
+  }
   // Agrupa por fabric_id; só interessa quem tem 2+ fornecedores
   const porFabric={};
   for(const cp of comparadorPrecos){
