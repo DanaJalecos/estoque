@@ -281,10 +281,12 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
   .form-row{grid-template-columns:1fr;}
   #chartsGrid{grid-template-columns:1fr!important;}
   #purchaseChartsGrid{grid-template-columns:1fr!important;}
-  /* Mini-cards das paginas Analise & Queima e Vinculos: nunca squeeze 3-cols */
+  /* Mini-cards das paginas Analise & Queima: nunca squeeze 3-cols */
   #anTabAbc div[style*="grid-template-columns:repeat(3,1fr)"],
   #anTabSemd div[style*="grid-template-columns:repeat(3,1fr)"],
   #anTabQueima div[style*="grid-template-columns:repeat(3,1fr)"],
+  #anTabPaAbc div[style*="grid-template-columns:repeat(3,1fr)"],
+  #anTabParados div[style*="grid-template-columns:repeat(3,1fr)"],
   #dashAbcSection div[style*="grid-template-columns:repeat(3,1fr)"],
   #dashAbcSection div[style*="grid-template-columns:1fr 1fr"]{
     grid-template-columns:1fr!important;
@@ -955,16 +957,20 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
     <div id="page-analise" class="page hidden" data-perm="dashboard">
       <div class="topbar"><h2>📊 Análise & Queima de Estoque</h2></div>
       <div class="content">
-        <!-- Abas internas -->
-        <div style="display:flex;gap:.4rem;margin-bottom:1rem;background:var(--bg-card);padding:.4rem;border-radius:8px;border:1px solid var(--border);">
-          <button class="btn" id="anTabBtn1" onclick="anSetTab('abc')" style="flex:1;font-weight:600;">📊 Curva ABC</button>
-          <button class="btn" id="anTabBtn2" onclick="anSetTab('semd')" style="flex:1;font-weight:600;">🔍 Sem Demanda</button>
-          <button class="btn" id="anTabBtn3" onclick="anSetTab('queima')" style="flex:1;font-weight:600;">🔥 Queima C</button>
+        <!-- Abas internas: 3 de Materia-Prima + 2 de Produto Acabado -->
+        <div style="display:flex;gap:.3rem;margin-bottom:1rem;background:var(--bg-card);padding:.4rem;border-radius:8px;border:1px solid var(--border);flex-wrap:wrap;">
+          <button class="btn" id="anTabBtn1" onclick="anSetTab('abc')" style="flex:1;min-width:130px;font-weight:600;font-size:.82rem;">🧵 ABC Matéria-Prima</button>
+          <button class="btn" id="anTabBtn2" onclick="anSetTab('semd')" style="flex:1;min-width:130px;font-weight:600;font-size:.82rem;">🔍 Sem Demanda (MP)</button>
+          <button class="btn" id="anTabBtn3" onclick="anSetTab('queima')" style="flex:1;min-width:130px;font-weight:600;font-size:.82rem;">🔥 Queima C (MP)</button>
+          <button class="btn" id="anTabBtn4" onclick="anSetTab('paabc')" style="flex:1;min-width:130px;font-weight:600;font-size:.82rem;">👕 ABC Produto Acabado</button>
+          <button class="btn" id="anTabBtn5" onclick="anSetTab('parados')" style="flex:1;min-width:130px;font-weight:600;font-size:.82rem;">📦 Produtos Parados</button>
         </div>
 
         <div id="anTabAbc"></div>
         <div id="anTabSemd" style="display:none;"></div>
         <div id="anTabQueima" style="display:none;"></div>
+        <div id="anTabPaAbc" style="display:none;"></div>
+        <div id="anTabParados" style="display:none;"></div>
       </div>
     </div>
 
@@ -1373,10 +1379,11 @@ let fabricCustoMedio=[]; // [{fabric_id, custo_medio_ponderado, ultimo_custo, va
 let comparadorPrecos=[]; // [{fabric_id, produto, fornecedor_id, fornecedor_nome, preco_medio, ultimo_preco, ...}]
 let mpDashboard=[]; // view mp_dashboard_resumo — curva ABC + capital imobilizado consolidados
 let mpSemDemanda=[]; // view mp_sem_demanda — orfas/produto_morto/demanda_baixa/ok
+let paCurvaAbc=[]; // view pa_curva_abc — Curva ABC dos PRODUTOS ACABADOS (Bling)
 // Bling caches
 let blingTrendPeriodo=[],blingVendasMes=[],blingDiaSemana=[],blingTopProdutos=[],blingVelocidade=[],blingCatalogo=[],blingSyncMeta=null;
 async function loadAll(){
-  const[f,m,p,pu,rp,fo,btp,bvm,bds,btop,bvel,bmeta,fp,ft,vpc,cp,fcm,cmp,mp,msd]=await Promise.all([
+  const[f,m,p,pu,rp,fo,btp,bvm,bds,btop,bvel,bmeta,fp,ft,vpc,cp,fcm,cmp,mp,msd,paa]=await Promise.all([
     sb.from('fabrics').select('*').order('created_at',{ascending:false}),
     sb.from('movements').select('*').order('created_at',{ascending:false}),
     sb.from('profiles').select('*'),
@@ -1396,7 +1403,8 @@ async function loadAll(){
     sb.from('fabric_custo_medio').select('*'),
     sb.from('comparador_precos').select('*'),
     sb.from('mp_dashboard_resumo').select('*'),
-    sb.from('mp_sem_demanda').select('*')
+    sb.from('mp_sem_demanda').select('*'),
+    sb.from('pa_curva_abc').select('*').order('valor_vendido_90d', { ascending: false })
   ]);
   fabrics=f.data||[];movements=m.data||[];profiles=p.data||[];purchases=pu.data||[];
   rolePerms=(rp.data?.permissions)||{};
@@ -1408,6 +1416,7 @@ async function loadAll(){
   comparadorPrecos=cmp.data||[];
   mpDashboard=mp.data||[];
   mpSemDemanda=msd.data||[];
+  paCurvaAbc=paa.data||[];
 }
 // Helper: pega custo médio ponderado do fabric (com fallback pro último preço)
 function getCustoMedio(fabricId){
@@ -3654,9 +3663,9 @@ function renderDashAbc(){
 // Re-usa mpDashboard (mp_dashboard_resumo) + mpSemDemanda (mp_sem_demanda).
 
 function anSetTab(tab){
-  const tabs=['abc','semd','queima'];
-  const labels={abc:'anTabBtn1',semd:'anTabBtn2',queima:'anTabBtn3'};
-  const panels={abc:'anTabAbc',semd:'anTabSemd',queima:'anTabQueima'};
+  const tabs=['abc','semd','queima','paabc','parados'];
+  const labels={abc:'anTabBtn1',semd:'anTabBtn2',queima:'anTabBtn3',paabc:'anTabBtn4',parados:'anTabBtn5'};
+  const panels={abc:'anTabAbc',semd:'anTabSemd',queima:'anTabQueima',paabc:'anTabPaAbc',parados:'anTabParados'};
   for(const t of tabs){
     const btn=$(labels[t]);
     const pn=$(panels[t]);
@@ -3674,6 +3683,8 @@ function renderAnalisePage(){
   renderAnTabAbc();
   renderAnTabSemDemanda();
   renderAnTabQueima();
+  renderAnTabPaAbc();
+  renderAnTabParados();
   anSetTab('abc');
 }
 
@@ -3935,6 +3946,178 @@ function filterQueimaTable(){
   if(cnt){
     const fmtRkLocal=n=>'R$ '+Number(n||0).toLocaleString('pt-BR',{maximumFractionDigits:0});
     cnt.textContent=`${visiveis} alvos · ${fmtRkLocal(somaVis)}`;
+  }
+}
+
+// ═══ PRODUTO ACABADO — ABC + Parados ═══
+// Usa view pa_curva_abc (cruza bling_produtos com bling_velocidade_90d).
+// 2 abas: ABC dos produtos vendidos (giradores/medios/parados) e Produtos Parados
+// (estoque > 0 e zero venda 90d — alvos pra promocao/queima).
+
+function renderAnTabPaAbc(){
+  const host=$('anTabPaAbc');
+  if(!host)return;
+  if(!paCurvaAbc||!paCurvaAbc.length){
+    host.innerHTML='<div class="empty-state" style="padding:2rem;text-align:center;color:var(--text-muted);">Sem dados. Sincronize o cache do Bling primeiro.</div>';
+    return;
+  }
+  const fmtR=n=>'R$ '+Number(n||0).toLocaleString('pt-BR',{maximumFractionDigits:0});
+  const fmtR2=n=>'R$ '+Number(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+  const grupos={A:[],B:[],C:[]};
+  let totalImobilizado=0,totalVendido=0;
+  paCurvaAbc.forEach(r=>{
+    const c=r.curva||'C';
+    if(grupos[c])grupos[c].push(r);
+    totalImobilizado+=Number(r.capital_imobilizado||0);
+    totalVendido+=Number(r.valor_vendido_90d||0);
+  });
+
+  const miniCard=(letra,cor,desc,arr)=>{
+    const imob=arr.reduce((s,r)=>s+Number(r.capital_imobilizado||0),0);
+    const vend=arr.reduce((s,r)=>s+Number(r.valor_vendido_90d||0),0);
+    return `<div style="background:var(--bg-card);border:1px solid var(--border);border-left:4px solid ${cor};border-radius:var(--radius);padding:1rem 1.1rem;">
+      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.4rem;">
+        <span style="background:${cor};color:#000;font-weight:800;font-size:.85rem;padding:.15rem .5rem;border-radius:6px;">${letra}</span>
+        <span style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">${desc}</span>
+      </div>
+      <div style="font-size:1.4rem;font-weight:700;line-height:1.1;">${arr.length}<span style="font-size:.7rem;color:var(--text-muted);font-weight:500;"> produtos</span></div>
+      <div style="font-size:.78rem;color:var(--text-secondary);margin-top:.4rem;">
+        💰 ${fmtR(imob)} parados<br>
+        📈 ${fmtR(vend)} vendidos 90d
+      </div>
+    </div>`;
+  };
+
+  // Top giradores (curva A)
+  const topA=grupos.A.slice().sort((a,b)=>Number(b.valor_vendido_90d||0)-Number(a.valor_vendido_90d||0)).slice(0,15);
+  const tblA=topA.length?`<div class="table-wrap"><table>
+    <thead><tr><th>Produto</th><th style="text-align:right;">Vendido 90d</th><th style="text-align:right;">R$ vendido</th><th style="text-align:right;">Estoque</th><th style="text-align:right;">% acum</th></tr></thead>
+    <tbody>${topA.map(r=>`<tr>
+      <td style="font-size:.85rem;">${esc(r.nome||'—')}</td>
+      <td style="text-align:right;">${fmt(Number(r.qtd_vendida_90d||0))} un</td>
+      <td style="text-align:right;font-weight:700;color:var(--green);">${fmtR(r.valor_vendido_90d)}</td>
+      <td style="text-align:right;">${fmt(Number(r.estoque_virtual||0))}</td>
+      <td style="text-align:right;font-size:.78rem;color:var(--text-muted);">${Number(r.perc_acumulado||0).toFixed(1)}%</td>
+    </tr>`).join('')}</tbody></table></div>`:'<div style="padding:.8rem;color:var(--text-muted);">Sem produtos curva A.</div>';
+
+  host.innerHTML=`<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;flex-wrap:wrap;gap:.8rem;">
+      <div>
+        <h3 style="font-size:.95rem;font-weight:700;margin-bottom:.2rem;">👕 Curva ABC — Produtos Acabados</h3>
+        <p style="font-size:.72rem;color:var(--text-muted);">Pareto baseado no valor de venda dos últimos 90d (Bling). A = giradores fortes (80% do faturamento). C = parados ou pouca saída.</p>
+      </div>
+      <div style="display:flex;gap:1.2rem;align-items:flex-start;flex-wrap:wrap;">
+        <div style="text-align:right;">
+          <div style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">Vendido 90d</div>
+          <div style="font-size:1.4rem;font-weight:800;color:var(--green);line-height:1;">${fmtR2(totalVendido)}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">Imobilizado em PA</div>
+          <div style="font-size:1.4rem;font-weight:800;line-height:1;">${fmtR2(totalImobilizado)}</div>
+          <div style="font-size:.65rem;color:var(--text-muted);margin-top:.15rem;">a custo de produção</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;margin-bottom:1.2rem;">
+      ${miniCard('A','#4ade80','Giradores (80%)',grupos.A)}
+      ${miniCard('B','#fbbf24','Médios (15%)',grupos.B)}
+      ${miniCard('C','#f87171','Parados (5%)',grupos.C)}
+    </div>
+
+    <h4 style="font-size:.82rem;font-weight:700;margin-bottom:.6rem;">🟢 Top 15 Giradores (Curva A)</h4>
+    <p style="font-size:.72rem;color:var(--text-muted);margin-bottom:.5rem;">Estes 15 produtos representam a maior parte do faturamento. Garantir estoque deles é prioridade.</p>
+    ${tblA}
+  </div>`;
+}
+
+function renderAnTabParados(){
+  const host=$('anTabParados');
+  if(!host)return;
+  if(!paCurvaAbc||!paCurvaAbc.length){host.innerHTML='<div class="empty-state" style="padding:2rem;text-align:center;color:var(--text-muted);">Sem dados.</div>';return;}
+
+  const parados=paCurvaAbc.filter(r=>r.parado===true&&Number(r.capital_imobilizado||0)>0)
+    .sort((a,b)=>Number(b.capital_imobilizado||0)-Number(a.capital_imobilizado||0));
+  const totalImob=parados.reduce((s,r)=>s+Number(r.capital_imobilizado||0),0);
+  const totalEstoque=parados.reduce((s,r)=>s+Number(r.estoque_virtual||0),0);
+  const fmtR=n=>'R$ '+Number(n||0).toLocaleString('pt-BR',{maximumFractionDigits:0});
+  const fmtR2=n=>'R$ '+Number(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+  const filtros=`<div style="display:flex;gap:.6rem;margin-bottom:.8rem;flex-wrap:wrap;align-items:center;">
+    <input id="paradoSearch" placeholder="Buscar produto..." style="flex:1;min-width:200px;padding:.5rem .7rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:.85rem;" oninput="filterParadosTable()">
+    <select id="paradoMinFilter" onchange="filterParadosTable()" style="padding:.5rem .7rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:.85rem;">
+      <option value="0">Qualquer R$</option>
+      <option value="100">≥ R$ 100</option>
+      <option value="500">≥ R$ 500</option>
+      <option value="1000">≥ R$ 1.000</option>
+    </select>
+    <select id="paradoSort" onchange="filterParadosTable()" style="padding:.5rem .7rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:.85rem;">
+      <option value="imob_desc">💰 Maior imobilizado</option>
+      <option value="estoque_desc">📦 Maior estoque</option>
+      <option value="name_asc">A-Z</option>
+    </select>
+    <span id="paradoCount" style="font-size:.75rem;color:var(--text-muted);">${parados.length} produtos · ${fmtR(totalImob)}</span>
+  </div>`;
+
+  const linhas=parados.map(r=>`<tr data-name="${esc((r.nome||'').toLowerCase())}" data-imob="${Number(r.capital_imobilizado||0)}" data-est="${Number(r.estoque_virtual||0)}">
+    <td style="font-size:.85rem;">${esc(r.nome||'—')}</td>
+    <td style="text-align:right;">${fmt(Number(r.estoque_virtual||0))} un</td>
+    <td style="text-align:right;">${fmtR(r.preco)}</td>
+    <td style="text-align:right;font-weight:700;color:var(--red);">${fmtR(r.capital_imobilizado)}</td>
+  </tr>`).join('');
+
+  host.innerHTML=`<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;flex-wrap:wrap;gap:.8rem;">
+      <div>
+        <h3 style="font-size:.95rem;font-weight:700;margin-bottom:.2rem;">📦 Produtos Parados</h3>
+        <p style="font-size:.72rem;color:var(--text-muted);">Produtos acabados com estoque > 0 e <strong>zero vendas em 90 dias</strong>. Alvos pra queima/promoção/liquidação.</p>
+      </div>
+      <div style="display:flex;gap:1.2rem;align-items:flex-start;flex-wrap:wrap;">
+        <div style="text-align:right;">
+          <div style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">Total parado</div>
+          <div style="font-size:1.4rem;font-weight:800;color:var(--red);line-height:1;">${fmtR2(totalImob)}</div>
+          <div style="font-size:.65rem;color:var(--text-muted);margin-top:.15rem;">${fmt(totalEstoque)} unidades</div>
+        </div>
+      </div>
+    </div>
+    <div style="background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.3);border-radius:8px;padding:.7rem 1rem;margin-bottom:1rem;font-size:.78rem;color:var(--text-secondary);">
+      💡 <strong>Sugestão:</strong> escoar via promoção, kit-combo com produtos da curva A, ou liquidação. Sem ação, esse capital fica indefinidamente parado.
+    </div>
+    ${filtros}
+    <div class="table-wrap"><table>
+      <thead><tr><th>Produto</th><th style="text-align:right;">Estoque</th><th style="text-align:right;">Preço</th><th style="text-align:right;">Imobilizado</th></tr></thead>
+      <tbody id="paradoTbody">${linhas||'<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:1rem;">Nenhum produto parado.</td></tr>'}</tbody>
+    </table></div>
+  </div>`;
+}
+
+function filterParadosTable(){
+  const tbody=$('paradoTbody');
+  if(!tbody)return;
+  const q=($('paradoSearch')?.value||'').trim().toLowerCase();
+  const min=Number($('paradoMinFilter')?.value||0);
+  const sort=$('paradoSort')?.value||'imob_desc';
+  const rows=Array.from(tbody.querySelectorAll('tr[data-name]'));
+  let visiveis=0,somaImob=0;
+  rows.forEach(tr=>{
+    const okQ=!q||(tr.dataset.name||'').includes(q);
+    const imob=Number(tr.dataset.imob||0);
+    const okM=imob>=min;
+    const show=okQ&&okM;
+    tr.style.display=show?'':'none';
+    if(show){visiveis++;somaImob+=imob;}
+  });
+  const ord=rows.slice().filter(tr=>tr.style.display!=='none').sort((a,b)=>{
+    if(sort==='name_asc')return (a.dataset.name||'').localeCompare(b.dataset.name||'');
+    if(sort==='estoque_desc')return Number(b.dataset.est||0)-Number(a.dataset.est||0);
+    return Number(b.dataset.imob||0)-Number(a.dataset.imob||0);
+  });
+  ord.forEach(tr=>tbody.appendChild(tr));
+  const cnt=$('paradoCount');
+  if(cnt){
+    const fmtRk=n=>'R$ '+Number(n||0).toLocaleString('pt-BR',{maximumFractionDigits:0});
+    cnt.textContent=`${visiveis} produtos · ${fmtRk(somaImob)}`;
   }
 }
 
