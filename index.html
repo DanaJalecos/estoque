@@ -3750,7 +3750,7 @@ function renderAnTabQueima(){
     else if(r.status_demanda==='demanda_baixa'){badge='<span style="background:rgba(251,191,36,.2);color:#fbbf24;padding:.1rem .4rem;border-radius:4px;font-size:.7rem;font-weight:600;">DEMANDA BAIXA</span>';sugestao=`${r.meses_cobertura}m de cobertura. Pausar compra e escoar antes.`;}
     else if(r.status_demanda==='orfa'){badge='<span style="background:rgba(251,191,36,.15);color:#fbbf24;padding:.1rem .4rem;border-radius:4px;font-size:.7rem;font-weight:600;">SEM FICHA</span>';sugestao=`Cadastrar ficha técnica antes de decidir queima.`;}
     else{badge='<span style="background:rgba(100,116,139,.2);color:var(--text-muted);padding:.1rem .4rem;border-radius:4px;font-size:.7rem;">—</span>';sugestao='';}
-    return `<tr>
+    return `<tr data-name="${esc((r.name||'').toLowerCase())}" data-status="${r.status_demanda||''}" data-imob="${Number(r.capital_imobilizado||0)}">
       <td>${esc(r.name||'—')}</td>
       <td>${badge}</td>
       <td style="text-align:right;">${fmt(Number(r.stock||0))} ${esc(r.unit||'')}</td>
@@ -3759,6 +3759,35 @@ function renderAnTabQueima(){
       <td style="font-size:.75rem;color:var(--text-secondary);max-width:280px;">${sugestao}</td>
     </tr>`;
   };
+
+  // Contagens por status pros dropdowns
+  const cntMorto=alvos.filter(r=>r.status_demanda==='produto_morto').length;
+  const cntBaixa=alvos.filter(r=>r.status_demanda==='demanda_baixa').length;
+  const cntOrfa=alvos.filter(r=>r.status_demanda==='orfa').length;
+
+  const filtros=`<div style="display:flex;gap:.6rem;margin-bottom:.8rem;flex-wrap:wrap;align-items:center;">
+    <input id="queimaSearch" placeholder="Buscar item..." style="flex:1;min-width:200px;padding:.5rem .7rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:.85rem;" oninput="filterQueimaTable()">
+    <select id="queimaStatusFilter" onchange="filterQueimaTable()" style="padding:.5rem .7rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:.85rem;">
+      <option value="">Todos status (${alvos.length})</option>
+      <option value="confiavel">🎯 Só confiáveis (${cntMorto+cntBaixa})</option>
+      <option value="produto_morto">🔴 Prod Morto (${cntMorto})</option>
+      <option value="demanda_baixa">🟡 Demanda Baixa (${cntBaixa})</option>
+      <option value="orfa">🟠 Sem Ficha (${cntOrfa})</option>
+    </select>
+    <select id="queimaMinFilter" onchange="filterQueimaTable()" style="padding:.5rem .7rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:.85rem;">
+      <option value="0">Qualquer R$</option>
+      <option value="100">≥ R$ 100</option>
+      <option value="500">≥ R$ 500</option>
+      <option value="1000">≥ R$ 1.000</option>
+      <option value="5000">≥ R$ 5.000</option>
+    </select>
+    <select id="queimaSort" onchange="filterQueimaTable()" style="padding:.5rem .7rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:.85rem;">
+      <option value="imob_desc">💰 Maior imobilizado</option>
+      <option value="imob_asc">📉 Menor imobilizado</option>
+      <option value="name_asc">A-Z</option>
+    </select>
+    <span id="queimaCount" style="font-size:.75rem;color:var(--text-muted);">${alvos.length} alvos · ${_fmtRk(totalLiberar)}</span>
+  </div>`;
 
   host.innerHTML=`<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem;">
@@ -3780,11 +3809,48 @@ function renderAnTabQueima(){
     <div style="background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.3);border-radius:8px;padding:.8rem 1rem;margin-bottom:1rem;font-size:.78rem;color:var(--text-secondary);">
       <strong>💡 Como usar:</strong> ordene por capital imobilizado, foque nos badges <strong style="color:#f87171;">PROD MORTO</strong> e <strong style="color:#fbbf24;">DEMANDA BAIXA</strong> primeiro (são os mais confiáveis). SEM FICHA precisa cadastrar a ficha técnica antes pra confirmar se é queima ou não.
     </div>
+    ${filtros}
     <div class="table-wrap"><table>
       <thead><tr><th>Item</th><th>Status</th><th style="text-align:right;">Estoque</th><th style="text-align:right;">Imobilizado</th><th style="text-align:right;">Última compra</th><th>Sugestão</th></tr></thead>
-      <tbody>${alvos.length?alvos.map(linha).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:1rem;">Nenhum alvo identificado.</td></tr>'}</tbody>
+      <tbody id="queimaTbody">${alvos.length?alvos.map(linha).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:1rem;">Nenhum alvo identificado.</td></tr>'}</tbody>
     </table></div>
   </div>`;
+}
+
+function filterQueimaTable(){
+  const tbody=$('queimaTbody');
+  if(!tbody)return;
+  const q=($('queimaSearch')?.value||'').trim().toLowerCase();
+  const status=$('queimaStatusFilter')?.value||'';
+  const min=Number($('queimaMinFilter')?.value||0);
+  const sort=$('queimaSort')?.value||'imob_desc';
+
+  const rows=Array.from(tbody.querySelectorAll('tr[data-name]'));
+  // Filtrar
+  let visiveis=0, somaVis=0;
+  rows.forEach(tr=>{
+    const okQ=!q||(tr.dataset.name||'').includes(q);
+    const okS=!status||(status==='confiavel'?(tr.dataset.status==='produto_morto'||tr.dataset.status==='demanda_baixa'):tr.dataset.status===status);
+    const imob=Number(tr.dataset.imob||0);
+    const okM=imob>=min;
+    const show=okQ&&okS&&okM;
+    tr.style.display=show?'':'none';
+    if(show){visiveis++;somaVis+=imob;}
+  });
+
+  // Ordenar (move DOM nodes)
+  const ordenadas=rows.slice().filter(tr=>tr.style.display!=='none').sort((a,b)=>{
+    if(sort==='name_asc')return (a.dataset.name||'').localeCompare(b.dataset.name||'');
+    const ai=Number(a.dataset.imob||0), bi=Number(b.dataset.imob||0);
+    return sort==='imob_asc'?ai-bi:bi-ai;
+  });
+  ordenadas.forEach(tr=>tbody.appendChild(tr));
+
+  const cnt=$('queimaCount');
+  if(cnt){
+    const fmtRkLocal=n=>'R$ '+Number(n||0).toLocaleString('pt-BR',{maximumFractionDigits:0});
+    cnt.textContent=`${visiveis} alvos · ${fmtRkLocal(somaVis)}`;
+  }
 }
 
 // ═══ CHARTS ═══
