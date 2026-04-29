@@ -268,12 +268,40 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
   .sidebar.open{transform:translateX(0);}
   .main{margin-left:0;}
   .menu-toggle{display:flex;align-items:center;justify-content:center;}
-  .topbar{padding-left:3rem;}
+  .topbar{padding-left:3rem;flex-wrap:wrap;gap:.4rem;}
+  .topbar h2{font-size:.92rem;}
+  .topbar-actions{flex-wrap:wrap;}
   .content{padding:1rem;}
   .stats-grid{grid-template-columns:1fr 1fr;}
   .form-row{grid-template-columns:1fr;}
   #chartsGrid{grid-template-columns:1fr!important;}
   #purchaseChartsGrid{grid-template-columns:1fr!important;}
+  /* Mini-cards das paginas Analise & Queima e Vinculos: nunca squeeze 3-cols */
+  #anTabAbc div[style*="grid-template-columns:repeat(3,1fr)"],
+  #anTabSemd div[style*="grid-template-columns:repeat(3,1fr)"],
+  #anTabQueima div[style*="grid-template-columns:repeat(3,1fr)"],
+  #dashAbcSection div[style*="grid-template-columns:repeat(3,1fr)"],
+  #dashAbcSection div[style*="grid-template-columns:1fr 1fr"]{
+    grid-template-columns:1fr!important;
+  }
+  /* Tabelas das ondas (curva ABC) — texto menor pra caber */
+  #anTabAbc .table-wrap td,#anTabAbc .table-wrap th{font-size:.75rem;padding:.5rem .4rem;}
+  /* Cards de vinculos: ajusta grid 24px 1fr 56px → 1 col no mobile */
+  #vinculosList div[style*="grid-template-columns:24px 1fr 56px"]{
+    grid-template-columns:1fr!important;gap:.3rem!important;
+  }
+  #vinculosList div[style*="grid-template-columns:24px 1fr 56px"] > *:nth-child(3){
+    text-align:left!important;
+  }
+  /* Topbar de Vinculos com botao gerar — empilha */
+  #page-vinculos .topbar-actions .btn{font-size:.78rem;padding:.45rem .7rem;}
+  /* Stats-grid: garante 1 col em telas muito pequenas */
+}
+@media(max-width:480px){
+  .stats-grid{grid-template-columns:1fr;}
+  .topbar h2{font-size:.85rem;}
+  .filter-bar{flex-direction:column;align-items:stretch;}
+  .filter-bar input,.filter-bar select{width:100%;}
 }
 </style>
 </head>
