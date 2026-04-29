@@ -877,8 +877,8 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
 
         <!-- Filtros -->
         <div class="filter-bar" style="margin-top:1rem;">
-          <input id="fichaSearch" placeholder="Buscar produto..." oninput="renderFichas()" style="flex:1;min-width:200px;">
-          <select id="fichaTipoFilter" onchange="renderFichas()">
+          <input id="fichaSearch" placeholder="Buscar produto..." oninput="fichaPagina=1;renderFichas()" style="flex:1;min-width:220px;font-size:.92rem;padding:.55rem .8rem;">
+          <select id="fichaTipoFilter" onchange="fichaPagina=1;renderFichas()" style="font-size:.92rem;padding:.55rem .8rem;">
             <option value="all">Todos os tipos</option>
             <option value="Jaleco">🧥 Jalecos</option>
             <option value="Scrub">👨‍⚕️ Scrubs</option>
@@ -889,7 +889,7 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
             <option value="Acessório">📌 Acessórios</option>
             <option value="Home">🏠 Home</option>
           </select>
-          <select id="fichaSortBy" onchange="renderFichas()">
+          <select id="fichaSortBy" onchange="fichaPagina=1;renderFichas()" style="font-size:.92rem;padding:.55rem .8rem;">
             <option value="custo_desc">Maior custo ↓</option>
             <option value="custo_asc">Menor custo ↑</option>
             <option value="vendas_desc">Mais vendido ↓</option>
@@ -899,21 +899,23 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
 
         <!-- Tabela de produtos -->
         <div class="table-wrap" style="margin-top:1rem;">
-          <table>
-            <thead><tr>
-              <th>Código</th>
-              <th>Produto</th>
-              <th>Tipo</th>
-              <th style="text-align:center">Itens</th>
-              <th style="text-align:right">Custo Produção</th>
-              <th style="text-align:right">Vendas 90d</th>
-              <th style="text-align:right">Projeção 30d</th>
+          <table style="font-size:.95rem;">
+            <thead><tr style="font-size:.82rem;">
+              <th style="padding:.7rem .6rem;">Código</th>
+              <th style="padding:.7rem .6rem;">Produto</th>
+              <th style="padding:.7rem .6rem;">Tipo</th>
+              <th style="text-align:center;padding:.7rem .6rem;">Itens</th>
+              <th style="text-align:right;padding:.7rem .6rem;">Custo Produção</th>
+              <th style="text-align:right;padding:.7rem .6rem;">Vendas 90d</th>
+              <th style="text-align:right;padding:.7rem .6rem;">Projeção 30d</th>
             </tr></thead>
             <tbody id="fichaList">
-              <tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:1rem;">Carregando...</td></tr>
+              <tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:1.4rem;font-size:.95rem;">Carregando...</td></tr>
             </tbody>
           </table>
         </div>
+        <!-- Paginação -->
+        <div id="fichaPaginacao"></div>
       </div>
     </div>
 
@@ -1520,6 +1522,12 @@ function vendasDoProduto(codigo){
   return vendasPorCodigo.find(v=>v.codigo===codigo)||{qtd_vendida_90d:0,projecao_mensal:0};
 }
 
+// Estado de paginação da Ficha Técnica (notebook-friendly: 10 itens/pag default + fonte maior)
+let fichaPagina=1;
+let fichaPorPagina=10;
+function gotoFichaPage(n){fichaPagina=Math.max(1,n);renderFichas();}
+function setFichaPorPagina(n){fichaPorPagina=Number(n)||10;fichaPagina=1;renderFichas();}
+
 function renderFichas(){
   // KPIs
   const total=fichaProdutos.length;
@@ -1553,23 +1561,68 @@ function renderFichas(){
   else if(sortBy==='nome')list.sort((a,b)=>a.nome.localeCompare(b.nome));
 
   if(!list.length){
-    $('fichaList').innerHTML=`<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:1rem;">Nenhum produto encontrado</td></tr>`;
+    $('fichaList').innerHTML=`<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:1.4rem;font-size:.95rem;">Nenhum produto encontrado</td></tr>`;
+    const pgHost=$('fichaPaginacao');if(pgHost)pgHost.innerHTML='';
     return;
   }
 
-  $('fichaList').innerHTML=list.map(p=>{
+  // Paginação client-side (mostra só a página atual)
+  const totalItens=list.length;
+  const totalPaginas=fichaPorPagina>=9999?1:Math.max(1,Math.ceil(totalItens/fichaPorPagina));
+  if(fichaPagina>totalPaginas)fichaPagina=totalPaginas;
+  const inicio=(fichaPagina-1)*fichaPorPagina;
+  const fim=fichaPorPagina>=9999?totalItens:Math.min(inicio+fichaPorPagina,totalItens);
+  const pageList=list.slice(inicio,fim);
+
+  $('fichaList').innerHTML=pageList.map(p=>{
     const v=vendasDoProduto(p.codigo);
     const ico=TIPO_ICON[p.tipo]||'📦';
-    return `<tr style="cursor:pointer" onclick="openFichaDrawer('${p.codigo.replace(/'/g,'\\\'')}')">
-      <td style="font-family:monospace;font-size:.8rem">${esc(p.codigo)}</td>
-      <td>${ico} ${esc(p.nome)}</td>
-      <td><span style="font-size:.7rem;padding:2px 8px;background:var(--bg);border-radius:999px;color:var(--text-muted);">${esc(p.tipo||'—')}</span></td>
-      <td style="text-align:center">${p.total_itens||0}</td>
-      <td style="text-align:right;font-weight:600">${fmtBRL(p.custo_total)}</td>
-      <td style="text-align:right">${fmtNum(v.qtd_vendida_90d)} un</td>
-      <td style="text-align:right;color:${v.projecao_mensal>0?'var(--green)':'var(--text-muted)'};">${fmtNum(v.projecao_mensal)} un</td>
+    return `<tr style="cursor:pointer;font-size:.95rem;" onclick="openFichaDrawer('${p.codigo.replace(/'/g,'\\\'')}')">
+      <td style="font-family:monospace;font-size:.85rem;padding:.7rem .6rem;">${esc(p.codigo)}</td>
+      <td style="padding:.7rem .6rem;font-weight:500;">${ico} ${esc(p.nome)}</td>
+      <td style="padding:.7rem .6rem;"><span style="font-size:.78rem;padding:3px 10px;background:var(--bg);border-radius:999px;color:var(--text-muted);">${esc(p.tipo||'—')}</span></td>
+      <td style="text-align:center;padding:.7rem .6rem;font-weight:600;">${p.total_itens||0}</td>
+      <td style="text-align:right;font-weight:700;padding:.7rem .6rem;color:var(--green);">${fmtBRL(p.custo_total)}</td>
+      <td style="text-align:right;padding:.7rem .6rem;">${fmtNum(v.qtd_vendida_90d)} un</td>
+      <td style="text-align:right;padding:.7rem .6rem;color:${v.projecao_mensal>0?'var(--green)':'var(--text-muted)'};font-weight:${v.projecao_mensal>0?'600':'400'};">${fmtNum(v.projecao_mensal)} un</td>
     </tr>`;
   }).join('');
+
+  // Renderiza paginação
+  const pgHost=$('fichaPaginacao');
+  if(pgHost){
+    const fim1=fim;const ini1=inicio+1;
+    const btn=(n,label,disabled,ativo)=>`<button class="btn ${ativo?'btn-primary':''}" ${disabled?'disabled':''} onclick="gotoFichaPage(${n})" style="padding:.45rem .8rem;font-size:.85rem;min-width:38px;${disabled?'opacity:.4;cursor:not-allowed;':''}">${label}</button>`;
+    // Janelinha de páginas (max 5 botões com ... se for o caso)
+    let pages=[];
+    if(totalPaginas<=7){for(let i=1;i<=totalPaginas;i++)pages.push(i);}
+    else{
+      pages.push(1);
+      if(fichaPagina>3)pages.push('...');
+      const start=Math.max(2,fichaPagina-1),end=Math.min(totalPaginas-1,fichaPagina+1);
+      for(let i=start;i<=end;i++)pages.push(i);
+      if(fichaPagina<totalPaginas-2)pages.push('...');
+      pages.push(totalPaginas);
+    }
+    const pageBtns=pages.map(p=>p==='...'?'<span style="padding:.45rem .4rem;color:var(--text-muted);">...</span>':btn(p,p,false,p===fichaPagina)).join('');
+    pgHost.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.8rem;margin-top:1rem;padding:.6rem .2rem;">
+      <div style="font-size:.85rem;color:var(--text-secondary);">
+        Exibindo <strong>${ini1}-${fim1}</strong> de <strong>${totalItens}</strong> produto${totalItens===1?'':'s'}
+      </div>
+      <div style="display:flex;gap:.3rem;align-items:center;flex-wrap:wrap;">
+        ${btn(fichaPagina-1,'← Anterior',fichaPagina<=1,false)}
+        ${pageBtns}
+        ${btn(fichaPagina+1,'Próxima →',fichaPagina>=totalPaginas,false)}
+        <span style="font-size:.85rem;color:var(--text-muted);margin-left:.6rem;">por página:</span>
+        <select onchange="setFichaPorPagina(this.value)" style="padding:.4rem .6rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:.85rem;">
+          <option value="10" ${fichaPorPagina===10?'selected':''}>10</option>
+          <option value="25" ${fichaPorPagina===25?'selected':''}>25</option>
+          <option value="50" ${fichaPorPagina===50?'selected':''}>50</option>
+          <option value="9999" ${fichaPorPagina>=9999?'selected':''}>Todos</option>
+        </select>
+      </div>
+    </div>`;
+  }
 }
 
 function openFichaDrawer(codigo){
