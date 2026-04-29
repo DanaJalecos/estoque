@@ -4020,17 +4020,27 @@ function renderAnTabPaAbc(){
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;margin-bottom:1.2rem;">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;margin-bottom:.4rem;">
       ${miniCard('A','#4ade80','Giradores (80%)',grupos.A)}
       ${miniCard('B','#fbbf24','Médios (15%)',grupos.B)}
       ${miniCard('C','#f87171','Parados (5%)',grupos.C)}
     </div>
+    <p style="font-size:.7rem;color:var(--text-muted);margin-bottom:1.2rem;font-style:italic;">
+      ℹ️ <strong>Curva C</strong> inclui produtos sem venda <em>e</em> produtos com baixíssima saída
+      (a "cauda" do Pareto). Pra ver só os com <strong>zero venda 90d</strong>, abra a aba "📦 Produtos Parados".
+    </p>
 
     <h4 style="font-size:.82rem;font-weight:700;margin-bottom:.6rem;">🟢 Top 15 Giradores (Curva A)</h4>
     <p style="font-size:.72rem;color:var(--text-muted);margin-bottom:.5rem;">Estes 15 produtos representam a maior parte do faturamento. Garantir estoque deles é prioridade.</p>
     ${tblA}
   </div>`;
 }
+
+// Estado de paginacao da aba Produtos Parados
+let paradoPagina=1;
+let paradoPorPagina=10;
+function gotoParadoPage(n){paradoPagina=Math.max(1,n);_renderParadosBody();}
+function setParadoPorPagina(n){paradoPorPagina=Number(n)||10;paradoPagina=1;_renderParadosBody();}
 
 function renderAnTabParados(){
   const host=$('anTabParados');
@@ -4041,32 +4051,9 @@ function renderAnTabParados(){
     .sort((a,b)=>Number(b.capital_imobilizado||0)-Number(a.capital_imobilizado||0));
   const totalImob=parados.reduce((s,r)=>s+Number(r.capital_imobilizado||0),0);
   const totalEstoque=parados.reduce((s,r)=>s+Number(r.estoque_virtual||0),0);
-  const fmtR=n=>'R$ '+Number(n||0).toLocaleString('pt-BR',{maximumFractionDigits:0});
   const fmtR2=n=>'R$ '+Number(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 
-  const filtros=`<div style="display:flex;gap:.6rem;margin-bottom:.8rem;flex-wrap:wrap;align-items:center;">
-    <input id="paradoSearch" placeholder="Buscar produto..." style="flex:1;min-width:200px;padding:.5rem .7rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:.85rem;" oninput="filterParadosTable()">
-    <select id="paradoMinFilter" onchange="filterParadosTable()" style="padding:.5rem .7rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:.85rem;">
-      <option value="0">Qualquer R$</option>
-      <option value="100">≥ R$ 100</option>
-      <option value="500">≥ R$ 500</option>
-      <option value="1000">≥ R$ 1.000</option>
-    </select>
-    <select id="paradoSort" onchange="filterParadosTable()" style="padding:.5rem .7rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:.85rem;">
-      <option value="imob_desc">💰 Maior imobilizado</option>
-      <option value="estoque_desc">📦 Maior estoque</option>
-      <option value="name_asc">A-Z</option>
-    </select>
-    <span id="paradoCount" style="font-size:.75rem;color:var(--text-muted);">${parados.length} produtos · ${fmtR(totalImob)}</span>
-  </div>`;
-
-  const linhas=parados.map(r=>`<tr data-name="${esc((r.nome||'').toLowerCase())}" data-imob="${Number(r.capital_imobilizado||0)}" data-est="${Number(r.estoque_virtual||0)}">
-    <td style="font-size:.85rem;">${esc(r.nome||'—')}</td>
-    <td style="text-align:right;">${fmt(Number(r.estoque_virtual||0))} un</td>
-    <td style="text-align:right;">${fmtR(r.preco)}</td>
-    <td style="text-align:right;font-weight:700;color:var(--red);">${fmtR(r.capital_imobilizado)}</td>
-  </tr>`).join('');
-
+  // Layout fixo da aba — corpo da tabela + paginacao saem em _renderParadosBody()
   host.innerHTML=`<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;flex-wrap:wrap;gap:.8rem;">
       <div>
@@ -4081,45 +4068,115 @@ function renderAnTabParados(){
         </div>
       </div>
     </div>
-    <div style="background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.3);border-radius:8px;padding:.7rem 1rem;margin-bottom:1rem;font-size:.78rem;color:var(--text-secondary);">
+    <div style="background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.3);border-radius:8px;padding:.7rem 1rem;margin-bottom:.4rem;font-size:.78rem;color:var(--text-secondary);">
       💡 <strong>Sugestão:</strong> escoar via promoção, kit-combo com produtos da curva A, ou liquidação. Sem ação, esse capital fica indefinidamente parado.
     </div>
-    ${filtros}
+    <p style="font-size:.7rem;color:var(--text-muted);margin-bottom:1rem;font-style:italic;">
+      ℹ️ Esta lista mostra <strong>só</strong> produtos com <strong>0 vendas em 90 dias</strong>. Pra ver toda a "cauda" do Pareto (que inclui também os com pouquíssima venda), abra a aba "👕 ABC Produto Acabado" e veja a curva C.
+    </p>
+    <div style="display:flex;gap:.6rem;margin-bottom:.8rem;flex-wrap:wrap;align-items:center;">
+      <input id="paradoSearch" placeholder="Buscar produto..." style="flex:1;min-width:200px;padding:.5rem .7rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:.85rem;" oninput="paradoPagina=1;_renderParadosBody()">
+      <select id="paradoMinFilter" onchange="paradoPagina=1;_renderParadosBody()" style="padding:.5rem .7rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:.85rem;">
+        <option value="0">Qualquer R$</option>
+        <option value="100">≥ R$ 100</option>
+        <option value="500">≥ R$ 500</option>
+        <option value="1000">≥ R$ 1.000</option>
+      </select>
+      <select id="paradoSort" onchange="paradoPagina=1;_renderParadosBody()" style="padding:.5rem .7rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:.85rem;">
+        <option value="imob_desc">💰 Maior imobilizado</option>
+        <option value="estoque_desc">📦 Maior estoque</option>
+        <option value="name_asc">A-Z</option>
+      </select>
+      <span id="paradoCount" style="font-size:.75rem;color:var(--text-muted);"></span>
+    </div>
     <div class="table-wrap"><table>
       <thead><tr><th>Produto</th><th style="text-align:right;">Estoque</th><th style="text-align:right;">Preço</th><th style="text-align:right;">Imobilizado</th></tr></thead>
-      <tbody id="paradoTbody">${linhas||'<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:1rem;">Nenhum produto parado.</td></tr>'}</tbody>
+      <tbody id="paradoTbody"></tbody>
     </table></div>
+    <div id="paradoPaginacao"></div>
   </div>`;
+  _renderParadosBody();
 }
 
-function filterParadosTable(){
+function _renderParadosBody(){
   const tbody=$('paradoTbody');
+  const pgHost=$('paradoPaginacao');
   if(!tbody)return;
   const q=($('paradoSearch')?.value||'').trim().toLowerCase();
   const min=Number($('paradoMinFilter')?.value||0);
   const sort=$('paradoSort')?.value||'imob_desc';
-  const rows=Array.from(tbody.querySelectorAll('tr[data-name]'));
-  let visiveis=0,somaImob=0;
-  rows.forEach(tr=>{
-    const okQ=!q||(tr.dataset.name||'').includes(q);
-    const imob=Number(tr.dataset.imob||0);
-    const okM=imob>=min;
-    const show=okQ&&okM;
-    tr.style.display=show?'':'none';
-    if(show){visiveis++;somaImob+=imob;}
+  const fmtR=n=>'R$ '+Number(n||0).toLocaleString('pt-BR',{maximumFractionDigits:0});
+
+  // Aplica filtros
+  let lista=paCurvaAbc.filter(r=>r.parado===true&&Number(r.capital_imobilizado||0)>0);
+  if(q)lista=lista.filter(r=>(r.nome||'').toLowerCase().includes(q));
+  if(min>0)lista=lista.filter(r=>Number(r.capital_imobilizado||0)>=min);
+
+  // Ordenacao
+  lista.sort((a,b)=>{
+    if(sort==='name_asc')return (a.nome||'').localeCompare(b.nome||'');
+    if(sort==='estoque_desc')return Number(b.estoque_virtual||0)-Number(a.estoque_virtual||0);
+    return Number(b.capital_imobilizado||0)-Number(a.capital_imobilizado||0);
   });
-  const ord=rows.slice().filter(tr=>tr.style.display!=='none').sort((a,b)=>{
-    if(sort==='name_asc')return (a.dataset.name||'').localeCompare(b.dataset.name||'');
-    if(sort==='estoque_desc')return Number(b.dataset.est||0)-Number(a.dataset.est||0);
-    return Number(b.dataset.imob||0)-Number(a.dataset.imob||0);
-  });
-  ord.forEach(tr=>tbody.appendChild(tr));
+
+  const totalItens=lista.length;
+  const somaImob=lista.reduce((s,r)=>s+Number(r.capital_imobilizado||0),0);
+
+  // Paginacao
+  const totalPaginas=paradoPorPagina>=9999?1:Math.max(1,Math.ceil(totalItens/paradoPorPagina));
+  if(paradoPagina>totalPaginas)paradoPagina=totalPaginas;
+  const inicio=(paradoPagina-1)*paradoPorPagina;
+  const fim=paradoPorPagina>=9999?totalItens:Math.min(inicio+paradoPorPagina,totalItens);
+  const pageList=lista.slice(inicio,fim);
+
+  tbody.innerHTML=pageList.length
+    ? pageList.map(r=>`<tr>
+        <td style="font-size:.85rem;">${esc(r.nome||'—')}</td>
+        <td style="text-align:right;">${fmt(Number(r.estoque_virtual||0))} un</td>
+        <td style="text-align:right;">${fmtR(r.preco)}</td>
+        <td style="text-align:right;font-weight:700;color:var(--red);">${fmtR(r.capital_imobilizado)}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:1rem;">Nenhum produto encontrado com esses filtros.</td></tr>';
+
   const cnt=$('paradoCount');
-  if(cnt){
-    const fmtRk=n=>'R$ '+Number(n||0).toLocaleString('pt-BR',{maximumFractionDigits:0});
-    cnt.textContent=`${visiveis} produtos · ${fmtRk(somaImob)}`;
+  if(cnt)cnt.textContent=`${totalItens} produto${totalItens===1?'':'s'} · ${fmtR(somaImob)}`;
+
+  // Renderiza paginacao
+  if(!pgHost){return;}
+  if(totalPaginas<=1&&totalItens<=10){pgHost.innerHTML='';return;}
+  const btn=(n,label,disabled,ativo)=>`<button class="btn ${ativo?'btn-primary':''}" ${disabled?'disabled':''} onclick="gotoParadoPage(${n})" style="padding:.45rem .8rem;font-size:.85rem;min-width:38px;${disabled?'opacity:.4;cursor:not-allowed;':''}">${label}</button>`;
+  let pages=[];
+  if(totalPaginas<=7){for(let i=1;i<=totalPaginas;i++)pages.push(i);}
+  else{
+    pages.push(1);
+    if(paradoPagina>3)pages.push('...');
+    const start=Math.max(2,paradoPagina-1),end=Math.min(totalPaginas-1,paradoPagina+1);
+    for(let i=start;i<=end;i++)pages.push(i);
+    if(paradoPagina<totalPaginas-2)pages.push('...');
+    pages.push(totalPaginas);
   }
+  const pageBtns=pages.map(p=>p==='...'?'<span style="padding:.45rem .4rem;color:var(--text-muted);">...</span>':btn(p,p,false,p===paradoPagina)).join('');
+  pgHost.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.8rem;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
+    <div style="font-size:.85rem;color:var(--text-secondary);">
+      ${totalItens?`Exibindo <strong>${inicio+1}-${fim}</strong> de <strong>${totalItens}</strong>`:'Nenhum produto'}
+    </div>
+    <div style="display:flex;gap:.3rem;align-items:center;flex-wrap:wrap;">
+      ${btn(paradoPagina-1,'← Anterior',paradoPagina<=1,false)}
+      ${pageBtns}
+      ${btn(paradoPagina+1,'Próxima →',paradoPagina>=totalPaginas,false)}
+      <span style="font-size:.85rem;color:var(--text-muted);margin-left:.6rem;">por página:</span>
+      <select onchange="setParadoPorPagina(this.value)" style="padding:.4rem .6rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:.85rem;">
+        <option value="10" ${paradoPorPagina===10?'selected':''}>10</option>
+        <option value="25" ${paradoPorPagina===25?'selected':''}>25</option>
+        <option value="50" ${paradoPorPagina===50?'selected':''}>50</option>
+        <option value="9999" ${paradoPorPagina>=9999?'selected':''}>Todos</option>
+      </select>
+    </div>
+  </div>`;
 }
+
+// Compatibilidade: filterParadosTable continua existindo caso algo chame
+function filterParadosTable(){_renderParadosBody();}
 
 // (Vinculos MP->Ficha removido — Manu confirmou que nao vai usar)
 
