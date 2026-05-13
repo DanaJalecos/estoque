@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -387,9 +388,10 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
       <button data-perm="historico" onclick="showPage('historico',this)"><span class="icon"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg></span> Histórico</button>
       <button data-perm="cadastro" onclick="showPage('cadastro',this)"><span class="icon"><svg viewBox="0 0 24 24"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M21 14V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7"/><line x1="9" y1="15" x2="15" y2="15"/><line x1="12" y1="12" x2="12" y2="18"/></svg></span> Cadastrar Produto</button>
 
-      <div class="nav-section" data-perm-section="entrada,saida">Movimentar</div>
+      <div class="nav-section" data-perm-section="entrada,saida,ajuste">Movimentar</div>
       <button data-perm="entrada" onclick="showPage('entrada',this)"><span class="icon"><svg viewBox="0 0 24 24"><path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/></svg></span> Registrar Entrada</button>
       <button data-perm="saida" onclick="showPage('saida',this)"><span class="icon"><svg viewBox="0 0 24 24"><path d="M12 7v14"/><path d="m6 13 6-6 6 6"/><path d="M19 3H5"/></svg></span> Registrar Saída</button>
+      <button data-perm="ajuste" onclick="showPage('ajuste',this)"><span class="icon"><svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M7 12h10"/><path d="M10 18h4"/><circle cx="6" cy="6" r="1.5" fill="currentColor"/><circle cx="14" cy="12" r="1.5" fill="currentColor"/><circle cx="9" cy="18" r="1.5" fill="currentColor"/></svg></span> Ajuste de Inventário</button>
 
       <div class="nav-section" data-perm-section="compras,fornecedores">Compras</div>
       <button data-perm="compras" onclick="showPage('compras',this)"><span class="icon"><svg viewBox="0 0 24 24"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v-11"/></svg></span> Histórico Compras</button>
@@ -620,6 +622,153 @@ body{font-family:var(--body);color:var(--text);background:var(--bg);min-height:1
             <div class="form-group"><label>Destino / Motivo</label><input id="exitDest" placeholder="Ex: Descartado / Emprestado / Amostra"></div>
             <div class="form-actions"><button type="submit" class="btn btn-primary">Registrar Saída</button></div>
           </form>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- AJUSTE DE INVENTÁRIO -->
+    <div id="page-ajuste" class="page hidden">
+      <div class="topbar">
+        <h2>Ajuste de Inventário</h2>
+        <div class="topbar-actions">
+          <button class="btn btn-sm" onclick="ajusteSetTab('individual',this)" id="ajusteTabBtnInd" style="border-color:var(--accent);background:rgba(99,102,241,0.1);color:var(--text)">Ajuste individual</button>
+          <button class="btn btn-sm" onclick="ajusteSetTab('planilha',this)" id="ajusteTabBtnXls">Importar planilha</button>
+          <button class="btn btn-sm" onclick="ajusteSetTab('hist',this)" id="ajusteTabBtnHist">Histórico</button>
+        </div>
+      </div>
+      <div class="content">
+        <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:1rem;line-height:1.5;">
+          Use esta tela pra <strong>corrigir o estoque do sistema</strong> com o que existe no físico (inventário, perda, achado, vencimento, erro de cadastro).
+          Diferente de "Registrar Entrada" (que é compra real), aqui o histórico fica separado e marcado como <em>ajuste</em>.
+        </p>
+
+        <!-- Tab Individual -->
+        <div id="ajuste-tab-individual">
+          <div class="form-card">
+            <h3 style="font-size:.9rem;font-weight:700;margin-bottom:1rem;">Ajustar um item</h3>
+            <form onsubmit="return saveAjuste(event)">
+              <div class="form-group">
+                <label>Matéria-prima</label>
+                <select id="ajusteFab" required onchange="onAjusteFabChange()"></select>
+              </div>
+              <div id="ajusteInfo" style="display:none;background:rgba(99,102,241,0.08);border:1px solid var(--accent);border-radius:var(--radius);padding:.7rem 1rem;margin-bottom:.8rem;font-size:.82rem;">
+                <strong>Estoque atual no sistema:</strong> <span id="ajusteStockAtual" style="color:var(--accent);font-weight:700">-</span>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Estoque REAL contado</label>
+                  <input id="ajusteQtyReal" type="number" min="0" step="0.01" required placeholder="Ex: 47.5" oninput="updateAjustePreview()">
+                </div>
+                <div class="form-group">
+                  <label>Diferença</label>
+                  <input id="ajusteDiff" type="text" readonly style="background:var(--surface);font-weight:700">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Motivo</label>
+                  <select id="ajusteMotivo" required>
+                    <option value="">Selecionar...</option>
+                    <option value="inventario">Inventário físico (contagem)</option>
+                    <option value="perda">Perda / dano</option>
+                    <option value="achado">Achado (encontrei mais)</option>
+                    <option value="vencimento">Vencimento / descarte</option>
+                    <option value="erro_cadastro">Erro de cadastro anterior</option>
+                    <option value="outro">Outro</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Data</label>
+                  <input id="ajusteDate" type="date" required>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Observação</label>
+                <textarea id="ajusteNotes" placeholder="Detalhe o motivo (opcional, mas recomendado)"></textarea>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Confirmar ajuste</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Tab Importar Planilha -->
+        <div id="ajuste-tab-planilha" style="display:none">
+          <div class="form-card">
+            <h3 style="font-size:.9rem;font-weight:700;margin-bottom:.3rem;">📊 Importar planilha de inventário</h3>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:.8rem;">
+              Envie a planilha <code>INVENTARIO-FISICO-yyyy-mm-dd.xlsx</code> preenchida pela equipe.
+              O sistema lê os IDs internos e a coluna "Estoque REAL", compara com o sistema e cria ajustes em lote.
+            </p>
+            <div id="ajusteDropZone" style="border:2px dashed var(--border);border-radius:var(--radius);padding:2rem;text-align:center;cursor:pointer;transition:all .2s;" onclick="document.getElementById('ajusteXlsxInput').click()">
+              <div style="font-size:2rem;margin-bottom:.5rem;opacity:.5;">📊</div>
+              <p style="font-size:.85rem;color:var(--text-secondary);">Clique ou arraste a planilha (.xlsx) aqui</p>
+              <p style="font-size:.72rem;color:var(--text-muted);margin-top:.3rem;">Modelo: <code>INVENTARIO-FISICO-*.xlsx</code></p>
+            </div>
+            <input type="file" id="ajusteXlsxInput" accept=".xlsx,.xls" style="display:none" onchange="parseAjusteXLSX(event)">
+            <div id="ajusteXlsxLoading" style="display:none;text-align:center;padding:1.2rem;"><span class="spinner"></span> Lendo planilha...</div>
+            <div id="ajusteXlsxError" style="display:none;margin-top:.8rem;color:var(--red);font-size:.82rem;"></div>
+          </div>
+
+          <div id="ajusteXlsxResults" style="display:none;margin-top:1rem">
+            <div class="form-card">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem;flex-wrap:wrap;gap:.5rem">
+                <h3 style="font-size:.9rem;font-weight:700;">✅ Preview do ajuste</h3>
+                <div style="font-size:.78rem;color:var(--text-muted)" id="ajusteXlsxStats">—</div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th><input type="checkbox" id="ajusteXlsxSelAll" checked onchange="toggleAjusteXlsxAll(this.checked)"></th>
+                      <th>Produto</th>
+                      <th>Variação</th>
+                      <th>Sistema</th>
+                      <th>Real</th>
+                      <th>Diferença</th>
+                      <th>Observação</th>
+                    </tr>
+                  </thead>
+                  <tbody id="ajusteXlsxRows"></tbody>
+                </table>
+              </div>
+              <div style="margin-top:1rem;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+                <select id="ajusteXlsxMotivo" style="flex:0 0 auto;max-width:240px;">
+                  <option value="inventario">Motivo: Inventário físico</option>
+                  <option value="perda">Motivo: Perda / dano</option>
+                  <option value="achado">Motivo: Achado</option>
+                  <option value="erro_cadastro">Motivo: Erro de cadastro</option>
+                  <option value="outro">Motivo: Outro</option>
+                </select>
+                <button class="btn btn-primary" onclick="confirmImportAjuste()">Confirmar e registrar selecionados</button>
+                <button class="btn" onclick="document.getElementById('ajusteXlsxResults').style.display='none'">Cancelar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab Histórico -->
+        <div id="ajuste-tab-hist" style="display:none">
+          <div class="form-card">
+            <h3 style="font-size:.9rem;font-weight:700;margin-bottom:1rem;">Histórico de ajustes (últimos 100)</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Item</th>
+                    <th>Variação</th>
+                    <th>Δ Qtd</th>
+                    <th>Motivo</th>
+                    <th>Por quem</th>
+                  </tr>
+                </thead>
+                <tbody id="ajusteHistRows"><tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:1.5rem">Carregando...</td></tr></tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
       </div>
@@ -1315,7 +1464,7 @@ async function saveProfile(){
 }
 
 const ROLE_LABELS={admin:'Administrador',gerente:'Gerente',estoquista:'Estoquista',costureira:'Costureira',user:'Usuário'};
-const PERM_LABELS={dashboard:'Ver Dashboard',estoque:'Ver Estoque',alertas:'Ver Alertas',historico:'Ver Histórico',cadastro:'Cadastrar Produto',entrada:'Registrar Entrada',saida:'Registrar Saída',compras:'Ver Compras',fornecedores:'Ver Fornecedores',fornecedores_editar:'Editar Fornecedores',ficha:'Ver Ficha Técnica',ficha_editar:'Editar Ficha Técnica',bling:'Ver Vendas Bling',excluir_mov:'Excluir Movimentações'};
+const PERM_LABELS={dashboard:'Ver Dashboard',estoque:'Ver Estoque',alertas:'Ver Alertas',historico:'Ver Histórico',cadastro:'Cadastrar Produto',entrada:'Registrar Entrada',saida:'Registrar Saída',ajuste:'Ajustar Inventário',compras:'Ver Compras',fornecedores:'Ver Fornecedores',fornecedores_editar:'Editar Fornecedores',ficha:'Ver Ficha Técnica',ficha_editar:'Editar Ficha Técnica',bling:'Ver Vendas Bling',excluir_mov:'Excluir Movimentações'};
 let rolePerms={};
 function hasRole(...roles){return roles.includes(profile?.role);}
 function canAccess(perm){
@@ -1620,6 +1769,14 @@ async function showPage(name,btn){
   if(name==='dashboard')renderDash();
   if(name==='cadastro'){renderFabList();popSupSelect('fabFornecedorId',$('fabFornecedorId')?.value||'');}
   if(name==='entrada'){popSel('entryFab');$('entryDate').value=td;popSupSelect('entryFornecedorId');}
+  if(name==='ajuste'){
+    popSel('ajusteFab');
+    $('ajusteDate').value=td;
+    $('ajusteInfo').style.display='none';
+    $('ajusteQtyReal').value='';
+    $('ajusteDiff').value='';
+    ajusteSetTab('individual', document.getElementById('ajusteTabBtnInd'));
+  }
   if(name==='saida'){
     popSel('exitFab');$('exitDate').value=td;$('exitWho').value=profile.display_name;updAvail();
     popExitProdSelect();$('exitProdDate').value=td;$('exitProdWho').value=profile.display_name;
@@ -3266,6 +3423,228 @@ function updAvail(){
   $('exitAvail').textContent=f?`Disponível: ${f.stock} ${f.unit}`:'';
 }
 
+// ═══ AJUSTE DE INVENTÁRIO ═══
+// Diferente de entrada/saida: marca movements.type='ajuste' pra historico ficar
+// separado. Aceita qty NEGATIVO (quando sistema tem mais que o físico).
+function ajusteSetTab(tab, btn){
+  ['individual','planilha','hist'].forEach(t=>{
+    const el=$('ajuste-tab-'+t);
+    if(el) el.style.display = t===tab ? '' : 'none';
+  });
+  ['Ind','Xls','Hist'].forEach(suf=>{
+    const b=$('ajusteTabBtn'+suf);
+    if(!b) return;
+    b.style.borderColor='var(--border)';
+    b.style.background='';
+    b.style.color='';
+  });
+  if(btn){ btn.style.borderColor='var(--accent)'; btn.style.background='rgba(99,102,241,0.1)'; btn.style.color='var(--text)'; }
+  if(tab==='hist') loadAjusteHist();
+}
+
+function onAjusteFabChange(){
+  const f=fabrics.find(x=>x.id===$('ajusteFab').value);
+  if(!f){ $('ajusteInfo').style.display='none'; return; }
+  $('ajusteStockAtual').textContent = `${f.stock||0} ${f.unit||''}`;
+  $('ajusteInfo').style.display='';
+  updateAjustePreview();
+}
+
+function updateAjustePreview(){
+  const f=fabrics.find(x=>x.id===$('ajusteFab').value);
+  const real=parseFloat($('ajusteQtyReal').value);
+  const diffEl=$('ajusteDiff');
+  if(!f||isNaN(real)){ diffEl.value=''; diffEl.style.color=''; return; }
+  const diff = real - (f.stock||0);
+  const sign = diff>0?'+':'';
+  diffEl.value = `${sign}${diff.toFixed(2)} ${f.unit||''}`;
+  diffEl.style.color = diff>0 ? 'var(--green)' : diff<0 ? 'var(--red)' : 'var(--text-muted)';
+}
+
+async function saveAjuste(e){
+  e.preventDefault();
+  const fid=$('ajusteFab').value;
+  const real=parseFloat($('ajusteQtyReal').value);
+  const motivo=$('ajusteMotivo').value;
+  if(!fid||isNaN(real)||!motivo){ toast('Preencha todos os campos obrigatórios'); return; }
+  const fab=fabrics.find(f=>f.id===fid);
+  if(!fab){ toast('Item não encontrado'); return; }
+  const stockAtual = parseFloat(fab.stock)||0;
+  const diff = real - stockAtual;
+  if(diff===0){ toast('Sem diferença — nada a ajustar'); return; }
+  const notes=($('ajusteNotes').value||'').trim();
+  const motivoLabel={
+    inventario:'Inventário físico',
+    perda:'Perda/dano',
+    achado:'Achado',
+    vencimento:'Vencimento/descarte',
+    erro_cadastro:'Erro de cadastro',
+    outro:'Outro'
+  }[motivo]||motivo;
+  const detail=`[${motivoLabel}] ${stockAtual} → ${real}${notes?' · '+notes:''}`;
+  try{
+    await Promise.all([
+      sb.from('movements').insert({user_id:user.id,fabric_id:fid,type:'ajuste',qty:diff,date:$('ajusteDate').value,detail,who:profile.display_name}),
+      sb.from('fabrics').update({stock:real}).eq('id',fid)
+    ]);
+    toast(`Ajuste registrado: ${fab.name} ${stockAtual} → ${real}`);
+    e.target.reset();
+    $('ajusteDate').value=today();
+    $('ajusteInfo').style.display='none';
+    await loadAll();
+    popSel('ajusteFab');
+  }catch(err){
+    toast('Erro: '+(err.message||err));
+  }
+}
+
+// ═══ IMPORT PLANILHA XLSX ═══
+let _ajusteXlsxItems = [];
+
+async function parseAjusteXLSX(ev){
+  const file=ev.target.files[0];
+  if(!file) return;
+  const loading=$('ajusteXlsxLoading'), errBox=$('ajusteXlsxError'), resBox=$('ajusteXlsxResults');
+  loading.style.display='block';
+  errBox.style.display='none';
+  resBox.style.display='none';
+  try{
+    if(typeof XLSX==='undefined'){ throw new Error('SheetJS não carregou — verifique conexão'); }
+    const buf=await file.arrayBuffer();
+    const wb=XLSX.read(buf,{type:'array'});
+    // Procura a aba "Inventario Fisico" (com ou sem acento)
+    let sheet=null;
+    for(const name of wb.SheetNames){
+      const n=name.toLowerCase().replace(/[áâãà]/g,'a').replace(/[éê]/g,'e').replace(/[íî]/g,'i').replace(/[óôõò]/g,'o');
+      if(n.includes('inventario') && n.includes('fisico')){ sheet=wb.Sheets[name]; break; }
+    }
+    if(!sheet){ throw new Error('Aba "Inventario Fisico" não encontrada na planilha'); }
+    const rows=XLSX.utils.sheet_to_json(sheet,{header:1,range:3}); // header na linha 4 (index 3)
+    // Header esperado: Categoria, Nome, Variacao, Unidade, Estoque REAL, Estoque Sistema, Diferenca, Observacao, ID
+    const items=[];
+    for(const r of rows){
+      if(!r||!r.length) continue;
+      const id = r[8]; // coluna I (index 8) = ID interno
+      const real = r[4]; // coluna E
+      if(!id || real===undefined || real===null || real==='') continue;
+      const realNum = parseFloat(real);
+      if(isNaN(realNum)) continue;
+      const fab = fabrics.find(f=>f.id===id);
+      if(!fab) continue; // ignora ids não cadastrados
+      const sistema = parseFloat(fab.stock)||0;
+      const diff = realNum - sistema;
+      items.push({
+        id, nome: fab.name, variacao: fab.color||'', unit: fab.unit||'',
+        sistema, real: realNum, diff, obs: (r[7]||'').toString().trim(),
+        selected: diff !== 0
+      });
+    }
+    _ajusteXlsxItems = items;
+    loading.style.display='none';
+    if(!items.length){
+      errBox.textContent='Nenhum item válido na planilha. Verifique se a coluna E (Estoque REAL) foi preenchida e a coluna I (ID) está intacta.';
+      errBox.style.display='block';
+      return;
+    }
+    renderAjusteXlsxPreview();
+    resBox.style.display='block';
+  }catch(err){
+    loading.style.display='none';
+    errBox.textContent='Erro: '+(err.message||err);
+    errBox.style.display='block';
+  }
+}
+
+function renderAjusteXlsxPreview(){
+  const tbody=$('ajusteXlsxRows');
+  const sobra = _ajusteXlsxItems.filter(i=>i.diff>0).length;
+  const falta = _ajusteXlsxItems.filter(i=>i.diff<0).length;
+  const iguais = _ajusteXlsxItems.filter(i=>i.diff===0).length;
+  $('ajusteXlsxStats').innerHTML = `${_ajusteXlsxItems.length} itens · <span style="color:var(--green)">+${sobra} sobra</span> · <span style="color:var(--red)">${falta} falta</span> · ${iguais} sem diferença`;
+  tbody.innerHTML = _ajusteXlsxItems.map((it,i)=>{
+    const corDiff = it.diff>0?'var(--green)':it.diff<0?'var(--red)':'var(--text-muted)';
+    const sign = it.diff>0?'+':'';
+    return `<tr>
+      <td><input type="checkbox" ${it.selected?'checked':''} onchange="_ajusteXlsxItems[${i}].selected=this.checked"></td>
+      <td>${esc(it.nome)}</td>
+      <td>${esc(it.variacao||'—')}</td>
+      <td style="text-align:right">${it.sistema} ${esc(it.unit)}</td>
+      <td style="text-align:right;font-weight:700">${it.real} ${esc(it.unit)}</td>
+      <td style="text-align:right;font-weight:700;color:${corDiff}">${sign}${it.diff.toFixed(2)}</td>
+      <td>${esc(it.obs||'')}</td>
+    </tr>`;
+  }).join('');
+}
+
+function toggleAjusteXlsxAll(checked){
+  _ajusteXlsxItems.forEach(it=>{ it.selected = checked && it.diff!==0; });
+  renderAjusteXlsxPreview();
+}
+
+async function confirmImportAjuste(){
+  const motivo = $('ajusteXlsxMotivo').value || 'inventario';
+  const motivoLabel={inventario:'Inventário físico',perda:'Perda/dano',achado:'Achado',erro_cadastro:'Erro de cadastro',outro:'Outro'}[motivo]||motivo;
+  const sel = _ajusteXlsxItems.filter(i=>i.selected && i.diff!==0);
+  if(!sel.length){ toast('Nenhum item selecionado pra ajustar'); return; }
+  if(!confirm(`Confirma o ajuste de ${sel.length} item${sel.length>1?'ns':''}?`)) return;
+  const td = today();
+  let ok=0, fail=0;
+  for(const it of sel){
+    try{
+      const detail = `[${motivoLabel}] ${it.sistema} → ${it.real}${it.obs?' · '+it.obs:''}`;
+      await Promise.all([
+        sb.from('movements').insert({user_id:user.id,fabric_id:it.id,type:'ajuste',qty:it.diff,date:td,detail,who:profile.display_name}),
+        sb.from('fabrics').update({stock:it.real}).eq('id',it.id)
+      ]);
+      ok++;
+    }catch(e){ console.warn('ajuste fail',it.id,e); fail++; }
+  }
+  toast(`✓ ${ok} ajustes registrados${fail?` · ${fail} falharam`:''}`);
+  $('ajusteXlsxResults').style.display='none';
+  $('ajusteXlsxInput').value='';
+  _ajusteXlsxItems=[];
+  await loadAll();
+}
+
+async function loadAjusteHist(){
+  const tbody=$('ajusteHistRows');
+  tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:1.5rem">Carregando...</td></tr>';
+  try{
+    const {data,error} = await sb.from('movements')
+      .select('id, date, fabric_id, qty, detail, who, created_at')
+      .eq('type','ajuste')
+      .order('created_at',{ascending:false})
+      .limit(100);
+    if(error) throw error;
+    if(!data || !data.length){
+      tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:1.5rem">Nenhum ajuste registrado ainda.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.map(m=>{
+      const fab = fabrics.find(f=>f.id===m.fabric_id);
+      const nome = fab?fab.name:'(item removido)';
+      const varia = fab?(fab.color||'—'):'—';
+      const unit = fab?fab.unit:'';
+      const corDiff = m.qty>0?'var(--green)':'var(--red)';
+      const sign = m.qty>0?'+':'';
+      const motivo = (m.detail||'').match(/^\[([^\]]+)\]/);
+      const motivoTxt = motivo ? motivo[1] : '—';
+      const obs = (m.detail||'').replace(/^\[[^\]]+\]\s*/,'');
+      const dt = m.date ? new Date(m.date+'T12:00').toLocaleDateString('pt-BR') : '—';
+      return `<tr>
+        <td>${dt}</td>
+        <td>${esc(nome)}</td>
+        <td>${esc(varia)}</td>
+        <td style="text-align:right;font-weight:700;color:${corDiff}">${sign}${m.qty} ${esc(unit)}</td>
+        <td>${esc(motivoTxt)}</td>
+        <td>${esc(m.who||'—')}</td>
+      </tr>`;
+    }).join('');
+  }catch(e){
+    tbody.innerHTML=`<tr><td colspan="6" style="text-align:center;color:var(--red);padding:1.5rem">Erro: ${esc(e.message||e)}</td></tr>`;
+  }
+}
+
 // ═══ SAÍDA POR PRODUÇÃO (consome ficha técnica) ═══
 function exitSetMode(modo){
   const isProd=modo==='producao';
@@ -3614,6 +3993,7 @@ function popSel(id){
   const s=$(id);
   s.innerHTML='<option value="">Selecione...</option>'+fabrics.map(f=>`<option value="${f.id}">${esc(f.name)} — ${esc(f.color)} (${f.stock} ${f.unit})</option>`).join('');
   if(id==='exitFab')s.onchange=updAvail;
+  if(id==='ajusteFab')s.onchange=onAjusteFabChange;
 }
 function popHistFilter(){
   $('hFab').innerHTML='<option value="all">Todos</option>'+fabrics.map(f=>`<option value="${f.id}">${esc(f.name)} — ${esc(f.color)}</option>`).join('');
